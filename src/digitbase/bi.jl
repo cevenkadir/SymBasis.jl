@@ -107,6 +107,13 @@ function Base.iterate(b::BaseInt{T,Ti,B}, state) where {T<:Integer,Ti<:Integer,B
     return nothing
 end
 
+function Base.isless(
+    b1::BaseInt{T,Ti,B},
+    b2::BaseInt{T,Ti,B}
+) where {T<:Integer,Ti<:Integer,B}
+    return b1.value < b2.value
+end
+
 subscript(i::Integer) = join(Char(0x2080 + d) for d in reverse!(digits(i)))
 
 function base_number_to_string(

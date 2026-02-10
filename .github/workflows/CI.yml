@@ -23,12 +23,14 @@ jobs:
       fail-fast: false
       matrix:
         version:
+          - '1.7'
+          - '1.8'
+          - '1.9'
           - '1.10'
           - '1.11'
           - '1.12'
         os:
           - ubuntu-latest
-          - ubuntu-24.04
           - macOS-latest
         arch:
           - x64

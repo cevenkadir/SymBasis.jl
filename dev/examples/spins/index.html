@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Quantum mechanical spins · SymBasis.jl</title><meta name="title" content="Quantum mechanical spins · SymBasis.jl"/><meta property="og:title" content="Quantum mechanical spins · SymBasis.jl"/><meta property="twitter:title" content="Quantum mechanical spins · SymBasis.jl"/><meta name="description" content="Documentation for SymBasis.jl."/><meta property="og:description" content="Documentation for SymBasis.jl."/><meta property="twitter:description" content="Documentation for SymBasis.jl."/><meta property="og:url" content="https://cevenkadir.github.io/SymBasis.jl/examples/spins/"/><meta property="twitter:url" content="https://cevenkadir.github.io/SymBasis.jl/examples/spins/"/><link rel="canonical" href="https://cevenkadir.github.io/SymBasis.jl/examples/spins/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">SymBasis.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Manual</span><ul><li><a class="tocitem" href="../../manual/getting_started/">Getting started</a></li><li><a class="tocitem" href="../../manual/defining_dof_objects/">Defining DoF-object(s)</a></li><li><a class="tocitem" href="../../manual/defining_sym_groups/">Defining symmetry group(s)</a></li><li><a class="tocitem" href="../../manual/basis_construction/">Basis construction</a></li><li><a class="tocitem" href="../../manual/representative_states/">Determining representative states</a></li></ul></li><li><span class="tocitem">Examples</span><ul><li class="is-active"><a class="tocitem" href>Quantum mechanical spins</a><ul class="internal"><li><a class="tocitem" href="#Spin-1/2-objects-on-a-chain-without-any-symmetries"><span>Spin-1/2 objects on a chain without any symmetries</span></a></li><li><a class="tocitem" href="#Spin-1-objects-on-a-chain-with-total-magnetization-symmetry"><span>Spin-1 objects on a chain with total magnetization symmetry</span></a></li><li><a class="tocitem" href="#Spin-1/2-objects-on-a-chain-with-total-magnetization-and-translational-symmetries"><span>Spin-1/2 objects on a chain with total magnetization and translational symmetries</span></a></li><li><a class="tocitem" href="#Spin-1/2-objects-on-a-2D-square-lattice-with-total-magnetization,-translational,-and-spatial-reflection-symmetries"><span>Spin-1/2 objects on a 2D square lattice with total magnetization, translational, and spatial reflection symmetries</span></a></li></ul></li></ul></li><li><span class="tocitem">API Reference</span><ul><li><a class="tocitem" href="../../api/digitbase/">DigitBase</a></li><li><a class="tocitem" href="../../api/dofobjects/">DoFObjects</a></li><li><a class="tocitem" href="../../api/miscs/">Miscs</a></li><li><a class="tocitem" href="../../api/symgroups/">SymGroups</a></li><li><a class="tocitem" href="../../api/bases/">Bases</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Quantum mechanical spins</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Quantum mechanical spins</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/cevenkadir/SymBasis.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/cevenkadir/SymBasis.jl/blob/main/docs/src/examples/spins.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Quantum-mechanical-spins"><a class="docs-heading-anchor" href="#Quantum-mechanical-spins">Quantum mechanical spins</a><a id="Quantum-mechanical-spins-1"></a><a class="docs-heading-anchor-permalink" href="#Quantum-mechanical-spins" title="Permalink"></a></h1><h2 id="Spin-1/2-objects-on-a-chain-without-any-symmetries"><a class="docs-heading-anchor" href="#Spin-1/2-objects-on-a-chain-without-any-symmetries">Spin-1/2 objects on a chain without any symmetries</a><a id="Spin-1/2-objects-on-a-chain-without-any-symmetries-1"></a><a class="docs-heading-anchor-permalink" href="#Spin-1/2-objects-on-a-chain-without-any-symmetries" title="Permalink"></a></h2><p>In this example, we will construct a basis for a system of spin-1/2 objects on a chain without any symmetries. We will first define the DoF-object for spin-1/2 and then generate the full basis for a system of 4 spin-1/2 objects.</p><pre><code class="language-julia hljs">using SymBasis.DoFObjects
+using SymBasis.Bases
+
+N = 4 # number of sites
+dofo = dof_object(:Spin, 1 // 2) # define a DoF-object for spin-1/2
+
+b = basis(dofo, N) # generate the full basis without any symmetries</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Basis{UInt64,Int64,2,Float64} with 16 states
+  states: Vector{SymBasis.DigitBase.BaseInt{UInt64, Int64, 2}}
+  norms : Vector{Float64}
+  first 10 states/norms:
+    (0)₂     (norm=1.0)
+    (1)₂     (norm=1.0)
+    (10)₂    (norm=1.0)
+    (11)₂    (norm=1.0)
+    (100)₂   (norm=1.0)
+    (101)₂   (norm=1.0)
+    (110)₂   (norm=1.0)
+    (111)₂   (norm=1.0)
+    (1000)₂  (norm=1.0)
+    (1001)₂  (norm=1.0)
+    ⋮
+</code></pre><p>This will generate the full basis for a system of 4 spin-1/2 particles, which consists of <span>$2^4 = 16$</span> basis states. Each basis state corresponds to a specific configuration of the spin-1/2 objects on the chain, where each object can be in either the spin-up or spin-down state. The basis states are represented as integers using the base positional numbering system, where the position of each spin-1/2 object contributes to the overall integer representation of the state. For example, the state where all spin-1/2 objects are in the spin-down state would be represented as <code>0</code>, while the state where all spin-1/2 objects are in the spin-up state would be represented as <code>15</code> (which is <code>2^4 - 1</code>).</p><h2 id="Spin-1-objects-on-a-chain-with-total-magnetization-symmetry"><a class="docs-heading-anchor" href="#Spin-1-objects-on-a-chain-with-total-magnetization-symmetry">Spin-1 objects on a chain with total magnetization symmetry</a><a id="Spin-1-objects-on-a-chain-with-total-magnetization-symmetry-1"></a><a class="docs-heading-anchor-permalink" href="#Spin-1-objects-on-a-chain-with-total-magnetization-symmetry" title="Permalink"></a></h2><p>In this example, we will construct a basis for a system of spin-1 objects on a chain with total magnetization symmetry. We will first define the DoF-object for spin-1 and then define the symmetry group for total magnetization. Finally, we will generate the basis that resolves the total magnetization symmetry for a system of 4 spin-1 objects.</p><pre><code class="language-julia hljs">using SymBasis.DoFObjects
+using SymBasis.SymGroups
+using SymBasis.Bases
+
+N = 4 # number of sites
+dofo = dof_object(:Spin, 1//1) # define a DoF-object for spin-1
+
+Sz = 0 // 1 # total magnetization quantum number
+sg_Sz = sym(:TotalMagnetization, dofo, Sz, N) # define the symmetry group for total magnetization
+
+b = basis(dofo, N, sg_Sz) # generate the basis that resolves the total magnetization symmetry</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Basis{UInt64,Int64,3,Float64} with 19 states
+  states: Vector{SymBasis.DigitBase.BaseInt{UInt64, Int64, 3}}
+  norms : Vector{Float64}
+  first 10 states/norms:
+    (22)₃    (norm=1.0)
+    (112)₃   (norm=1.0)
+    (121)₃   (norm=1.0)
+    (202)₃   (norm=1.0)
+    (211)₃   (norm=1.0)
+    (220)₃   (norm=1.0)
+    (1012)₃  (norm=1.0)
+    (1021)₃  (norm=1.0)
+    (1102)₃  (norm=1.0)
+    (1111)₃  (norm=1.0)
+    ⋮
+</code></pre><p>This will generate a basis that consists of the basis states with total magnetization quantum number <span>$S^z = 0$</span> for a system of 4 spin-1 objects.</p><h2 id="Spin-1/2-objects-on-a-chain-with-total-magnetization-and-translational-symmetries"><a class="docs-heading-anchor" href="#Spin-1/2-objects-on-a-chain-with-total-magnetization-and-translational-symmetries">Spin-1/2 objects on a chain with total magnetization and translational symmetries</a><a id="Spin-1/2-objects-on-a-chain-with-total-magnetization-and-translational-symmetries-1"></a><a class="docs-heading-anchor-permalink" href="#Spin-1/2-objects-on-a-chain-with-total-magnetization-and-translational-symmetries" title="Permalink"></a></h2><p>In this example, we will construct a basis for a system of spin-1/2 objects on a chain with both total magnetization and translational symmetries. We will first define the DoF-object for spin-1/2, then define the symmetry groups for total magnetization and translational symmetries, and finally combine the symmetry groups to generate the basis that resolves both symmetries for a system of 4 spin-1/2 objects.</p><pre><code class="language-julia hljs">using SymBasis.DoFObjects
+using SymBasis.SymGroups
+using SymBasis.Bases
+
+N = 4 # number of sites
+dofo = dof_object(:Spin, 1 // 2) # define a DoF-object for spin-1/2
+
+Sz = 0 // 1 # total magnetization quantum number
+sg_Sz = sym(:TotalMagnetization, dofo, Sz, N) # define the symmetry group for total magnetization
+
+perm = mod1.((1:N) .+ 1, N) # permutation for translational symmetry
+k = 0 # momentum quantum number
+sg_translational = sym(:Translational, dofo, k, perm) # define the symmetry group for translational symmetry
+
+# Combine the total magnetization symmetry and the translational symmetry
+csg = sg_Sz ∘ sg_translational
+
+b = basis(dofo, N, csg) # generate the basis that resolves both symmetries</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Basis{UInt64,Int64,2,Float64} with 2 states
+  states: Vector{SymBasis.DigitBase.BaseInt{UInt64, Int64, 2}}
+  norms : Vector{Float64}
+  first 2 states/norms:
+    (1010)₂  (norm=8.0)
+    (1100)₂  (norm=4.0)
+</code></pre><p>This will generate a basis that consists of the basis states with total magnetization quantum number <span>$S^z = 0$</span> and momentum quantum number <span>$k = 0$</span> for a system of 4 spin-1/2 objects. The basis states in this case will be linear combinations of the basis states from the previous example (without symmetries) that are invariant under both the total magnetization and translational symmetry operations. Each basis state in this combined symmetry sector will have a specific normalization factor that accounts for the number of states that are combined to form the invariant state under the symmetry operations.</p><h2 id="Spin-1/2-objects-on-a-2D-square-lattice-with-total-magnetization,-translational,-and-spatial-reflection-symmetries"><a class="docs-heading-anchor" href="#Spin-1/2-objects-on-a-2D-square-lattice-with-total-magnetization,-translational,-and-spatial-reflection-symmetries">Spin-1/2 objects on a 2D square lattice with total magnetization, translational, and spatial reflection symmetries</a><a id="Spin-1/2-objects-on-a-2D-square-lattice-with-total-magnetization,-translational,-and-spatial-reflection-symmetries-1"></a><a class="docs-heading-anchor-permalink" href="#Spin-1/2-objects-on-a-2D-square-lattice-with-total-magnetization,-translational,-and-spatial-reflection-symmetries" title="Permalink"></a></h2><p>In this example, we will construct a basis for a system of spin-1/2 objects on a 2D square lattice with total magnetization, translational, and spatial reflection symmetries. We will first define the DoF-object for spin-1/2, then define the symmetry groups for total magnetization, translational, and spatial reflection symmetries, and finally combine the symmetry groups to generate the basis that resolves all three symmetries for a system of 4 spin-1/2 objects on a 2D square lattice.</p><pre><code class="language-julia hljs">using SymBasis.DoFObjects
+using SymBasis.SymGroups
+using SymBasis.Bases
+
+Lₛ = (4, 3) # dimensions of the square lattice (x and y directions)
+N = prod(Lₛ) # total number of sites
+dofo = dof_object(:Spin, 1 // 2) # define a DoF-object for spin-1
+
+Sz = 0 // 1 # total magnetization quantum number
+# define the symmetry group for total magnetization
+sg_Sz = sym(:TotalMagnetization, dofo, Sz, N)
+
+Tx_perm = LinearIndices(Lₛ)[
+    [CartesianIndex(mod1(r[1] + 1, Lₛ[1]), r[2]) for r in CartesianIndices(Lₛ)][:]
+]
+kx = 0 # momentum quantum number for x-direction
+# define the symmetry group for translational symmetry in x-direction
+sg_translational_x = sym(:Translational, dofo, kx, Tx_perm)
+
+Rx_perm = LinearIndices(Lₛ)[
+    [CartesianIndex(Lₛ[1] - r[1] + 1, r[2]) for r in CartesianIndices(Lₛ)][:]
+]
+px = -1 # parity quantum number for reflection in x-direction
+# define the symmetry group for spatial reflection symmetry in x-direction
+sg_reflection_x = sym(:SpatialReflection, dofo, px, Rx_perm)
+
+Ty_perm = LinearIndices(Lₛ)[
+    [CartesianIndex(r[1], mod1(r[2] + 1, Lₛ[2])) for r in CartesianIndices(Lₛ)][:]
+]
+ky = 0 # momentum quantum number for y-direction
+# define the symmetry group for translational symmetry in y-direction
+sg_translational_y = sym(:Translational, dofo, ky, Ty_perm)
+
+Ry_perm = LinearIndices(Lₛ)[
+    [CartesianIndex(r[1], Lₛ[2] - r[2] + 1) for r in CartesianIndices(Lₛ)][:]
+]
+py = 1 # parity quantum number for reflection in y-direction
+# define the symmetry group for spatial reflection symmetry in y-direction
+sg_reflection_y = sym(:SpatialReflection, dofo, py, Ry_perm)
+
+# Combine all the symmetry groups
+csg = sg_Sz ∘ sg_translational_x ∘ sg_reflection_x ∘ sg_translational_y ∘ sg_reflection_y
+
+b = basis(dofo, N, csg) # generate the basis that resolves all three symmetries</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Basis{UInt64,Int64,2,Float64} with 14 states
+  states: Vector{SymBasis.DigitBase.BaseInt{UInt64, Int64, 2}}
+  norms : Vector{Float64}
+  first 10 states/norms:
+    (1011100011)₂    (norm=48.0)
+    (1110001110)₂    (norm=48.0)
+    (10010011101)₂   (norm=48.0)
+    (10101011100)₂   (norm=96.0)
+    (11000101101)₂   (norm=48.0)
+    (11001101100)₂   (norm=96.0)
+    (100010011101)₂  (norm=48.0)
+    (100010101011)₂  (norm=48.0)
+    (101100100101)₂  (norm=48.0)
+    (101110001001)₂  (norm=48.0)
+    ⋮
+</code></pre><p>This will generate a basis that consists of the basis states with total magnetization quantum number <span>$S^z = 0$</span>, momentum quantum numbers <span>$k_x = 0$</span> and <span>$k_y = 0$</span>, and parity quantum numbers <span>$p_x = -1$</span> and <span>$p_y = 1$</span> for a system of 12 spin-1/2 objects on a 2D square lattice. The basis states in this combined symmetry sector will be linear combinations of the basis states from the previous examples that are invariant under the total magnetization, translational, and spatial reflection symmetry operations. Each basis state in this combined symmetry sector will have a specific normalization factor that accounts for the number of states that are combined to form the invariant state under the symmetry operations.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../manual/representative_states/">« Determining representative states</a><a class="docs-footer-nextpage" href="../../api/digitbase/">DigitBase »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Tuesday 10 February 2026 19:58">Tuesday 10 February 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

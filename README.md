@@ -25,6 +25,8 @@ SymBasis.jl provides predefined symmetry groups for commonly used symmetries, in
 In the upcoming versions, we plan to add more predefined symmetries such as spin inversion, particle number conservation (for fermions and bosons), etc.
 
 ## Installation
+**Requirements**: Julia 1.11 or later.
+
 You can install SymBasis.jl using Julia's package manager. Open the Julia REPL and run:
 ```julia
 julia> import Pkg; Pkg.add("https://github.com/cevenkadir/SymBasis.jl")

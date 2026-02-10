@@ -91,7 +91,7 @@
             @test transl_sym1ₛ.check == check_perm
             @test transl_sym1ₛ.apply == apply_perm
             @test transl_sym1ₛ.factors ≈ [
-                any([k, r] .== 0) ? 1.0 + 0.0im : (-0.5 - im * √3 / 2 * (-1)^(r + k))
+                exp(-2im * π * r * k / length(perm1))
                 for r in 0:(length(perm1)-1)
             ]
         end
@@ -112,7 +112,7 @@
             @test transl_sym2ₛ.check == check_perm
             @test transl_sym2ₛ.apply == apply_perm
             @test transl_sym2ₛ.factors ≈ [
-                any([k, r] .== 0) ? 1.0 : -1.0
+                exp(-2im * π * r * k / length(perm2))
                 for r in 0:(length(perm2)-1)
             ]
         end

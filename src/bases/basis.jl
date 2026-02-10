@@ -123,6 +123,8 @@ Generates the full basis for a DoF-object without symmetry considerations.
 # Keyword Arguments
 - `norm_type::DataType=Float64`: The data type for the norms of the basis states. Default is
     `Float64`.
+- `is_sorted::Bool=false`: Whether to sort the basis states in ascending order. Default is
+    `false`.
 
 # Returns
 - [`SymBasis.Bases.Basis`](@ref)`{T,Ti,B,T_n}`: The generated basis, where `B` is the number
@@ -131,12 +133,17 @@ Generates the full basis for a DoF-object without symmetry considerations.
 function basis(
     dofo::DoFObject{B,T_s,T,Ti},
     N::Integer;
-    norm_type=Float64
+    norm_type::DataType=Float64,
+    is_sorted::Bool=false
 ) where {B,T_s,T<:Integer,Ti<:Integer}
     states = collect(BaseInt(T(0); base=B, Ti=Ti):BaseInt(T(B^N - 1); base=B, Ti=Ti))
     norms = ones(norm_type, length(states))
-
-    return Basis(states, norms)
+    if is_sorted
+        sorted_indices = sortperm(states)
+        return Basis(states[sorted_indices], norms[sorted_indices])
+    else
+        return Basis(states, norms)
+    end
 end
 
 """
@@ -159,6 +166,8 @@ Generates the symmetry-resolved basis for a DoF-object under the action of a sym
 # Keyword Arguments
 - `norm_type::DataType=Float64`: The data type for the norms of the basis states. Default is
     `Float64`.
+- `is_sorted::Bool=false`: Whether to sort the basis states in ascending order. Default is
+    `false`.
 
 # Returns
 - [`SymBasis.Bases.Basis`](@ref)`{T,Ti,B,T_n}`: The generated symmetry-resolved basis, where
@@ -169,7 +178,8 @@ function basis(
     dofo::DoFObject{B,T_s,T,Ti},
     N::Integer,
     sg::SymGroup{B,T_s,T,Ti,Ts};
-    norm_type=Float64
+    norm_type::DataType=Float64,
+    is_sorted::Bool=false
 ) where {T<:Integer,Ti<:Integer,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
     nthreads = Threads.nthreads()
 
@@ -224,7 +234,12 @@ function basis(
         end
     end
 
-    return Basis(vcat(states...), vcat(norms...))
+    if is_sorted
+        sorted_indices = sortperm(states)
+        return Basis(states[sorted_indices], norms[sorted_indices])
+    else
+        return Basis(states, norms)
+    end
 end
 
 """
@@ -248,6 +263,8 @@ Generates the symmetry-resolved basis for a DoF-object under the action of a com
 # Keyword Arguments
 - `norm_type::DataType=Float64`: The data type for the norms of the basis states. Default is
     `Float64`.
+- `is_sorted::Bool=false`: Whether to sort the basis states in ascending order. Default is
+    `false`.
 
 # Returns
 - [`SymBasis.Bases.Basis`](@ref)`{T,Ti,B,T_n}`: The generated symmetry-resolved basis, where
@@ -258,7 +275,8 @@ function basis(
     dofo::DoFObject{B,T_s,T,Ti},
     N::Integer,
     csg::CombSymGroup{B,T_s,T,Ti,Ts};
-    norm_type=Float64
+    norm_type::DataType=Float64,
+    is_sorted::Bool=false
 ) where {T<:Integer,Ti<:Integer,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
     nthreads = Threads.nthreads()
 
@@ -328,7 +346,12 @@ function basis(
     states = vcat(states...)
     norms = vcat(norms...)
 
-    return Basis(states, norms)
+    if is_sorted
+        sorted_indices = sortperm(states)
+        return Basis(states[sorted_indices], norms[sorted_indices])
+    else
+        return Basis(states, norms)
+    end
 end
 
 """

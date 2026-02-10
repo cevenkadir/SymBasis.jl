@@ -100,7 +100,7 @@ end
         p::NamedTuple{names,NT},
         state::SymBasis.DigitBase.BaseInt{T,Ti,B},
         prev_bool::Bool,
-    ) where {names,NT<:Tuple{Vararg{<:Integer}},T<:Integer,Ti<:Integer,B}
+    ) where {names,NT<:Tuple{Vararg{Integer}},T<:Integer,Ti<:Integer,B}
 
 Check if the given state has the specified digit counts as defined in the named tuple `p`.
 Since this is a symmetry check, the result is combined with `prev_bool`.
@@ -117,7 +117,7 @@ function check_Nₛ(
     p::NamedTuple{names,NT},
     state::BaseInt{T,Ti,B},
     prev_bool::Bool
-) where {names,NT<:Tuple{Vararg{<:Integer}},T<:Integer,Ti<:Integer,B}
+) where {names,NT<:Tuple{Vararg{Integer}},T<:Integer,Ti<:Integer,B}
     return prev_bool * _check_Nₛ(state, p)
 end
 
@@ -125,7 +125,7 @@ end
     _check_Nₛ(
         state::SymBasis.DigitBase.BaseInt{T,Ti,B},
         p::NamedTuple{names,NT}
-    ) where {T<:Integer,Ti<:Integer,B,names,NT<:Tuple{Vararg{<:Integer}}}
+    ) where {T<:Integer,Ti<:Integer,B,names,NT<:Tuple{Vararg{Integer}}}
 
 Internal function to check if the given state has the specified digit counts as defined in
 the named tuple `p`.
@@ -140,7 +140,7 @@ the named tuple `p`.
 function _check_Nₛ(
     state::BaseInt{T,Ti,B},
     p::NamedTuple{names,NT}
-) where {T<:Integer,Ti<:Integer,B,names,NT<:Tuple{Vararg{<:Integer}}}
+) where {T<:Integer,Ti<:Integer,B,names,NT<:Tuple{Vararg{Integer}}}
     sites = 1:p.N |> collect
 
     return all((j, p[Symbol("N$j")]) for j in 0:(B-1)) do (digit, Nᵢ)
@@ -178,7 +178,7 @@ end
     apply_Nₛ(
         p::NamedTuple{names,NT},
         state::SymBasis.DigitBase.BaseInt{T,Ti,B}
-    ) where {names,NT<:Tuple{Vararg{<:Integer}},T<:Integer,Ti<:Integer,B}
+    ) where {names,NT<:Tuple{Vararg{Integer}},T<:Integer,Ti<:Integer,B}
 
 Apply the symmetry operation defined by the digit counts in `p` to the given state. Since
 this is a symmetry where the state remains unchanged, the function simply returns the input
@@ -195,7 +195,7 @@ state.
 function apply_Nₛ(
     p::NamedTuple{names,NT},
     state::BaseInt{T,Ti,B}
-) where {names,NT<:Tuple{Vararg{<:Integer}},T<:Integer,Ti<:Integer,B}
+) where {names,NT<:Tuple{Vararg{Integer}},T<:Integer,Ti<:Integer,B}
     return state
 end
 # END -- check and apply functions for predefined symmetries

@@ -6,12 +6,12 @@
     @testset "basis without any symmetry" begin
         N1 = 2
         dofo1 = dof_object(:Spin, 1 // 2)
-        states1, norms1 = basis(dofo1, N1)
+        states1, norms1 = basis(dofo1, N1; is_sorted=true)
         @test states1 == [bi"0"2, bi"1"2, bi"10"2, bi"11"2]
         @test norms1 == ones(Float64, 2^N1)
 
         N2 = 3
-        states2, norms2 = basis(dofo1, N2)
+        states2, norms2 = basis(dofo1, N2; is_sorted=true)
         @test states2 == [
             bi"0"2,
             bi"1"2,
@@ -26,7 +26,7 @@
 
         N3 = 2
         dofo3 = dof_object(:Spin, 1 // 1)
-        states3, norms3 = basis(dofo3, N3)
+        states3, norms3 = basis(dofo3, N3; is_sorted=true)
         @test states3 == [
             bi"0"3,
             bi"1"3,
@@ -46,7 +46,7 @@
             N = 3
             dofo = dof_object(:Spin, 1 // 2)
             sg = sym(:TotalMagnetization, dofo, -1 // 2, N)
-            states, norms = basis(dofo, N, sg)
+            states, norms = basis(dofo, N, sg; is_sorted=true)
             @test states == [bi"001"2, bi"010"2, bi"100"2]
             @test norms == ones(Float64, 3)
         end
@@ -55,7 +55,7 @@
             N = 2
             dofo = dof_object(:Spin, 1 // 1)
             sg = sym(:TotalMagnetization, dofo, 0 // 1, N)
-            states, norms = basis(dofo, N, sg)
+            states, norms = basis(dofo, N, sg; is_sorted=true)
             @test states == [bi"02"3, bi"11"3, bi"20"3]
             @test norms == ones(Float64, 3)
         end
@@ -67,7 +67,7 @@
 
             @testset "k = 0 for N = 4" begin
                 sg = sym(:Translational, dofo, 0, perm)
-                states, norms = basis(dofo, N, sg)
+                states, norms = basis(dofo, N, sg; is_sorted=true)
                 @test states == [
                     bi"0000"2,
                     bi"1000"2,
@@ -81,7 +81,7 @@
 
             @testset "k = 1" begin
                 sg = sym(:Translational, dofo, 1, perm)
-                states, norms = basis(dofo, N, sg)
+                states, norms = basis(dofo, N, sg; is_sorted=true)
                 @test states == [
                     bi"1000"2,
                     bi"1011"2,
@@ -98,7 +98,7 @@
 
             @testset "k = 0 for N = 3" begin
                 sg = sym(:Translational, dofo, 0, perm)
-                states, norms = basis(dofo, N, sg)
+                states, norms = basis(dofo, N, sg; is_sorted=true)
                 @test states == [
                     bi"000"3,
                     bi"002"3,
@@ -117,7 +117,7 @@
 
             @testset "k = 1" begin
                 sg = sym(:Translational, dofo, 1, perm)
-                states, norms = basis(dofo, N, sg)
+                states, norms = basis(dofo, N, sg; is_sorted=true)
                 @test states == [
                     bi"002"3,
                     bi"010"3,
@@ -138,7 +138,7 @@
             perm = [3, 2, 1] # reflection
 
             sg = sym(:SpatialReflection, dofo, 1, perm)
-            states, norms = basis(dofo, N, sg)
+            states, norms = basis(dofo, N, sg; is_sorted=true)
             @test states == [
                 bi"000"2,
                 bi"010"2,
@@ -156,7 +156,7 @@
             perm = [2, 1] # reflection
 
             sg = sym(:SpatialReflection, dofo, -1, perm)
-            states, norms = basis(dofo, N, sg)
+            states, norms = basis(dofo, N, sg; is_sorted=true)
             @test states == [
                 bi"03"5,
                 bi"10"5,
@@ -182,7 +182,7 @@
                 sg1 = sym(:TotalMagnetization, dofo, 0 // 1, N)
                 sg2 = sym(:Translational, dofo, 0, perm)
                 csg = sg1 ∘ sg2
-                b = basis(dofo, N, csg)
+                b = basis(dofo, N, csg; is_sorted=true)
                 @test is_commutative(b, csg)
                 @test b.states == [bi"1010"2, bi"1100"2]
                 @test b.norms == Float64[8, 4]
@@ -192,7 +192,7 @@
                 sg1 = sym(:TotalMagnetization, dofo, 0 // 1, N)
                 sg2 = sym(:Translational, dofo, 1, perm)
                 csg = sg1 ∘ sg2
-                b = basis(dofo, N, csg)
+                b = basis(dofo, N, csg; is_sorted=true)
                 @test is_commutative(b, csg)
                 @test b.states == [bi"1100"2]
                 @test b.norms == Float64[4,]
@@ -202,7 +202,7 @@
                 sg1 = sym(:TotalMagnetization, dofo, -1 // 1, N)
                 sg2 = sym(:Translational, dofo, 0, perm)
                 csg = sg1 ∘ sg2
-                b = basis(dofo, N, csg)
+                b = basis(dofo, N, csg; is_sorted=true)
                 @test is_commutative(b, csg)
                 @test b.states == [bi"1000"2,]
                 @test b.norms == Float64[4,]
@@ -212,7 +212,7 @@
                 sg1 = sym(:TotalMagnetization, dofo, -1 // 1, N)
                 sg2 = sym(:Translational, dofo, 3, perm)
                 csg = sg1 ∘ sg2
-                b = basis(dofo, N, csg)
+                b = basis(dofo, N, csg; is_sorted=true)
                 @test is_commutative(b, csg)
                 @test b.states == [bi"1000"2,]
                 @test b.norms == Float64[4,]
@@ -230,7 +230,7 @@
                 sg2 = sym(:Translational, dofo, 0, perm_T)
                 sg3 = sym(:SpatialReflection, dofo, 1, perm_R)
                 csg = sg1 ∘ sg2 ∘ sg3
-                b = basis(dofo, N, csg)
+                b = basis(dofo, N, csg; is_sorted=true)
                 @test is_commutative(b, csg)
                 @test b.states == [bi"121"3, bi"1111"3, bi"1120"3, bi"2002"3, bi"2020"3]
                 @test b.norms == Float64[16, 64, 8, 16, 32]
@@ -241,7 +241,7 @@
                 sg2 = sym(:Translational, dofo, 1, perm_T)
                 sg3 = sym(:SpatialReflection, dofo, -1, perm_R)
                 csg = sg1 ∘ sg2 ∘ sg3
-                b = basis(dofo, N, csg)
+                b = basis(dofo, N, csg; is_sorted=true)
                 @test !is_commutative(b, csg)
             end
 
@@ -250,7 +250,7 @@
                 sg2 = sym(:Translational, dofo, 3, perm_T)
                 sg3 = sym(:SpatialReflection, dofo, 1, perm_R)
                 csg = sg1 ∘ sg2 ∘ sg3
-                b = basis(dofo, N, csg)
+                b = basis(dofo, N, csg; is_sorted=true)
                 @test !is_commutative(b, csg)
             end
         end

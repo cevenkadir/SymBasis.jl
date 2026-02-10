@@ -1,0 +1,17 @@
+name = "SymBasis"
+uuid = "0806812d-f945-4f84-939d-820504b53c51"
+authors = ["cevenkadir <9449257+cevenkadir@users.noreply.github.com>"]
+version = "0.1.0"
+
+[deps]
+BitPermutations = "81206824-6155-40a8-95f7-18696067be4d"
+
+[compat]
+BitPermutations = "0.3.2"
+julia = "1.11"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]

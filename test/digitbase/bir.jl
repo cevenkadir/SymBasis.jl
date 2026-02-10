@@ -1,0 +1,105 @@
+@testset "Tests for BaseIntRange" begin
+    @testset "Construction of BaseIntRange" begin
+        r1 = BaseIntRange(bi"0"2, bi"1"2, bi"11"2)
+        @test r1.first == bi"0"2
+        @test r1.step == bi"1"2
+        @test r1.last == bi"11"2
+
+        r2 = BaseIntRange(bi"5"10, bi"1"10, bi"10"10)
+        @test r2.first == bi"5"10
+        @test r2.step == bi"1"10
+        @test r2.last == bi"10"10
+
+        r3 = BaseIntRange(bi"1"4, bi"2"4, bi"100"4)
+        @test r3.first == bi"1"4
+        @test r3.step == bi"2"4
+        @test r3.last == bi"100"4
+    end
+
+    @testset "Base.:(:)" begin
+        r1 = bi"0"2:bi"11"2
+        @test r1.first == bi"0"2
+        @test r1.step == bi"1"2
+        @test r1.last == bi"11"2
+
+        r2 = bi"5"10:bi"1"10:bi"10"10
+        @test r2.first == bi"5"10
+        @test r2.step == bi"1"10
+        @test r2.last == bi"10"10
+
+        r3 = bi"1"5:bi"2"5:bi"40"5
+        @test r3.first == bi"1"5
+        @test r3.step == bi"2"5
+        @test r3.last == bi"40"5
+    end
+
+    @testset "Base.length for BaseIntRange" begin
+        r1 = bi"0"2:bi"11"2
+        @test length(r1) == 4
+
+        r2 = bi"3"4:bi"1"4:bi"20"4
+        @test length(r2) == 6
+
+        r3 = bi"3"7:bi"2"7:bi"100"7
+        @test length(r3) == 24
+    end
+
+    @testset "Base.collect for BaseIntRange" begin
+        r1 = bi"0"2:bi"11"2
+        collected1 = collect(r1)
+        expected1 = [bi"0"2, bi"1"2, bi"10"2, bi"11"2]
+        @test collected1 == expected1
+
+        r2 = bi"5"10:bi"1"10:bi"10"10
+        collected2 = collect(r2)
+        expected2 = [bi"5"10, bi"6"10, bi"7"10, bi"8"10, bi"9"10, bi"10"10]
+        @test collected2 == expected2
+
+        r3 = bi"1"2:bi"10"2:bi"1001"2
+        collected3 = collect(r3)
+        expected3 = [bi"1"2, bi"11"2, bi"101"2, bi"111"2, bi"1001"2]
+        @test collected3 == expected3
+    end
+
+    @testset "Base.show for BaseIntRange" begin
+        r1 = bi"0"2:bi"11"2
+        io1 = IOBuffer()
+        show(io1, r1)
+        output1 = String(take!(io1))
+        @test output1 == "(0)₂:(1)₂:(11)₂"
+
+        r2 = bi"15"10:bi"1"10:bi"20"10
+        io2 = IOBuffer()
+        show(io2, r2)
+        output2 = String(take!(io2))
+        @test output2 == "(15)₁₀:(1)₁₀:(20)₁₀"
+
+        r3 = bi"3"7:bi"2"7:bi"100"7
+        io3 = IOBuffer()
+        show(io3, r3)
+        output3 = String(take!(io3))
+        @test output3 == "(3)₇:(2)₇:(100)₇"
+    end
+
+    @testset "Base.iterate for BaseIntRange" begin
+        r1 = bi"0"2:bi"11"2
+        map(x -> x, r1) == [bi"0"2, bi"1"2, bi"10"2, bi"11"2] || @test false
+
+        r2 = bi"100"3:bi"10"3:bi"200"3
+        map(x -> x, r2) == [bi"100"3, bi"110"3, bi"120"3, bi"200"3] || @test false
+    end
+
+    @testset "Base.getindex for BaseIntRange" begin
+        r1 = bi"0"2:bi"11"2
+        @test r1[1] == bi"0"2
+        @test r1[2] == bi"1"2
+        @test r1[3] == bi"10"2
+        @test r1[4] == bi"11"2
+
+        r2 = bi"5"6:bi"2"6:bi"20"6
+        @test r2[1] == bi"5"6
+        @test r2[2] == bi"11"6
+        @test r2[3] == bi"13"6
+        @test r2[4] == bi"15"6
+    end
+end

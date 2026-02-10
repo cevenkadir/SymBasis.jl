@@ -1,0 +1,6 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+SymBasis = "0806812d-f945-4f84-939d-820504b53c51"
+
+[compat]
+Documenter = "1.16"

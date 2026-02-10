@@ -30,7 +30,7 @@
     @testset "Base.hash for DoFObject" begin
         dofo1 = DoFObject(:Emoji, (:🥳, :🙈); T=UInt8, Ti=Int8)
         dofo2 = DoFObject(:Emoji, (:🥳, :🙈); T=UInt8, Ti=Int8)
-        dofo3 = DoFObject(:Emoji, (:👀, :🫥, :💁); T=UInt8, Ti=Int8)
+        dofo3 = DoFObject(:Emoji, (:😀, :😃, :😄); T=UInt8, Ti=Int8)
         h1 = hash(dofo1)
         h2 = hash(dofo2)
         h3 = hash(dofo3)

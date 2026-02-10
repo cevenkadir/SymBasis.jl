@@ -320,10 +320,10 @@
                 test_states = [bi"001"3, bi"020"3, bi"101"3, bi"012"3]
                 test_reps = [bi"010"3, bi"002"3, bi"011"3, bi"120"3]
                 test_factors = ComplexF64[
-                    exp(im * 2π / 3),
-                    exp(-im * 2π / 3),
-                    exp(im * 2π / 3),
-                    exp(im * 2π / 3)
+                    cis(2π / 3),
+                    cis(-2π / 3),
+                    cis(2π / 3),
+                    cis(2π / 3)
                 ]
 
                 for (i, state) in enumerate(test_states)

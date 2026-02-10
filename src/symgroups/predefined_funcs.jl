@@ -314,7 +314,7 @@ function sym(
         check_perm,
         apply_perm,
         [
-            exp(-2im * π * r * k / R)
+            cis(-2π * r * k / R)
             for r in rₛ
         ],
         N

@@ -1,5 +1,5 @@
 using SymBasis.Miscs: combos_spin_sum, perm_k, perm_wrapper
-using BitPermutations: bitpermute, BenesNetwork, BitPermutation
+using BitPermutations: bitpermute, PermutationBackend, BitPermutation
 using SymBasis.DoFObjects: DoFObject
 using SymBasis.DigitBase: BaseInt, permute, count
 
@@ -15,7 +15,7 @@ using SymBasis.DigitBase: BaseInt, permute, count
         B,
         Tperm<:Union{
             AbstractVector{<:Ti},
-            BitPermutations.BitPermutation{T,BitPermutations.BenesNetwork{T}}
+            BitPermutations.BitPermutation{T,<:BitPermutations.PermutationBackend{T}}
         }
     }
 
@@ -38,7 +38,7 @@ function check_perm(
     T<:Integer,
     Ti<:Integer,
     B,
-    Tperm<:Union{AbstractVector{<:Ti},BitPermutation{T,BenesNetwork{T}}}
+    Tperm<:Union{AbstractVector{<:Ti},BitPermutation{T,<:PermutationBackend{T}}}
 }
     bool = prev_bool |> copy
     return bool
@@ -74,7 +74,7 @@ end
     ) where {
         T<:Integer,
         Ti<:Integer,
-        Tperm<:BitPermutations.BitPermutation{T,BitPermutations.BenesNetwork{T}}
+        Tperm<:BitPermutations.BitPermutation{T,<:BitPermutations.PermutationBackend{T}}
     }
 
 Apply the bit permutation `p.perm` to the given binary state in a more efficient way.
@@ -91,7 +91,7 @@ Apply the bit permutation `p.perm` to the given binary state in a more efficient
 function apply_perm(
     p::@NamedTuple{perm::Tperm},
     state::BaseInt{T,Ti,2}
-) where {T<:Integer,Ti<:Integer,Tperm<:BitPermutation{T,BenesNetwork{T}}}
+) where {T<:Integer,Ti<:Integer,Tperm<:BitPermutation{T,<:PermutationBackend{T}}}
     return BaseInt(bitpermute(state.value, p.perm); base=2, Ti=Ti)
 end
 

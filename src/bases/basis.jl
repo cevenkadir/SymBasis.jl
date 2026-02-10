@@ -183,56 +183,61 @@ function basis(
 ) where {T<:Integer,Ti<:Integer,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
     nthreads = Threads.nthreads()
 
-    norms = [norm_type[] for _ in 1:nthreads]
-    states = [BaseInt{T,Ti,B}[] for _ in 1:nthreads]
-
     F₀ = zero(Complex{norm_type})
-    F = [F₀ |> deepcopy for _ in 1:nthreads]
-
     eps_norm_type = eps(norm_type)
-
     n_cycles = sg.cycles |> length
-
-    Dₛₛ = [_make_hashset(sg) for _ in 1:nthreads]
-
     c = true
 
     all_bints = BaseInt(T(0); base=B, Ti=Ti):BaseInt(T(B^N - 1); base=B, Ti=Ti)
 
-    Threads.@threads for state₀ in all_bints
-        threadid = Threads.threadid()
+    # Partition work and spawn tasks
+    tasks = map(Iterators.partition(all_bints, length(all_bints) ÷ nthreads + 1)) do chunk
+        Threads.@spawn begin
+            # Local buffers for this task
+            local_norms = norm_type[]
+            local_states = BaseInt{T,Ti,B}[]
+            local_F = F₀
+            local_Dₛₛ = _make_hashset(sg)
 
-        F[threadid] = F₀
+            for state₀ in chunk
+                local_F = F₀
+                h_state₀ = hash(state₀)
+                empty!(local_Dₛₛ)
 
-        h_state₀ = hash(state₀)
+                @inbounds for idx in 1:n_cycles
+                    cycleᵢ = sg.cycles[idx]
 
-        empty!(Dₛₛ[threadid])
+                    temp_state₀ = sg.apply(cycleᵢ, state₀)
+                    is_valid_state = sg.check(cycleᵢ, temp_state₀, c)
 
-        @inbounds for idx in 1:n_cycles
-            cycleᵢ = sg.cycles[idx]
+                    if is_valid_state
+                        h_temp_state = hash(temp_state₀)
+                        push!(local_Dₛₛ, h_temp_state)
 
-            temp_state₀ = sg.apply(cycleᵢ, state₀)
-            is_valid_state = sg.check(cycleᵢ, temp_state₀, c)
+                        if h_temp_state < h_state₀
+                            local_F *= zero(norm_type)
+                            break
+                        elseif h_temp_state == h_state₀
+                            local_F += sg.factors[idx]
+                        end
+                    end
+                end
 
-            if is_valid_state
-                h_temp_state = hash(temp_state₀)
-                push!(Dₛₛ[threadid], h_temp_state)
-
-                if h_temp_state < h_state₀
-                    F[threadid] *= zero(norm_type)
-                    break
-                elseif h_temp_state == h_state₀
-                    F[threadid] += sg.factors[idx]
+                norm₀ = length(local_Dₛₛ) * abs2(local_F)
+                if norm₀ > eps_norm_type
+                    push!(local_norms, norm₀)
+                    push!(local_states, state₀)
                 end
             end
-        end
 
-        norm₀ = length(Dₛₛ[threadid]) * abs2(F[threadid])
-        if norm₀ > eps_norm_type
-            push!(norms[threadid], norm₀)
-            push!(states[threadid], state₀)
+            (local_states, local_norms)
         end
     end
+
+    # Fetch results from all tasks
+    results = fetch.(tasks)
+    states = vcat((r[1] for r in results)...)
+    norms = vcat((r[2] for r in results)...)
 
     if is_sorted
         sorted_indices = sortperm(states)
@@ -281,71 +286,72 @@ function basis(
 ) where {T<:Integer,Ti<:Integer,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
     nthreads = Threads.nthreads()
 
-    norms = [norm_type[] for _ in 1:nthreads]
-    states = [BaseInt{T,Ti,B}[] for _ in 1:nthreads]
-
     F₀ = zero(Complex{norm_type})
-    F = [F₀ |> deepcopy for _ in 1:nthreads]
-
     eps_norm_type = eps(norm_type)
-
     n_cycles = csg.cycles |> length
     ndims_cycles = csg.cycles |> ndims
-
-    Dₛₛ = [_make_hashset(csg) for _ in 1:nthreads]
-
     c = true
 
     all_bints = BaseInt(T(0); base=B, Ti=Ti):BaseInt(T(B^N - 1); base=B, Ti=Ti)
 
-    Threads.@threads for state₀ in all_bints
-        threadid = Threads.threadid()
+    # Partition work and spawn tasks
+    tasks = map(Iterators.partition(all_bints, length(all_bints) ÷ nthreads + 1)) do chunk
+        Threads.@spawn begin
+            # Local buffers for this task
+            local_norms = norm_type[]
+            local_states = BaseInt{T,Ti,B}[]
+            local_F = F₀
+            local_Dₛₛ = _make_hashset(csg)
 
-        F[threadid] = F₀
+            for state₀ in chunk
+                local_F = F₀
+                h_state₀ = hash(state₀)
+                empty!(local_Dₛₛ)
 
-        h_state₀ = hash(state₀)
+                @inbounds for idx in 1:n_cycles
+                    is_valid_state = c
+                    temp_state = state₀
+                    cycle = csg.cycles[idx]
 
-        empty!(Dₛₛ[threadid])
+                    for i in 1:ndims_cycles
+                        if is_valid_state
+                            is_valid_state = csg.check[i](cycle[i], state₀, is_valid_state)
+                        end
+                    end
 
-        @inbounds for idx in 1:n_cycles
-            is_valid_state = c
-            temp_state = state₀
-            cycle = csg.cycles[idx]
+                    if is_valid_state
+                        @inbounds for i in 1:ndims_cycles
+                            temp_state = csg.apply[i](cycle[i], temp_state)
+                        end
 
-            for i in 1:ndims_cycles
-                if is_valid_state
-                    is_valid_state = csg.check[i](cycle[i], state₀, is_valid_state)
+                        h_temp_state = hash(temp_state)
+
+                        push!(local_Dₛₛ, h_temp_state)
+
+                        if h_temp_state < h_state₀
+                            local_F *= zero(norm_type)
+                            break
+                        elseif h_temp_state == h_state₀
+                            local_F += csg.factors[idx]
+                        end
+                    end
+                end
+
+                norm₀ = length(local_Dₛₛ) * abs2(local_F)
+                if norm₀ > eps_norm_type
+                    push!(local_norms, norm₀)
+                    push!(local_states, state₀)
                 end
             end
 
-            if is_valid_state
-                @inbounds for i in 1:ndims_cycles
-                    temp_state = csg.apply[i](cycle[i], temp_state)
-                end
-
-                h_temp_state = hash(temp_state)
-
-                push!(Dₛₛ[threadid], h_temp_state)
-
-                if h_temp_state < h_state₀
-                    F[threadid] *= zero(norm_type)
-                    break
-                elseif h_temp_state == h_state₀
-                    F[threadid] += csg.factors[idx]#'
-                end
-            end
+            (local_states, local_norms)
         end
-
-        norm₀ = length(Dₛₛ[threadid]) * abs2(F[threadid])
-        if norm₀ > eps_norm_type
-            push!(norms[threadid], norm₀)
-            push!(states[threadid], state₀)
-        end
-
     end
 
-    states = vcat(states...)
-    norms = vcat(norms...)
+    # Fetch results from all tasks
+    results = fetch.(tasks)
+    states = vcat((r[1] for r in results)...)
+    norms = vcat((r[2] for r in results)...)
 
     if is_sorted
         sorted_indices = sortperm(states)
@@ -378,51 +384,45 @@ function is_commutative(
 ) where {T<:Integer,Ti<:Integer,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
     n_cycles = csg.cycles |> length
     ndims_cycles = csg.cycles |> ndims
+    nthreads = Threads.nthreads()
 
-    failed = Threads.Atomic{Bool}(false)
+    state_indices = eachindex(b.states)
 
-    Threads.@threads for s_idx in eachindex(b.states)
-        if failed[]
-            continue
-        end
+    # Partition work and spawn tasks
+    tasks = map(Iterators.partition(state_indices, length(state_indices) ÷ nthreads + 1)) do chunk
+        Threads.@spawn begin
+            for s_idx in chunk
+                test_state = b.states[s_idx]
 
-        test_state = b.states[s_idx]
+                for i in 1:ndims_cycles
+                    for j in (i+1):ndims_cycles
+                        for cycle_idx in 1:n_cycles
+                            cycle = csg.cycles[cycle_idx]
 
-        for i in 1:ndims_cycles
-            for j in (i+1):ndims_cycles
-                for cycle_idx in 1:n_cycles
-                    if failed[]
-                        break
-                    end
+                            # Apply symmetry i then j
+                            state_ij = csg.apply[i](cycle[i], test_state)
+                            state_ij = csg.apply[j](cycle[j], state_ij)
+                            state_ij, factor_ij = representative(state_ij, csg)
 
-                    cycle = csg.cycles[cycle_idx]
+                            # Apply symmetry j then i
+                            state_ji = csg.apply[j](cycle[j], test_state)
+                            state_ji = csg.apply[i](cycle[i], state_ji)
+                            state_ji, factor_ji = representative(state_ji, csg)
 
-                    # Apply symmetry i then j
-                    state_ij = csg.apply[i](cycle[i], test_state)
-                    state_ij = csg.apply[j](cycle[j], state_ij)
-                    state_ij, factor_ij = representative(state_ij, csg)
-
-                    # Apply symmetry j then i
-                    state_ji = csg.apply[j](cycle[j], test_state)
-                    state_ji = csg.apply[i](cycle[i], state_ji)
-                    state_ji, factor_ji = representative(state_ji, csg)
-
-                    if state_ij != state_ji || !(factor_ij ≈ factor_ji)
-                        failed[] = true
-                        break
+                            if state_ij != state_ji || !(factor_ij ≈ factor_ji)
+                                return false
+                            end
+                        end
                     end
                 end
-                if failed[]
-                    break
-                end
             end
-            if failed[]
-                break
-            end
+            return true
         end
     end
 
-    return !(failed[])
+    # Fetch results from all tasks - all must be true
+    results = fetch.(tasks)
+    return all(results)
 end
 
 """

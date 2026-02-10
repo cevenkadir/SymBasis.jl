@@ -247,7 +247,8 @@ end
         dofo::DoFObject{B,T_s,T,Ti},
         N::Integer,
         csg::CombSymGroup{B,T_s,T,Ti,Ts};
-        norm_type=Float64
+        norm_type::DataType=Float64,
+        is_sorted::Bool=false
     ) where {T<:Integer,Ti<:Integer,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
 
 Generates the symmetry-resolved basis for a DoF-object under the action of a combined

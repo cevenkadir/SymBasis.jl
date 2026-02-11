@@ -1,3 +1,7 @@
+<p align="center">
+    <img width="200px" src="docs/src/assets/logo.svg#gh-light-mode-only"/>
+    <img width="200px" src="docs/src/assets/logo-dark.svg#gh-dark-mode-only"/>
+</p>
 <div align="center">
 
 # SymBasis.jl

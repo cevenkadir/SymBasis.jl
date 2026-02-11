@@ -46,7 +46,7 @@ where $\eta(q,\ell_j)$ is the phase accrued when relating $\lvert b'_j(q)\rangle
 ## Implementation in SymBasis.jl
 To obtain the representative for an arbitrary state (and associated normalization information), use [`representative`](@ref SymBasis.Bases.representative) from [`SymBasis.Bases`](@ref bases-api). It takes a state and a symmetry group and returns the corresponding representative data used to build symmetry-resolved matrix elements.
 
-For example, if you have a state $\vert \downarrow \downarrow \uparrow \uparrow \rangle$ in a spin-1/2 chain with total magnetization symmetry ($S^z=0$ sector) and translational symmetry ($k=0$ sector), you can find its representative state and normalization factor as follows:
+For example, if you have a state $\lvert \downarrow \downarrow \uparrow \uparrow \rangle$ in a spin-1/2 chain with total magnetization symmetry ($S^z=0$ sector) and translational symmetry ($k=0$ sector), you can find its representative state and normalization factor as follows:
 ```@example
 using SymBasis.DigitBase
 using SymBasis.DoFObjects
@@ -73,7 +73,7 @@ state = bi"0011"2 # state |↓↓↑↑⟩ in binary representation
 # get the representative state and normalization
 rep_state, norm_factor = representative(state, csg)
 ```
-This will return the representative state corresponding to $\vert \uparrow \uparrow \downarrow \downarrow \rangle$ in the specified symmetry sector, along with its normalization factor, which can be used to compute matrix elements of operators in the basis.
+This will return the representative state corresponding to $\lvert \uparrow \uparrow \downarrow \downarrow \rangle$ in the specified symmetry sector, along with its normalization factor, which can be used to compute matrix elements of operators in the basis.
 
 !!! warning
     The [`representative`](@ref SymBasis.Bases.representative) function assumes that the input state is valid within the specified symmetry sector. If the state does not belong to the symmetry sector defined by the symmetry group, the function still returns a representative state and normalization factor, but they may not correspond to a valid state in the symmetry sector. It is the user's responsibility to ensure that the input state is consistent with the defined symmetries when using the [`representative`](@ref SymBasis.Bases.representative) function. You can use the [`is_commutative`](@ref SymBasis.Bases.is_commutative) function from the [`SymBasis.Bases`](@ref bases-api) submodule to check if the symmetries commute and thus ensure that the representative states are valid within the symmetry sector.

@@ -14,6 +14,7 @@ makedocs(;
         prettyurls=get(ENV, "CI", nothing) == "true",
         repolink=REPOLINK,
         canonical=CANONICAL,
+        analytics="G-X8Z32YNZ42"
     ),
     pages=[
         "Home" => "index.md",

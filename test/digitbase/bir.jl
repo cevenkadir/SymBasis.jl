@@ -42,6 +42,12 @@
 
         r3 = bi"3"7:bi"2"7:bi"100"7
         @test length(r3) == 24
+
+        r4 = bi"1"2:bi"1"2
+        @test length(r4) == 1
+
+        r5 = bi"1"4:bi"0"4
+        @test length(r5) == 0
     end
 
     @testset "Base.collect for BaseIntRange" begin

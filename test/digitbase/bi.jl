@@ -132,7 +132,7 @@
         ai = inc(a, 2)
         aiₛ = inc(a, [1, 3])
         @test ai == bi"111"2
-        @test aiₛ == bi"010"2
+        @test aiₛ == bi"1010"2
 
         b = bi"345"6
         bi = inc(b, 1)
@@ -145,6 +145,45 @@
         ciₛ = inc(c, [6, 8])
         @test ci == bi"11203"4
         @test ciₛ == bi"10101203"4
+
+        # Edge case: carry propagation through existing digit positions
+        # Incrementing a digit creating carry that propagates to next position
+        d = bi"1011"2  # Binary: increment position 2 (the second 1)
+        di = inc(d, 2)
+        @test di == bi"1101"2  # Carry propagates from position 2 to position 3
+
+        # Edge case: carry propagation creates new leading digit
+        e = bi"1101"2  # Increment position 3
+        ei = inc(e, 3)
+        # Carry propagates through positions 3-4 and creates new position 5
+        @test ei == bi"10001"2
+
+        # Edge case: carry propagation in higher base
+        f = bi"1455"6  # Increment position 1 (5 becomes 0, carry to position 2)
+        fi = inc(f, 1)
+        @test fi == bi"1500"6  # Carry propagates from position 1 to position 2
+
+        # Edge case: carry propagation through multiple positions
+        g = bi"1155"6  # Increment position 1
+        gi = inc(g, 1)
+        # Position 1: 5→0 + carry, Position 2: 5→0 + carry, Position 3: 1→2
+        @test gi == bi"1200"6
+
+        # Edge case: increment causing carry in middle positions
+        h = bi"10111"2  # Increment position 2
+        hi = inc(h, 2)
+        @test hi == bi"11001"2  # Carry propagates through positions 2-4
+
+        # Edge case: carry in base 3 with consecutive max digits
+        i = bi"1022"3  # Increment position 1
+        ii = inc(i, 1)
+        # Position 1: 2→0 + carry, Position 2: 2→0 + carry, Position 3: 0→1
+        @test ii == bi"1100"3
+
+        # Edge case: single carry without propagation
+        j = bi"1010"2  # Increment position 1
+        ji = inc(j, 1)
+        @test ji == bi"1011"2  # No carry propagation needed
     end
 
     @testset "dec for BaseInt" begin
@@ -165,6 +204,38 @@
         cdₛ = dec(c, [6, 8])
         @test cd == bi"31203"4
         @test cdₛ == bi"30301203"4
+
+        # Edge case: borrow propagation through multiple zero positions
+        # Decrementing position 1 when all lower positions are 0
+        d = bi"10000"2  # Binary: decrement position 1 (which is 0)
+        dd = dec(d, 1)
+        # Borrow propagates from position 5 through all intermediate positions
+        @test dd == bi"01111"2
+
+        # Edge case: borrow propagation in higher base
+        e = bi"1500"6  # Decrement position 1 (which is 0, need to borrow)
+        ed = dec(e, 1)
+        @test ed == bi"1455"6  # Position 1→5, borrow from position 2: [0,5] → [5,4]
+
+        # Edge case: borrow propagation through multiple positions in base 6
+        f = bi"1200"6  # Decrement position 1
+        fd = dec(f, 1)
+        @test fd == bi"1155"6  # Borrow from position 3, fill positions 1-2 with 5
+
+        # Edge case: borrow causing cascading changes in binary
+        g = bi"100000"2  # Decrement position 2
+        gd = dec(g, 2)
+        @test gd == bi"011110"2  # Borrow from position 6, fill positions 2-5 with 1
+
+        # Edge case: borrow in base 3 with multiple zeros
+        h = bi"10000"3  # Decrement position 1
+        hd = dec(h, 1)
+        @test hd == bi"02222"3  # Borrow from position 5, fill positions 1-4 with 2
+
+        # Edge case: borrow without intermediate zeros
+        i = bi"1010"2  # Decrement position 2 (which is 1, no borrow needed)
+        id = dec(i, 2)
+        @test id == bi"1000"2  # Direct decrement, no borrow propagation
     end
 
     @testset "num_digits_in_base for BaseInt" begin

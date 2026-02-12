@@ -217,10 +217,6 @@ function inc(b::BaseInt{T,Ti,B}, pos::Ti) where {T<:Integer,Ti<:Integer,B}
     pos_next = pos + 1
     while carry != 0
         base_pow_next = B^(pos_next - 1)
-
-        if base_pow_next > new_val
-            break
-        end
         current_digit = (new_val ÷ base_pow_next) % B
         new_digit = current_digit + carry
         carry = new_digit ÷ B
@@ -294,9 +290,13 @@ function dec(b::BaseInt{T,Ti,B}, pos::Ti) where {T<:Integer,Ti<:Integer,B}
             end
             current_digit = (b.value ÷ base_pow_next) % B
             if current_digit > 0
-                new_val = b.value
-                new_val -= base_pow_next
-                new_val += (B - 1) * base_pow
+                new_val = b.value - base_pow_next
+                # Set all positions from pos to pos_next-1 to (B-1)
+                for p in pos:(pos_next-1)
+                    base_pow_p = B^(p - 1)
+                    current_digit_p = (b.value ÷ base_pow_p) % B
+                    new_val += (B - 1 - current_digit_p) * base_pow_p
+                end
                 return BaseInt(new_val, base=B, Ti=Ti)
             end
             pos_next += 1

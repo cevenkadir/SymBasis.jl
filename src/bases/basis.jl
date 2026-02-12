@@ -104,8 +104,6 @@ function Base.show(
     end
 end
 
-
-
 """
     basis(
         dofo::DoFObject{B,T_s,T,Ti},

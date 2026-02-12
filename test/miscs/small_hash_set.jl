@@ -73,4 +73,93 @@
 
         @test_throws BoundsError Base.push!(s, 40 |> Int8)
     end
+
+    @testset "Base.hash for SmallHashSet" begin
+        s1 = SmallHashSet([1, 2, 3])
+        s2 = SmallHashSet([1, 2, 3])
+        s3 = SmallHashSet([1, 2, 4])
+
+        # Test that equal sets have the same hash
+        @test hash(s1) == hash(s2)
+
+        # Test that different sets likely have different hashes
+        @test hash(s1) != hash(s3)
+
+        # Test hash with custom seed
+        seed = UInt(12345)
+        h1 = hash(s1, seed)
+        h2 = hash(s2, seed)
+        @test h1 == h2
+        @test typeof(h1) == UInt
+
+        # Test that empty sets hash correctly
+        s_empty1 = SmallHashSet{3,Int}()
+        s_empty2 = SmallHashSet{3,Int}()
+        @test hash(s_empty1) == hash(s_empty2)
+
+        # Test that sets with different counts have different hashes
+        s_partial = SmallHashSet{3,Int}()
+        push!(s_partial, 1)
+        @test hash(s_partial) != hash(s_empty1)
+    end
+
+    @testset "Base.== for SmallHashSet" begin
+        s1 = SmallHashSet([10, 20, 30])
+        s2 = SmallHashSet([10, 20, 30])
+        s3 = SmallHashSet([10, 20, 40])
+
+        # Test equality of identical sets
+        @test s1 == s2
+
+        # Test inequality of different sets
+        @test !(s1 == s3)
+
+        # Test equality with empty sets
+        s_empty1 = SmallHashSet{3,Int}()
+        s_empty2 = SmallHashSet{3,Int}()
+        @test s_empty1 == s_empty2
+
+        # Test inequality between empty and non-empty sets
+        @test !(s1 == s_empty1)
+
+        # Test sets with same data but different counts
+        s4 = SmallHashSet{3,Int}()
+        push!(s4, 10)
+        push!(s4, 20)
+        s5 = SmallHashSet{3,Int}()
+        push!(s5, 10)
+        @test !(s4 == s5)
+    end
+
+    @testset "Base.isequal for SmallHashSet" begin
+        s1 = SmallHashSet([5, 15, 25])
+        s2 = SmallHashSet([5, 15, 25])
+        s3 = SmallHashSet([5, 15, 35])
+
+        # Test isequal for identical sets
+        @test isequal(s1, s2)
+
+        # Test isequal for different sets
+        @test !isequal(s1, s3)
+
+        # Test isequal with empty sets
+        s_empty1 = SmallHashSet{3,Int}()
+        s_empty2 = SmallHashSet{3,Int}()
+        @test isequal(s_empty1, s_empty2)
+
+        # Test isequal between empty and non-empty sets
+        @test !isequal(s1, s_empty1)
+
+        # Test that isequal and == behave the same for SmallHashSet
+        @test isequal(s1, s2) == (s1 == s2)
+        @test isequal(s1, s3) == (s1 == s3)
+
+        # Test sets with different counts
+        s4 = SmallHashSet{3,Int}()
+        push!(s4, 5)
+        push!(s4, 15)
+        s5 = SmallHashSet{3,Int}()
+        push!(s5, 5)
+        @test !isequal(s4, s5)
+    end
 end

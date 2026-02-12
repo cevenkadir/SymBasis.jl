@@ -282,6 +282,29 @@
         c = bi"55031"6
         cp = permute(c, [1, 4], [0, 2, 4, 1, 5, 3])
         @test cp == bi"53032"6
+
+        # Edge case: underflow check when permute decreases digit value
+        d = BaseInt(UInt(1); base=10, Ti=Int)  # Value is 1 (digit at pos 1 is 1)
+        # Permute position 1: digit 1 → digit 0 (decreasing)
+        # This should work fine as 1 - 1 * 10^0 = 0 >= typemin(UInt)
+        dp = permute(d, 1, [5, 0, 2, 3, 4, 1, 6, 7, 8, 9])
+        @test dp.value == 0
+
+        # Edge case: overflow check when permute increases digit value
+        # Using UInt8 type with a value near typemax
+        e = BaseInt(UInt8(254); base=10, Ti=Int)  # Value is 254
+        # digit at position 1 is 4, position 2 is 5, position 3 is 2
+        # Permute position 1: digit 4 → digit 5 (increasing by 1)
+        # new_val would be 254 + 1 = 255, which is still <= typemax(UInt8) = 255
+        ep = permute(e, 1, [1, 2, 3, 4, 5, 0, 6, 7, 8, 9])
+        @test ep.value == 255
+
+        # Edge case: overflow error when permute would exceed typemax
+        f = BaseInt(UInt8(255); base=10, Ti=Int)  # Value is 255 (max for UInt8)
+        # digit at position 1 is 5, position 2 is 5, position 3 is 2
+        # Try to permute position 1: digit 5 → digit 6 (increasing)
+        # new_val would be 255 + 1 = 256 > typemax(UInt8) = 255
+        @test_throws OverflowError permute(f, 1, [1, 2, 3, 4, 5, 6, 7, 8, 9, 0])
     end
 
     @testset "read for BaseInt" begin
@@ -314,6 +337,36 @@
         c = bi"120303"4
         cw = write(c, [1, 2, 3, 4, 5, 6], [0, 1, 0, 1, 0, 1])
         @test cw == bi"101010"4
+
+        # Edge case: underflow check when write decreases digit value
+        d = BaseInt(UInt(5); base=10, Ti=Int)  # Value is 5 (digit at pos 1 is 5)
+        # Write position 1: digit 5 → digit 0 (decreasing by 5)
+        # new_val = 5 - 5 = 0 >= typemin(UInt)
+        dw = write(d, 1, 0)
+        @test dw.value == 0
+
+        # Edge case: overflow check when write increases digit value
+        # Using UInt8 type with a value near typemax
+        e = BaseInt(UInt8(245); base=10, Ti=Int)  # Value is 245
+        # digit at position 1 is 5, position 2 is 4, position 3 is 2
+        # Write position 1: digit 5 → digit 9 (increasing by 4)
+        # new_val = 245 + 4 = 249 <= typemax(UInt8) = 255
+        ew = write(e, 1, 9)
+        @test ew.value == 249
+
+        # Edge case: overflow error when write would exceed typemax
+        f = BaseInt(UInt8(255); base=10, Ti=Int)  # Value is 255 (max for UInt8)
+        # digit at position 1 is 5, position 2 is 5, position 3 is 2
+        # Try to write position 1: digit 5 → digit 6 (increasing by 1)
+        # new_val = 255 + 1 = 256 > typemax(UInt8) = 255
+        @test_throws OverflowError write(f, 1, 6)
+
+        # Edge case: another overflow test with larger delta
+        g = BaseInt(UInt8(200); base=10, Ti=Int)  # Value is 200
+        # digit at position 1 is 0, position 2 is 0, position 3 is 2
+        # Try to write position 2: digit 0 → digit 9 (increasing by 90)
+        # new_val = 200 + 90 = 290 > typemax(UInt8) = 255
+        @test_throws OverflowError write(g, 2, 9)
     end
 
     @testset "count for BaseInt" begin

@@ -472,16 +472,10 @@ function permute(
 
     new_val = b.value + delta
 
-    # depending on whether delta is positive or negative, give overflow/underflow checks
-    if delta > 0
-        T_max = typemax(T)
-        (new_val > T_max) &&
-            throw(OverflowError("incrementing digit causes overflow"))
-    elseif delta < 0
-        T_min = typemin(T)
-        (new_val < T_min) &&
-            throw(OverflowError("decrementing digit causes underflow"))
-    end
+    # overflow check
+    T_max = typemax(T)
+    (delta > 0) && (new_val > T_max) &&
+        throw(OverflowError("incrementing digit causes overflow"))
 
     return BaseInt(new_val; base=B, Ti=Ti)
 end
@@ -612,16 +606,10 @@ function Base.write(
 
     new_val = b.value + delta
 
-    # depending on whether delta is positive or negative, give overflow/underflow checks
-    if delta > 0
-        T_max = typemax(T)
-        (new_val > T_max) &&
-            throw(OverflowError("incrementing digit causes overflow"))
-    elseif delta < 0
-        T_min = typemin(T)
-        (new_val < T_min) &&
-            throw(OverflowError("decrementing digit causes underflow"))
-    end
+    # overflow checks
+    T_max = typemax(T)
+    (delta > 0) && (new_val > T_max) &&
+        throw(OverflowError("incrementing digit causes overflow"))
 
     return BaseInt(new_val; base=B, Ti=Ti)
 end

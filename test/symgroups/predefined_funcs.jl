@@ -80,41 +80,47 @@
     end
 
     @testset "sym of Translational" begin
-        dofo1 = DoFObject(:Emoji, (:🥳, :🙈, :👀))
-        perm1 = [2, 3, 1]
-        for k in 0:(length(perm1)-1)
-            transl_sym1ₛ = sym(:Translational, dofo1, k, perm1)
-            @test transl_sym1ₛ.dofo == dofo1
-            @test transl_sym1ₛ.cycles == [
-                (; perm=[1, 2, 3]), (; perm=perm1), (; perm=perm1[perm1])
-            ]
-            @test transl_sym1ₛ.check == check_perm
-            @test transl_sym1ₛ.apply == apply_perm
-            @test transl_sym1ₛ.factors ≈ [
-                cis(-2π * r * k / length(perm1))
-                for r in 0:(length(perm1)-1)
-            ]
+        @testset "without BitPermutation" begin
+            dofo1 = DoFObject(:Emoji, (:🥳, :🙈, :👀))
+            perm1 = [2, 3, 1]
+            for k in 0:(length(perm1)-1)
+                transl_sym1ₛ = sym(:Translational, dofo1, k, perm1)
+                @test transl_sym1ₛ.dofo == dofo1
+                @test transl_sym1ₛ.cycles == [
+                    (; perm=[1, 2, 3]), (; perm=perm1), (; perm=perm1[perm1])
+                ]
+                @test transl_sym1ₛ.check == check_perm
+                @test transl_sym1ₛ.apply == apply_perm
+                @test transl_sym1ₛ.factors ≈ [
+                    cis(-2π * r * k / length(perm1))
+                    for r in 0:(length(perm1)-1)
+                ]
+            end
         end
 
-        dofo2 = DoFObject(:YinYang, (:⚫️, :⚪️))
-        perm2 = [2, 1]
-        cycles = [
-            (; perm=BitPermutation{UInt}(1:length(perm2) |> collect)),
-            (; perm=BitPermutation{UInt}(perm2))
-        ]
-        for k in 0:(length(perm2)-1)
-            transl_sym2ₛ = sym(:Translational, dofo2, k, perm2)
-            @test transl_sym2ₛ.dofo == dofo2
-            @test all(
-                transl_sym2ₛ.cycles[i].perm.vector == cycles[i].perm.vector
-                for i in 1:length(transl_sym2ₛ.cycles)
-            )
-            @test transl_sym2ₛ.check == check_perm
-            @test transl_sym2ₛ.apply == apply_perm
-            @test transl_sym2ₛ.factors ≈ [
-                cis(-2π * r * k / length(perm2))
-                for r in 0:(length(perm2)-1)
+        @testset "with BitPermutation" begin
+            dofo2 = DoFObject(:YinYang, (:⚫️, :⚪️))
+            perm2 = [2, 1]
+            cycles = [
+                (; perm=BitPermutation{UInt}(1:length(perm2) |> collect)),
+                (; perm=BitPermutation{UInt}(perm2))
             ]
+            for k in 0:(length(perm2)-1)
+                transl_sym2ₛ = sym(:Translational, dofo2, k, perm2)
+                @test transl_sym2ₛ.dofo == dofo2
+                @test all(
+                    transl_sym2ₛ.cycles[i].perm.vector == cycles[i].perm.vector
+                    for i in 1:length(transl_sym2ₛ.cycles)
+                )
+                @test transl_sym2ₛ.check == check_perm
+                @test transl_sym2ₛ.apply == apply_perm
+                @test transl_sym2ₛ.factors ≈ [
+                    cis(-2π * r * k / length(perm2))
+                    for r in 0:(length(perm2)-1)
+                ]
+            end
+        end
+
         end
     end
 

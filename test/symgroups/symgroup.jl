@@ -155,4 +155,142 @@
 
         @test SmallHashSet{length(csg.cycles),UInt}() == hashset_csg
     end
+
+    # @testset "_cycles_preview" begin
+    #     # Test empty cycles
+    #     @test SymBasis.SymGroups._cycles_preview([]) == "∅"
+
+    #     # Test with few items (less than maxitems)
+    #     cycles = [(; a=1, b=2), (; a=3, b=4), (; a=5, b=6)]
+    #     preview = SymBasis.SymGroups._cycles_preview(cycles)
+    #     @test contains(preview, "a = 1")
+    #     @test contains(preview, "a = 3")
+    #     @test contains(preview, "a = 5")
+    #     @test !contains(preview, "…")
+
+    #     # Test with many items (more than maxitems)
+    #     cycles_many = [(; x=i) for i in 1:10]
+    #     preview_many = SymBasis.SymGroups._cycles_preview(cycles_many; maxitems=4)
+    #     @test contains(preview_many, "x = 1")
+    #     @test contains(preview_many, "x = 4")
+    #     @test !contains(preview_many, "x = 5")
+    #     @test contains(preview_many, "…")
+    # end
+
+    # @testset "_print_kv" begin
+    #     # Test basic key-value printing
+    #     io = IOBuffer()
+    #     SymBasis.SymGroups._print_kv(io, "Key1:", "Value1")
+    #     str = String(take!(io))
+    #     @test contains(str, "Key1:")
+    #     @test contains(str, "Value1")
+
+    #     # Test with custom indent
+    #     io2 = IOBuffer()
+    #     SymBasis.SymGroups._print_kv(io2, "Key2:", "Value2"; indent=4)
+    #     str2 = String(take!(io2))
+    #     @test startswith(str2, "    ")
+    #     @test contains(str2, "Key2:")
+    #     @test contains(str2, "Value2")
+    # end
+
+    @testset "Base.summary for SymGroup" begin
+        dofo = dof_object(:Spin, 1 // 2)
+        N = 3
+        sg = sym(:TotalMagnetization, dofo, 1 // 2, N)
+
+        summ = summary(sg)
+        @test contains(summ, "SymGroup")
+        @test contains(summ, "cycle(s)")
+        @test contains(summ, string(length(sg.cycles)))
+    end
+
+    @testset "Base.summary for CombSymGroup" begin
+        dofo = dof_object(:Spin, 1 // 2)
+        N = 3
+        sg1 = sym(:TotalMagnetization, dofo, 1 // 2, N)
+        sg2 = sym(:Translational, dofo, 1, mod1.((1:N) .+ 1, N))
+        csg = sg1 ∘ sg2
+
+        summ = summary(csg)
+        @test contains(summ, "CombSymGroup")
+        @test contains(summ, "size of cycles")
+        @test contains(summ, string(size(csg.cycles)))
+    end
+
+    @testset "Base.show for SymGroup" begin
+        dofo = dof_object(:Spin, 1 // 2)
+        N = 3
+        sg = sym(:TotalMagnetization, dofo, 1 // 2, N)
+
+        # Test compact show
+        io_compact = IOContext(IOBuffer(), :compact => true)
+        show(io_compact, sg)
+        str_compact = String(take!(io_compact.io))
+        @test contains(str_compact, "SymGroup")
+        @test contains(str_compact, "cycle(s)")
+
+        # Test non-compact show
+        io = IOBuffer()
+        show(io, sg)
+        str = String(take!(io))
+        @test contains(str, "SymGroup")
+        @test contains(str, "N:")
+        @test contains(str, "DoF-object:")
+        @test contains(str, "cycles:")
+        @test contains(str, "factors:")
+        @test contains(str, "check:")
+        @test contains(str, "apply:")
+
+        # Test text/plain MIME
+        io_mime = IOBuffer()
+        show(io_mime, MIME("text/plain"), sg)
+        str_mime = String(take!(io_mime))
+        @test contains(str_mime, "SymGroup")
+        @test contains(str_mime, "N:")
+
+        # Test edge case: SymGroup with zero cycles
+        sg_empty = SymGroup(dofo, NamedTuple[], check_perm, apply_perm, Float64[], N)
+        io_empty = IOBuffer()
+        show(io_empty, sg_empty)
+        str_empty = String(take!(io_empty))
+        @test contains(str_empty, "SymGroup")
+        @test contains(str_empty, "∅")
+    end
+
+    @testset "Base.show for CombSymGroup" begin
+        dofo = dof_object(:Spin, 1 // 2)
+        N = 3
+        sg1 = sym(:TotalMagnetization, dofo, 1 // 2, N)
+        sg2 = sym(:Translational, dofo, 1, mod1.((1:N) .+ 1, N))
+        csg = sg1 ∘ sg2
+
+        # Test compact show
+        io_compact = IOContext(IOBuffer(), :compact => true)
+        show(io_compact, csg)
+        str_compact = String(take!(io_compact.io))
+        @test contains(str_compact, "CombSymGroup")
+        @test contains(str_compact, "size of cycles")
+
+        # Test non-compact show
+        io = IOBuffer()
+        show(io, csg)
+        str = String(take!(io))
+        @test contains(str, "CombSymGroup")
+        @test contains(str, "N:")
+        @test contains(str, "DoF-object:")
+        @test contains(str, "cycles:")
+        @test contains(str, "factors:")
+        @test contains(str, "check:")
+        @test contains(str, "apply:")
+        @test contains(str, "preview")
+
+        # Test text/plain MIME
+        io_mime = IOBuffer()
+        show(io_mime, MIME("text/plain"), csg)
+        str_mime = String(take!(io_mime))
+        @test contains(str_mime, "CombSymGroup")
+        @test contains(str_mime, "N:")
+        @test contains(str_mime, "preview")
+    end
 end

@@ -1,3 +1,20 @@
+# Helper function to test that unsorted basis matches sorted basis
+function test_unsorted_basis(dofo, N, args...; sorted_states, sorted_norms)
+    states_unsorted, norms_unsorted = basis(dofo, N, args...; is_sorted=false)
+    sorted_indices = sortperm(states_unsorted)
+    @test states_unsorted[sorted_indices] == sorted_states
+    @test norms_unsorted[sorted_indices] == sorted_norms
+end
+
+# Helper function to test representative states
+function test_representatives(test_states, expected_reps, expected_factors, sg)
+    for (i, state) in enumerate(test_states)
+        rep_state, rep_factor = representative(state, sg)
+        @test rep_state == expected_reps[i]
+        @test rep_factor ≈ expected_factors[i]
+    end
+end
+
 @testset "Testing Basis..." begin
     @testset "Construction of Basis" begin
 
@@ -9,6 +26,7 @@
         states1, norms1 = basis(dofo1, N1; is_sorted=true)
         @test states1 == [bi"0"2, bi"1"2, bi"10"2, bi"11"2]
         @test norms1 == ones(Float64, 2^N1)
+        test_unsorted_basis(dofo1, N1; sorted_states=states1, sorted_norms=norms1)
 
         N2 = 3
         states2, norms2 = basis(dofo1, N2; is_sorted=true)
@@ -23,6 +41,7 @@
             bi"111"2
         ]
         @test norms2 == ones(Float64, 2^N2)
+        test_unsorted_basis(dofo1, N2; sorted_states=states2, sorted_norms=norms2)
 
         N3 = 2
         dofo3 = dof_object(:Spin, 1 // 1)
@@ -39,6 +58,7 @@
             bi"22"3
         ]
         @test norms3 == ones(Float64, 3^N3)
+        test_unsorted_basis(dofo3, N3; sorted_states=states3, sorted_norms=norms3)
     end
 
     @testset "basis with one symmetry" begin
@@ -49,6 +69,7 @@
             states, norms = basis(dofo, N, sg; is_sorted=true)
             @test states == [bi"001"2, bi"010"2, bi"100"2]
             @test norms == ones(Float64, 3)
+            test_unsorted_basis(dofo, N, sg; sorted_states=states, sorted_norms=norms)
         end
 
         @testset "spin-1 with Sz symmetry" begin
@@ -58,6 +79,7 @@
             states, norms = basis(dofo, N, sg; is_sorted=true)
             @test states == [bi"02"3, bi"11"3, bi"20"3]
             @test norms == ones(Float64, 3)
+            test_unsorted_basis(dofo, N, sg; sorted_states=states, sorted_norms=norms)
         end
 
         @testset "spin-1/2 with translational symmetry" begin
@@ -89,7 +111,7 @@
                     ]
                     @test norms == Float64[16, 4, 4, 8, 4, 16]
                 end
-
+                test_unsorted_basis(dofo, N, sg; sorted_states=states, sorted_norms=norms)
             end
 
             @testset "k = 1" begin
@@ -109,6 +131,7 @@
                     ]
                 end
                 @test norms == Float64[4, 4, 4]
+                test_unsorted_basis(dofo, N, sg; sorted_states=states, sorted_norms=norms)
             end
         end
 
@@ -151,6 +174,7 @@
                     ]
                     @test norms == Float64[9, 3, 3, 3, 3, 9, 3, 3, 3, 3, 9]
                 end
+                test_unsorted_basis(dofo, N, sg; sorted_states=states, sorted_norms=norms)
             end
 
             @testset "k = 1" begin
@@ -180,6 +204,7 @@
                     ]
                 end
                 @test norms == Float64[3, 3, 3, 3, 3, 3, 3, 3]
+                test_unsorted_basis(dofo, N, sg; sorted_states=states, sorted_norms=norms)
             end
         end
 
@@ -211,6 +236,7 @@
                 ]
                 @test norms == Float64[4, 2, 4, 2, 4, 4]
             end
+            test_unsorted_basis(dofo, N, sg; sorted_states=states, sorted_norms=norms)
         end
 
         @testset "spin-1 with spatial reflection symmetry" begin
@@ -248,6 +274,7 @@
                 ]
             end
             @test norms == Float64[2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+            test_unsorted_basis(dofo, N, sg; sorted_states=states, sorted_norms=norms)
         end
     end
     @testset "basis with multiple symmetries + check" begin
@@ -269,6 +296,7 @@
                     @test b.states == [bi"0011"2, bi"0101"2]
                     @test b.norms == Float64[4, 8]
                 end
+                test_unsorted_basis(dofo, N, csg; sorted_states=b.states, sorted_norms=b.norms)
             end
 
             @testset "k = 1 and Sz = 0 for N = 4" begin
@@ -283,6 +311,7 @@
                     @test b.states == [bi"0011"2]
                 end
                 @test b.norms == Float64[4,]
+                test_unsorted_basis(dofo, N, csg; sorted_states=b.states, sorted_norms=b.norms)
             end
 
             @testset "k = 0 and Sz = -1 for N = 4" begin
@@ -297,6 +326,7 @@
                     @test b.states == [bi"0010"2,]
                 end
                 @test b.norms == Float64[4,]
+                test_unsorted_basis(dofo, N, csg; sorted_states=b.states, sorted_norms=b.norms)
             end
 
             @testset "k = 3 and Sz = -1 for N = 4" begin
@@ -311,6 +341,7 @@
                     @test b.states == [bi"0010"2,]
                 end
                 @test b.norms == Float64[4,]
+                test_unsorted_basis(dofo, N, csg; sorted_states=b.states, sorted_norms=b.norms)
             end
         end
 
@@ -346,6 +377,7 @@
                     ]
                     @test b.norms == Float64[16, 16, 32, 64, 8]
                 end
+                test_unsorted_basis(dofo, N, csg; sorted_states=b.states, sorted_norms=b.norms)
             end
 
             @testset "k = 1, Sz = 0 and R = 1 for N = 4" begin
@@ -378,11 +410,7 @@
                 test_states = [bi"001"2, bi"010"2, bi"100"2]
                 test_factors = ones(Float64, 3)
 
-                for (state, factor) in zip(test_states, test_factors)
-                    rep_state, rep_factor = representative(state, sg)
-                    @test rep_state == state
-                    @test rep_factor == factor
-                end
+                test_representatives(test_states, test_states, test_factors, sg)
             end
         end
 
@@ -395,11 +423,7 @@
                 test_states = [bi"02"3, bi"11"3, bi"20"3]
                 test_factors = ones(Float64, 3)
 
-                for (state, factor) in zip(test_states, test_factors)
-                    rep_state, rep_factor = representative(state, sg)
-                    @test rep_state == state
-                    @test rep_factor == factor
-                end
+                test_representatives(test_states, test_states, test_factors, sg)
             end
         end
 
@@ -420,11 +444,7 @@
                     test_factors = ComplexF64[1im, -1, -1im]
                 end
 
-                for (i, state) in enumerate(test_states)
-                    rep_state, rep_factor = representative(state, sg)
-                    @test rep_state == test_reps[i]
-                    @test rep_factor ≈ test_factors[i]
-                end
+                test_representatives(test_states, test_reps, test_factors, sg)
             end
         end
 
@@ -455,11 +475,7 @@
                     ]
                 end
 
-                for (i, state) in enumerate(test_states)
-                    rep_state, rep_factor = representative(state, sg)
-                    @test rep_state == test_reps[i]
-                    @test rep_factor ≈ test_factors[i]
-                end
+                test_representatives(test_states, test_reps, test_factors, sg)
             end
         end
 
@@ -480,11 +496,7 @@
                     test_factors = Float64[-1, -1]
                 end
 
-                for (i, state) in enumerate(test_states)
-                    rep_state, rep_factor = representative(state, sg)
-                    @test rep_state == test_reps[i]
-                    @test rep_factor ≈ test_factors[i]
-                end
+                test_representatives(test_states, test_reps, test_factors, sg)
             end
         end
 
@@ -505,11 +517,7 @@
                     test_factors = Float64[-1, -1, 1]
                 end
 
-                for (i, state) in enumerate(test_states)
-                    rep_state, rep_factor = representative(state, sg)
-                    @test rep_state == test_reps[i]
-                    @test rep_factor ≈ test_factors[i]
-                end
+                test_representatives(test_states, test_reps, test_factors, sg)
             end
         end
     end
@@ -537,11 +545,7 @@
                     test_factors = ComplexF64[-1,]
                 end
 
-                for (i, state) in enumerate(test_states)
-                    rep_state, rep_factor = representative(state, csg)
-                    @test rep_state == test_reps[i]
-                    @test rep_factor ≈ test_factors[i]
-                end
+                test_representatives(test_states, test_reps, test_factors, csg)
             end
 
             @testset "Sz = 1, k = 0, R = 1 for N = 4" begin
@@ -560,11 +564,7 @@
                     test_factors = ComplexF64[1,]
                 end
 
-                for (i, state) in enumerate(test_states)
-                    rep_state, rep_factor = representative(state, csg)
-                    @test rep_state == test_reps[i]
-                    @test rep_factor ≈ test_factors[i]
-                end
+                test_representatives(test_states, test_reps, test_factors, csg)
             end
         end
     end

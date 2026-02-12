@@ -108,4 +108,60 @@
         @test r2[3] == bi"13"6
         @test r2[4] == bi"15"6
     end
+
+    @testset "Base.eltype for BaseIntRange" begin
+        r1 = bi"0"2:bi"11"2
+        @test eltype(r1) == BaseInt{UInt64,Int64,2}
+        @test eltype(typeof(r1)) == BaseInt{UInt64,Int64,2}
+
+        r2 = bi"5"10:bi"1"10:bi"10"10
+        @test eltype(r2) == BaseInt{UInt64,Int64,10}
+        @test eltype(typeof(r2)) == BaseInt{UInt64,Int64,10}
+
+        r3 = bi"1"3:bi"2"3:bi"100"3
+        @test eltype(r3) == BaseInt{UInt64,Int64,3}
+    end
+
+    @testset "Base.IteratorSize for BaseIntRange" begin
+        r1 = bi"0"2:bi"11"2
+        @test Base.IteratorSize(typeof(r1)) == Base.HasLength()
+        @test Base.IteratorSize(BaseIntRange{Int64,Int64,2}) == Base.HasLength()
+
+        r2 = bi"5"10:bi"1"10:bi"10"10
+        @test Base.IteratorSize(typeof(r2)) == Base.HasLength()
+    end
+
+    @testset "Base.IteratorEltype for BaseIntRange" begin
+        r1 = bi"0"2:bi"11"2
+        @test Base.IteratorEltype(typeof(r1)) == Base.HasEltype()
+        @test Base.IteratorEltype(BaseIntRange{Int64,Int64,2}) == Base.HasEltype()
+
+        r2 = bi"5"10:bi"1"10:bi"10"10
+        @test Base.IteratorEltype(typeof(r2)) == Base.HasEltype()
+
+        r3 = bi"1"5:bi"2"5:bi"100"5
+        @test Base.IteratorEltype(typeof(r3)) == Base.HasEltype()
+    end
+
+    @testset "Base.firstindex for BaseIntRange" begin
+        r1 = bi"0"2:bi"11"2
+        @test firstindex(r1) == 1
+
+        r2 = bi"5"10:bi"1"10:bi"10"10
+        @test firstindex(r2) == 1
+
+        r3 = bi"1"3:bi"2"3:bi"100"3
+        @test firstindex(r3) == 1
+
+        r4 = bi"1"2:bi"1"2
+        @test firstindex(r4) == 1
+
+        r5 = bi"1"4:bi"0"4
+        @test firstindex(r5) == 1
+
+        # Test that firstindex is consistent with getindex
+        r6 = bi"10"7:bi"2"7:bi"50"7
+        @test firstindex(r6) == 1
+        @test r6[firstindex(r6)] == r6.first
+    end
 end

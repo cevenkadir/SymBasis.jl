@@ -92,7 +92,6 @@ function Base.summary(
     print(io, "DoFObject(", dofo.type, ", B=", B, ")")
 end
 
-
 function Base.show(io::IO, dofo::DoFObject)
     print(io, String(dofo.type), "⟨")
     for (i, x) in pairs(dofo.ldof)

@@ -50,4 +50,42 @@
         dofo2 = DoFObject(:Spin, (-1 // 1, 0 // 1, 1 // 1))
         @test length(dofo2) == 3
     end
+
+    @testset "Base.summary for DoFObject" begin
+        dofo1 = DoFObject(:Spin, (-1 // 2, 1 // 2); T=UInt16, Ti=Int8)
+        io = IOBuffer()
+        summary(io, dofo1)
+        str = String(take!(io))
+        @test str == "DoFObject(Spin, B=2)"
+
+        dofo2 = DoFObject(:Boson, (0, 1, 2, 3); T=UInt8, Ti=Int8)
+        io2 = IOBuffer()
+        summary(io2, dofo2)
+        str2 = String(take!(io2))
+        @test str2 == "DoFObject(Boson, B=4)"
+    end
+
+    @testset "Base.show for DoFObject" begin
+        # Test compact show (io without text/plain MIME)
+        dofo1 = DoFObject(:Spin, (-1 // 2, 1 // 2); T=UInt16, Ti=Int8)
+        io = IOBuffer()
+        show(io, dofo1)
+        str = String(take!(io))
+        @test str == "Spin⟨-1//2, 1//2⟩"
+
+        dofo2 = DoFObject(:Emoji, (:😀, :😃, :😄); T=UInt8, Ti=Int8)
+        io2 = IOBuffer()
+        show(io2, dofo2)
+        str2 = String(take!(io2))
+        @test str2 == "Emoji⟨:😀, :😃, :😄⟩"
+
+        # Test detailed show (text/plain MIME)
+        dofo3 = DoFObject(:Fermion, (0, 1); T=UInt32, Ti=Int16)
+        io3 = IOBuffer()
+        show(io3, MIME("text/plain"), dofo3)
+        str3 = String(take!(io3))
+        @test contains(str3, "DoFObject: Fermion (B=2)")
+        @test contains(str3, "ldof: (0, 1)")
+        @test contains(str3, "index types: T=UInt32, Ti=Int16")
+    end
 end

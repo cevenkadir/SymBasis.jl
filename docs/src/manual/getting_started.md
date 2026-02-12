@@ -9,7 +9,7 @@ pkg> add https://github.com/cevenkadir/SymBasis.jl
 ```
 or open the Julia REPL and run the following command:
 ```julia
-julia> import Pkg; Pkg.add("https://github.com/cevenkadir/SymBasis.jl")
+julia> import Pkg; Pkg.add(url="https://github.com/cevenkadir/SymBasis.jl")
 ```
 
 ## Basic concepts

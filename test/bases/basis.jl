@@ -17,7 +17,89 @@ end
 
 @testset "Testing Basis..." begin
     @testset "Construction of Basis" begin
+        # Test basic construction and iterator protocol
+        N = 2
+        dofo = dof_object(:Spin, 1 // 2)
+        b = basis(dofo, N; is_sorted=true)
 
+        # Test that Basis is properly constructed
+        @test b isa Basis
+        @test length(b.states) == 2^N
+        @test length(b.norms) == 2^N
+
+        # Test iterator protocol - destructuring
+        states_unpacked, norms_unpacked = b
+        @test states_unpacked == b.states
+        @test norms_unpacked == b.norms
+
+        # Test manual iteration
+        iter_result1 = iterate(b)
+        @test iter_result1 !== nothing
+        @test iter_result1[1] == b.states
+        @test iter_result1[2] == Val(:norms)
+
+        iter_result2 = iterate(b, Val(:norms))
+        @test iter_result2 !== nothing
+        @test iter_result2[1] == b.norms
+        @test iter_result2[2] == Val(:done)
+
+        # Test that iteration terminates (tests the selected line)
+        iter_result3 = iterate(b, Val(:done))
+        @test iter_result3 === nothing
+
+        # Test Base.summary
+        summary_str = sprint(summary, b)
+        @test occursin("Basis", summary_str)
+        @test occursin("with", summary_str)
+        @test occursin(string(length(b.states)), summary_str)
+        @test occursin("states", summary_str)
+
+        # Test Base.show with compact mode
+        compact_str = sprint(show, b; context=:compact => true)
+        @test occursin("Basis", compact_str)
+        @test occursin("states=$(length(b.states))", compact_str)
+        @test occursin("norms=$(length(b.norms))", compact_str)
+
+        # Test Base.show without compact mode
+        full_str = sprint(show, b)
+        @test occursin("Basis", full_str)
+        @test occursin("states =", full_str)
+        @test occursin("norms  =", full_str)
+
+        # Test Base.show with MIME"text/plain" for regular basis
+        plain_str = sprint(show, MIME("text/plain"), b)
+        @test occursin("Basis", plain_str)
+        @test occursin("with $(length(b.states)) states", plain_str)
+        @test occursin("states:", plain_str)
+        @test occursin("norms :", plain_str)
+        @test occursin("first", plain_str)
+        @test occursin("(norm=", plain_str)
+
+        # Test with empty basis
+        empty_states = BaseInt{Int64,Int64,2}[]
+        empty_norms = Float64[]
+        empty_basis = Basis(empty_states, empty_norms)
+        empty_str = sprint(show, MIME("text/plain"), empty_basis)
+        @test occursin("with 0 states", empty_str)
+        @test !occursin("first", empty_str)
+
+        # Test with basis that has many states (to test truncation)
+        N_large = 4
+        b_large = basis(dofo, N_large; is_sorted=true)
+        large_str = sprint(show, MIME("text/plain"), b_large; context=:limit => true)
+        @test occursin("Basis", large_str)
+        @test occursin("with $(length(b_large.states)) states", large_str)
+        # Should show first 10 states and potentially ellipsis
+        if length(b_large.states) > 10
+            @test occursin("⋮", large_str)
+        end
+
+        # Test singular vs plural state/norm labels
+        N_single = 1
+        b_single = basis(dofo, N_single; is_sorted=true)
+        single_str = sprint(show, MIME("text/plain"), b_single)
+        @test occursin("with 2 states", single_str)
+        @test occursin("first 2 states/norms:", single_str)
     end
 
     @testset "basis without any symmetry" begin

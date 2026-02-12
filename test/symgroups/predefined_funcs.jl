@@ -121,6 +121,24 @@
             end
         end
 
+        @testset "early exit" begin
+            dofo3 = DoFObject(:Test, (:A, :B, :C))
+            perm3 = [2, 3, 1, 5, 6, 4]
+            for k in 0:(length(perm3)÷2-1)
+                transl_sym3ₛ = sym(:Translational, dofo3, k, perm3)
+                @test transl_sym3ₛ.dofo == dofo3
+                @test transl_sym3ₛ.cycles == [
+                    (; perm=1:length(perm3) |> collect),
+                    (; perm=perm3),
+                    (; perm=perm3[perm3]),
+                ]
+                @test transl_sym3ₛ.check == check_perm
+                @test transl_sym3ₛ.apply == apply_perm
+                @test transl_sym3ₛ.factors ≈ [
+                    cis(-2π * r * k / (length(perm3) ÷ 2))
+                    for r in 0:(length(perm3)÷2-1)
+                ]
+            end
         end
     end
 

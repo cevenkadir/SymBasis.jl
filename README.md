@@ -31,9 +31,13 @@ In the upcoming versions, we plan to add more predefined symmetries such as spin
 ## Installation
 **Requirements**: Julia 1.11 or later.
 
-You can install SymBasis.jl using Julia's package manager. Open the Julia REPL and run:
+To install the latest stable version of SymBasis.jl, you can use the Julia package manager. Either use the Julia REPL package mode (by pressing `]`):
 ```julia
-julia> import Pkg; Pkg.add(url="https://github.com/cevenkadir/SymBasis.jl")
+pkg> add SymBasis
+```
+or open the Julia REPL and run the following command:
+```julia
+julia> import Pkg; Pkg.add("SymBasis")
 ```
 
 ## Documentation

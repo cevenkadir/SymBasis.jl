@@ -24,6 +24,7 @@ makedocs(;
             "Defining symmetry group(s)" => "manual/defining_sym_groups.md",
             "Basis construction" => "manual/basis_construction.md",
             "Determining representative states" => "manual/representative_states.md",
+            "State operations" => "manual/state_operations.md",
         ],
         "Examples" => [
             "Quantum mechanical spins" => "examples/spins.md",

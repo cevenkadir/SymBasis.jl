@@ -363,7 +363,7 @@ end
 """
     permute(
         b::SymBasis.DigitBase.BaseInt{T,Ti,B},
-        perm::AbstractVector{<:Integer}
+        perm::AbstractVector{Ti}
     ) where {T<:Integer,Ti<:Integer,B}
 
 Permute the positions of the digits in the base-`B` representation of the integer `b`
@@ -371,7 +371,7 @@ according to the permutation vector `perm`.
 
 # Arguments
 - `b::`[`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: The base-`B` integer.
-- `perm::AbstractVector{<:Integer}`: The permutation vector, where the `i`-th element
+- `perm::AbstractVector{Ti}`: The permutation vector, where the `i`-th element
     indicates the new position for the digit originally at position `i`.
 
 # Returns

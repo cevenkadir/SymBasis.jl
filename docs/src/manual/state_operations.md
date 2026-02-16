@@ -27,7 +27,7 @@ The `dec` function decreases the value of digit(s) by one, useful for implementi
 
 **Single digit:**
 
-Use [`dec(state, pos)`](@ref SymBasis.DigitBase.dec(::SymBasis.DigitBase.BaseInt{T,Ti,B}, ::Ti) where {T<:Integer,Ti<:Integer,B}) to decrement the digit at position `pos`.
+Use [`dec(state, pos)`](@ref SymBasis.DigitBase.dec(::SymBasis.DigitBase.BaseInt{T,Ti,B}, ::Ti) where {T,Ti,B}) to decrement the digit at position `pos`.
 
 ```@example dec
 using SymBasis.DigitBase
@@ -38,7 +38,7 @@ dec(state, pos) # Returns (1)₂
 
 **Multiple digits:**
 
-Use [`dec(state, positions)`](@ref SymBasis.DigitBase.dec(::SymBasis.DigitBase.BaseInt{T,Ti,B}, ::AbstractVector{Ti}) where {T<:Integer,Ti<:Integer,B}) to decrement several digits at once.
+Use [`dec(state, positions)`](@ref SymBasis.DigitBase.dec(::SymBasis.DigitBase.BaseInt{T,Ti,B}, ::AbstractVector{Ti}) where {T,Ti,B}) to decrement several digits at once.
 
 ```@example dec
 posₛ = [1, 2] # Decrement both positions
@@ -51,7 +51,7 @@ The `inc` function increases the value of digit(s) by one, useful for implementi
 
 **Single digit:**
 
-Use [`inc(state, pos)`](@ref SymBasis.DigitBase.inc(::SymBasis.DigitBase.BaseInt{T,Ti,B}, ::Ti) where {T<:Integer,Ti<:Integer,B}) to increment the digit at position `pos`.
+Use [`inc(state, pos)`](@ref SymBasis.DigitBase.inc(::SymBasis.DigitBase.BaseInt{T,Ti,B}, ::Ti) where {T,Ti,B}) to increment the digit at position `pos`.
 
 ```@example inc
 using SymBasis.DigitBase
@@ -62,7 +62,7 @@ inc(state, pos) # Returns (11)₂
 
 **Multiple digits:**
 
-Use [`inc(state, positions)`](@ref SymBasis.DigitBase.inc(::SymBasis.DigitBase.BaseInt{T,Ti,B}, ::AbstractVector{Ti}) where {T<:Integer,Ti<:Integer,B}) to increment several digits simultaneously.
+Use [`inc(state, positions)`](@ref SymBasis.DigitBase.inc(::SymBasis.DigitBase.BaseInt{T,Ti,B}, ::AbstractVector{Ti}) where {T,Ti,B}) to increment several digits simultaneously.
 
 ```@example inc
 posₛ = [1, 4] # Increment at positions 1 and 4
@@ -75,7 +75,7 @@ The `flip` function toggles digit values within the allowed range, useful for sp
 
 **Single digit:**
 
-Use [`flip(state, pos)`](@ref SymBasis.DigitBase.flip(::SymBasis.DigitBase.BaseInt{T,Ti,B}, ::Ti) where {T<:Integer,Ti<:Integer,B}) to flip the digit at position `pos`.
+Use [`flip(state, pos)`](@ref SymBasis.DigitBase.flip(::SymBasis.DigitBase.BaseInt{T,Ti,B}, ::Ti) where {T,Ti,B}) to flip the digit at position `pos`.
 
 ```@example flip
 using SymBasis.DigitBase
@@ -86,7 +86,7 @@ flip(state, pos) # Returns (20)₃ (flips 2→0)
 
 **Multiple digits:**
 
-Use [`flip(state, positions)`](@ref SymBasis.DigitBase.flip(::SymBasis.DigitBase.BaseInt{T,Ti,B}, ::AbstractVector{Ti}) where {T<:Integer,Ti<:Integer,B}) to flip several digits at once.
+Use [`flip(state, positions)`](@ref SymBasis.DigitBase.flip(::SymBasis.DigitBase.BaseInt{T,Ti,B}, ::AbstractVector{Ti}) where {T,Ti,B}) to flip several digits at once.
 
 ```@example flip
 posₛ = [1, 3] # Flip positions 1 and 3
@@ -99,7 +99,7 @@ The `write` function directly sets digit(s) to specified value(s), useful for pr
 
 **Single digit:**
 
-Use [`write(state, pos, value)`](@ref SymBasis.DigitBase.Base.write(::SymBasis.DigitBase.BaseInt{T,Ti,B}, ::Ti, ::Integer) where {T<:Integer,Ti<:Integer,B}) to set a specific value at position `pos`.
+Use [`write(state, pos, value)`](@ref SymBasis.DigitBase.Base.write(::SymBasis.DigitBase.BaseInt{T,Ti,B}, ::Ti, ::Integer) where {T,Ti,B}) to set a specific value at position `pos`.
 
 ```@example write
 using SymBasis.DigitBase
@@ -123,7 +123,7 @@ write(state, posₛ, values) # Returns (1002)₃
 
 ### Permuting digit positions
 
-Use [`permute(state, perm_vector)`](@ref SymBasis.DigitBase.permute(::SymBasis.DigitBase.BaseInt{T,Ti,B}, ::AbstractVector{Ti}) where {T<:Integer,Ti<:Integer,B}) to rearrange the positions of digits, useful for translation or other spatial symmetry operations.
+Use [`permute(state, perm_vector)`](@ref SymBasis.DigitBase.permute(::SymBasis.DigitBase.BaseInt{T,Ti,B}, ::AbstractVector{Ti}) where {T,Ti,B}) to rearrange the positions of digits, useful for translation or other spatial symmetry operations.
 
 ```@example permute1
 using SymBasis.DigitBase
@@ -164,7 +164,7 @@ The `read` function extracts digit value(s) without modifying the state, useful 
 
 **Single digit:**
 
-Use [`read(state, pos)`](@ref SymBasis.DigitBase.Base.read(::SymBasis.DigitBase.BaseInt{T,Ti,B}, ::Ti) where {T<:Integer,Ti<:Integer,B}) to get the value at position `pos`.
+Use [`read(state, pos)`](@ref SymBasis.DigitBase.Base.read(::SymBasis.DigitBase.BaseInt{T,Ti,B}, ::Ti) where {T,Ti,B}) to get the value at position `pos`.
 
 ```@example read
 using SymBasis.DigitBase
@@ -175,7 +175,7 @@ read(state, pos) # Returns 0
 
 **Multiple digits:**
 
-Use [`read(state, positions)`](@ref SymBasis.DigitBase.Base.read(::SymBasis.DigitBase.BaseInt{T,Ti,B}, ::AbstractVector{Ti}) where {T<:Integer,Ti<:Integer,B}) to get values at multiple positions.
+Use [`read(state, positions)`](@ref SymBasis.DigitBase.Base.read(::SymBasis.DigitBase.BaseInt{T,Ti,B}, ::AbstractVector{Ti}) where {T,Ti,B}) to get values at multiple positions.
 
 ```@example read
 posₛ = [1, 3] # Query positions 1 and 3

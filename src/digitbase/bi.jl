@@ -29,13 +29,13 @@ struct BaseInt{T<:Integer,Ti<:Integer,B}
     value::T
 
     function BaseInt(value::T; base::Integer=2, Ti=Int) where T<:Integer
-        @assert base >= 2 "Base must be at least 2"
+        @assert base >= 2 "Base must be at least 2, got $base"
         return new{T,Ti,base}(value)
     end
 end
 
 """
-    Base.copy(b::SymBasis.DigitBase.BaseInt{T,Ti,B}) where {T<:Integer,Ti<:Integer,B}
+    Base.copy(b::SymBasis.DigitBase.BaseInt{T,Ti,B}) where {T,Ti,B}
 
 Create a copy of the [`SymBasis.DigitBase.BaseInt`](@ref) instance `b`.
 
@@ -47,9 +47,7 @@ Create a copy of the [`SymBasis.DigitBase.BaseInt`](@ref) instance `b`.
 - [`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: A new [`SymBasis.DigitBase.BaseInt`](@ref)
     instance with the same value as `b`.
 """
-function Base.copy(
-    b::BaseInt{T,Ti,B}
-) where {T<:Integer,Ti<:Integer,B}
+function Base.copy(b::BaseInt{T,Ti,B}) where {T,Ti,B}
     return BaseInt(b.value |> copy; base=B, Ti=Ti)
 end
 
@@ -74,64 +72,49 @@ macro bi_str(str::String, base::Integer)
 end
 
 
-function Base.:(==)(
-    b1::BaseInt{T,Ti,B},
-    b2::BaseInt{T,Ti,B}
-) where {T<:Integer,Ti<:Integer,B}
+function Base.:(==)(b1::TB, b2::TB) where {TB<:BaseInt}
     return b1.value == b2.value
 end
 
-function Base.isequal(
-    b1::BaseInt{T,Ti,B},
-    b2::BaseInt{T,Ti,B}
-) where {T<:Integer,Ti<:Integer,B}
+function Base.isequal(b1::TB, b2::TB) where {TB<:BaseInt}
     return isequal(b1.value, b2.value)
 end
 
-function Base.hash(
-    b::BaseInt{T,Ti,B},
-    h::UInt
-) where {T<:Integer,Ti<:Integer,B}
+function Base.hash(b::BaseInt{T,Ti,B}, h::UInt) where {T,Ti,B}
     return hash(B, hash(b.value, hash(:BaseNumber, h)))
 end
 
-function Base.length(b::BaseInt{T,Ti,B}) where {T<:Integer,Ti<:Integer,B}
+function Base.length(::BaseInt)
     return 1
 end
 
-function Base.iterate(b::BaseInt{T,Ti,B}) where {T<:Integer,Ti<:Integer,B}
+function Base.iterate(b::BaseInt)
     return (b, nothing)
 end
 
-function Base.iterate(b::BaseInt{T,Ti,B}, state) where {T<:Integer,Ti<:Integer,B}
+function Base.iterate(::BaseInt, state)
     return nothing
 end
 
-function Base.isless(
-    b1::BaseInt{T,Ti,B},
-    b2::BaseInt{T,Ti,B}
-) where {T<:Integer,Ti<:Integer,B}
+function Base.isless(b1::TB, b2::TB) where {TB<:BaseInt}
     return b1.value < b2.value
 end
 
 subscript(i::Integer) = join(Char(0x2080 + d) for d in reverse!(digits(i)))
 
-function base_number_to_string(
-    b::BaseInt{T,Ti,B};
-    pad::Integer=1
-) where {T<:Integer,Ti<:Integer,B}
+function base_number_to_string(b::BaseInt{T,Ti,B}; pad::Integer=1) where {T,Ti,B}
     str = string(b.value, base=B, pad=pad)
     return "($str)$(subscript(B))"
 end
 
-function Base.show(io::IO, b::BaseInt{T,Ti,B}) where {T<:Integer,Ti<:Integer,B}
+function Base.show(io::IO, b::BaseInt)
     print(io, base_number_to_string(b))
 end
 # END -- General digit-base integer type and associated functions
 
 # START -- Digit manipulation functions
 """
-    flip(b::SymBasis.DigitBase.BaseInt{T,Ti,B}, pos::Ti) where {T<:Integer,Ti<:Integer,B}
+    flip(b::SymBasis.DigitBase.BaseInt{T,Ti,B}, pos::Ti) where {T,Ti,B}
 
 Flip the digit at position `pos` in the base-`B` representation of the integer `b`.
 
@@ -143,7 +126,7 @@ Flip the digit at position `pos` in the base-`B` representation of the integer `
 - [`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: A new [`SymBasis.DigitBase.BaseInt`](@ref)
     instance with the specified digit flipped.
 """
-function flip(b::BaseInt{T,Ti,B}, pos::Ti) where {T<:Integer,Ti<:Integer,B}
+function flip(b::BaseInt{T,Ti,B}, pos::Ti) where {T,Ti,B}
     pos > 0 || throw(ArgumentError("position must be positive, got $pos"))
     B >= 2 || throw(ArgumentError("base must be ≥ 2, got $B"))
 
@@ -160,10 +143,7 @@ function flip(b::BaseInt{T,Ti,B}, pos::Ti) where {T<:Integer,Ti<:Integer,B}
 end
 
 """
-    flip(
-        b::SymBasis.DigitBase.BaseInt{T,Ti,B},
-        pos::AbstractVector{Ti}
-    ) where {T<:Integer,Ti<:Integer,B}
+    flip(b::SymBasis.DigitBase.BaseInt{T,Ti,B}, pos::AbstractVector{Ti}) where {T,Ti,B}
 
 Flip the digits at the specified positions in the base-`B` representation of the integer
 `b`.
@@ -176,10 +156,7 @@ Flip the digits at the specified positions in the base-`B` representation of the
 - [`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: A new [`SymBasis.DigitBase.BaseInt`](@ref)
     instance with the specified digits flipped.
 """
-function flip(
-    b::BaseInt{T,Ti,B},
-    pos::AbstractVector{Ti}
-) where {T<:Integer,Ti<:Integer,B}
+function flip(b::BaseInt{T,Ti,B}, pos::AbstractVector{Ti}) where {T,Ti,B}
     new_b = b |> copy
 
     for posᵢ in pos
@@ -190,7 +167,7 @@ function flip(
 end
 
 """
-    inc(b::SymBasis.DigitBase.BaseInt{T,Ti,B}, pos::Ti) where {T<:Integer,Ti<:Integer,B}
+    inc(b::SymBasis.DigitBase.BaseInt{T,Ti,B}, pos::Ti) where {T,Ti,B}
 
 Increment the digit at position `pos` in the base-`B` representation of the integer `b`.
 
@@ -202,7 +179,7 @@ Increment the digit at position `pos` in the base-`B` representation of the inte
 - [`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: A new [`SymBasis.DigitBase.BaseInt`](@ref)
     instance with the specified digit incremented.
 """
-function inc(b::BaseInt{T,Ti,B}, pos::Ti) where {T<:Integer,Ti<:Integer,B}
+function inc(b::BaseInt{T,Ti,B}, pos::Ti) where {T,Ti,B}
     pos <= 0 && throw(ArgumentError("digit position must be non-negative"))
 
     base_pow = B^(pos - 1)
@@ -230,10 +207,7 @@ function inc(b::BaseInt{T,Ti,B}, pos::Ti) where {T<:Integer,Ti<:Integer,B}
 end
 
 """
-    inc(
-        b::SymBasis.DigitBase.BaseInt{T,Ti,B},
-        pos::AbstractVector{Ti}
-    ) where {T<:Integer,Ti<:Integer,B}
+    inc(b::SymBasis.DigitBase.BaseInt{T,Ti,B}, pos::AbstractVector{Ti}) where {T,Ti,B}
 
 Increment the digits at the specified positions in the base-`B` representation of the
 integer `b`.
@@ -246,10 +220,7 @@ integer `b`.
 - [`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: A new [`SymBasis.DigitBase.BaseInt`](@ref)
     instance with the specified digits incremented.
 """
-function inc(
-    b::BaseInt{T,Ti,B},
-    pos::AbstractVector{Ti}
-) where {T<:Integer,Ti<:Integer,B}
+function inc(b::BaseInt{T,Ti,B}, pos::AbstractVector{Ti}) where {T,Ti,B}
     new_b = b |> copy
 
     for posᵢ in pos
@@ -260,7 +231,7 @@ function inc(
 end
 
 """
-    dec(b::SymBasis.DigitBase.BaseInt{T,Ti,B}, pos::Ti) where {T<:Integer,Ti<:Integer,B}
+    dec(b::SymBasis.DigitBase.BaseInt{T,Ti,B}, pos::Ti) where {T,Ti,B}
 
 Decrement the digit at position `pos` in the base-`B` representation of the integer `b`.
 
@@ -272,7 +243,7 @@ Decrement the digit at position `pos` in the base-`B` representation of the inte
 - [`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: A new [`SymBasis.DigitBase.BaseInt`](@ref)
     instance with the specified digit decremented.
 """
-function dec(b::BaseInt{T,Ti,B}, pos::Ti) where {T<:Integer,Ti<:Integer,B}
+function dec(b::BaseInt{T,Ti,B}, pos::Ti) where {T,Ti,B}
     pos <= 0 && throw(ArgumentError("digit position must be non-negative"))
 
     base_pow = B^(pos - 1)
@@ -308,10 +279,7 @@ function dec(b::BaseInt{T,Ti,B}, pos::Ti) where {T<:Integer,Ti<:Integer,B}
 end
 
 """
-    dec(
-        b::SymBasis.DigitBase.BaseInt{T,Ti,B},
-        pos::AbstractVector{Ti}
-    ) where {T<:Integer,Ti<:Integer,B}
+    dec(b::SymBasis.DigitBase.BaseInt{T,Ti,B}, pos::AbstractVector{Ti}) where {T,Ti,B}
 
 Decrement the digits at the specified positions in the base-`B` representation of the
 integer `b`.
@@ -324,10 +292,7 @@ integer `b`.
 - [`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: A new [`SymBasis.DigitBase.BaseInt`](@ref)
     instance with the specified digits decremented.
 """
-function dec(
-    b::BaseInt{T,Ti,B},
-    pos::AbstractVector{Ti}
-) where {T<:Integer,Ti<:Integer,B}
+function dec(b::BaseInt{T,Ti,B}, pos::AbstractVector{Ti}) where {T,Ti,B}
     new_b = b |> copy
 
     for posᵢ in pos
@@ -361,10 +326,7 @@ function num_digits_in_base(n::Integer, base::Int)
 end
 
 """
-    permute(
-        b::SymBasis.DigitBase.BaseInt{T,Ti,B},
-        perm::AbstractVector{Ti}
-    ) where {T<:Integer,Ti<:Integer,B}
+    permute(b::SymBasis.DigitBase.BaseInt{T,Ti,B}, perm::AbstractVector{Ti}) where {T,Ti,B}
 
 Permute the positions of the digits in the base-`B` representation of the integer `b`
 according to the permutation vector `perm`.
@@ -378,10 +340,7 @@ according to the permutation vector `perm`.
 - [`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: A new [`SymBasis.DigitBase.BaseInt`](@ref)
     instance with the digits permuted according to `perm`.
 """
-function permute(
-    b::BaseInt{T,Ti,B},
-    perm::AbstractVector{Ti}
-) where {T<:Integer,Ti<:Integer,B}
+function permute(b::BaseInt{T,Ti,B}, perm::AbstractVector{Ti}) where {T,Ti,B}
     B > 1 || throw(ArgumentError("Base must be ≥ 2"))
 
     n = length(perm)
@@ -432,7 +391,7 @@ end
         b::SymBasis.DigitBase.BaseInt{T,Ti,B},
         pos::Ti,
         perm::AbstractVector{<:Integer}
-    ) where {T<:Integer,Ti<:Integer,B}
+    ) where {T,Ti,B}
 
 Permute the digit at position `pos` in the base-`B` representation of the integer `b`
 according to the permutation vector `perm`.
@@ -454,7 +413,7 @@ function permute(
     b::BaseInt{T,Ti,B},
     pos::Ti,
     perm::AbstractVector{<:Integer}
-) where {T<:Integer,Ti<:Integer,B}
+) where {T,Ti,B}
     pos >= 1 || throw(ArgumentError("position must be ≥ 1 (1‑based indexing)"))
     length(perm) == B ||
         throw(ArgumentError("permutation vector must have length equal to the base $B"))
@@ -485,7 +444,7 @@ end
         b::SymBasis.DigitBase.BaseInt{T,Ti,B},
         pos::AbstractVector{Ti},
         perm::AbstractVector{<:Integer}
-    ) where {T<:Integer,Ti<:Integer,B}
+    ) where {T,Ti,B}
 
 Permute the digits at the specified positions in the base-`B` representation of the integer
 `b` according to the permutation vector `perm`.
@@ -507,7 +466,7 @@ function permute(
     b::BaseInt{T,Ti,B},
     pos::AbstractVector{Ti},
     perm::AbstractVector{<:Integer}
-) where {T<:Integer,Ti<:Integer,B}
+) where {T,Ti,B}
     new_b = b |> copy
 
     for posᵢ in pos
@@ -518,10 +477,7 @@ function permute(
 end
 
 """
-    Base.read(
-        b::SymBasis.DigitBase.BaseInt{T,Ti,B},
-        pos::Ti
-    ) where {T<:Integer,Ti<:Integer,B}
+    Base.read(b::SymBasis.DigitBase.BaseInt{T,Ti,B}, pos::Ti) where {T,Ti,B}
 
 Read the digit at position `pos` in the base-`B` representation of the integer `b`.
 
@@ -532,10 +488,7 @@ Read the digit at position `pos` in the base-`B` representation of the integer `
 # Returns
 - `Int`: The digit at the specified position.
 """
-function Base.read(
-    b::BaseInt{T,Ti,B},
-    pos::Ti
-) where {T<:Integer,Ti<:Integer,B}
+function Base.read(b::BaseInt{T,Ti,B}, pos::Ti) where {T,Ti,B}
     pos >= 1 || throw(ArgumentError("position must be ≥ 1 (1‑based indexing)"))
     B >= 2 || throw(ArgumentError("base must be ≥ 2, got $B"))
 
@@ -546,10 +499,7 @@ function Base.read(
 end
 
 """
-    Base.read(
-        b::SymBasis.DigitBase.BaseInt{T,Ti,B},
-        pos::AbstractVector{Ti}
-    ) where {T<:Integer,Ti<:Integer,B}
+    Base.read(b::SymBasis.DigitBase.BaseInt{T,Ti,B}, pos::AbstractVector{Ti}) where {T,Ti,B}
 
 Read the digits at the specified positions in the base-`B` representation of the integer
 `b`.
@@ -561,21 +511,14 @@ Read the digits at the specified positions in the base-`B` representation of the
 # Returns
 - `Vector{Int}`: The digits at the specified positions.
 """
-function Base.read(
-    b::BaseInt{T,Ti,B},
-    pos::AbstractVector{Ti}
-) where {T<:Integer,Ti<:Integer,B}
+function Base.read(b::BaseInt{T,Ti,B}, pos::AbstractVector{Ti}) where {T,Ti,B}
     return map(pos) do posᵢ
         read(b, posᵢ)
     end
 end
 
 """
-    Base.write(
-        b::SymBasis.DigitBase.BaseInt{T,Ti,B},
-        pos::Ti,
-        d::Integer
-    ) where {T<:Integer,Ti<:Integer,B}
+    Base.write(b::SymBasis.DigitBase.BaseInt{T,Ti,B}, pos::Ti, d::Integer) where {T,Ti,B}
 
 Write the digit `d` at position `pos` in the base-`B` representation of the integer `b`.
 
@@ -588,11 +531,7 @@ Write the digit `d` at position `pos` in the base-`B` representation of the inte
 - [`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: A new [`SymBasis.DigitBase.BaseInt`](@ref)
     instance with the specified digit written.
 """
-function Base.write(
-    b::BaseInt{T,Ti,B},
-    pos::Ti,
-    d::Integer
-) where {T<:Integer,Ti<:Integer,B}
+function Base.write(b::BaseInt{T,Ti,B}, pos::Ti, d::Integer) where {T,Ti,B}
     pos >= 1 || throw(ArgumentError("position must be ≥ 1 (1‑based indexing)"))
     B >= 2 || throw(ArgumentError("base must be ≥ 2, got $B"))
     0 ≤ d < B || throw(ArgumentError("digit must satisfy 0 ≤ d < $B, got $d"))
@@ -619,7 +558,7 @@ end
         b::SymBasis.BaseInt{T,Ti,B},
         pos::AbstractVector{Ti},
         d::AbstractVector{<:Integer}
-    ) where {T<:Integer,Ti<:Integer,B}
+    ) where {T,Ti,B}
 
 Write the digits `d` at the specified positions in the base-`B` representation of the
 integer `b`.
@@ -637,7 +576,7 @@ function Base.write(
     b::BaseInt{T,Ti,B},
     pos::AbstractVector{Ti},
     d::AbstractVector{<:Integer}
-) where {T<:Integer,Ti<:Integer,B}
+) where {T,Ti,B}
     new_b = b |> copy
 
     for i in eachindex(pos)
@@ -652,7 +591,7 @@ end
         b::SymBasis.DigitBase.BaseInt{T,Ti,B},
         pos::AbstractVector{Ti},
         d::Integer
-    ) where {T<:Integer,Ti<:Integer,B}
+    ) where {T,Ti,B}
 
 Count the occurrences of the digit `d` at the specified positions in the base-`B`
 representation of the integer `b`.
@@ -665,11 +604,7 @@ representation of the integer `b`.
 # Returns
 - `Int`: The count of occurrences of the digit `d` at the specified positions.
 """
-function Base.count(
-    b::BaseInt{T,Ti,B},
-    pos::AbstractVector{Ti},
-    d::Integer
-) where {T<:Integer,Ti<:Integer,B}
+function Base.count(b::BaseInt{T,Ti,B}, pos::AbstractVector{Ti}, d::Integer) where {T,Ti,B}
     0 ≤ d < B || throw(ArgumentError("digit must satisfy 0 ≤ d < B, got $d"))
 
     @boundscheck any(p -> p < 1, pos) &&
@@ -687,7 +622,7 @@ end
         b::SymBasis.BaseInt{T,Ti,B},
         pos::AbstractVector{Ti},
         d::AbstractVector{<:Integer}
-    ) where {T<:Integer,Ti<:Integer,B}
+    ) where {T,Ti,B}
 
 Count the occurrences of each digit in `d` at the specified positions in the base-`B`
 representation of the integer `b`.
@@ -704,7 +639,7 @@ function Base.count(
     b::BaseInt{T,Ti,B},
     pos::AbstractVector{Ti},
     d::AbstractVector{<:Integer}
-) where {T<:Integer,Ti<:Integer,B}
+) where {T,Ti,B}
     return map(d) do dᵢ
         count(b, pos, dᵢ)
     end

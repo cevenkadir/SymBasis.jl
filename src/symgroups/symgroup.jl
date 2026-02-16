@@ -2,7 +2,7 @@ using SymBasis.DoFObjects: DoFObject
 using SymBasis.Miscs: SmallHashSet
 
 """
-    SymGroup{B,T_s,T<:Integer,Ti<:Integer,T_f<:Union{Number,Complex{<:Number}}}
+    SymGroup{B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
     SymGroup(
         dofo::DoFObject{B,T_s,T,Ti},
         cycles::AbstractVector{<:NamedTuple},
@@ -10,7 +10,7 @@ using SymBasis.Miscs: SmallHashSet
         apply::Function,
         factors::AbstractVector{T_f},
         N::Integer
-    ) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Union{Number,Complex{<:Number}}}
+    ) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
 
 A symmetry group acting on a DoF-object. The symmetry group is defined by its associated
 DoF-object, a set of cycles representing the symmetry operations, functions to check and
@@ -45,7 +45,7 @@ apply these operations, and factors associated with each symmetry cycle.
 The constructor checks that the number of cycles matches the number of factors to ensure
 consistency.
 """
-struct SymGroup{B,T_s,T<:Integer,Ti<:Integer,T_f<:Union{Number,Complex{<:Number}}}
+struct SymGroup{B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
     dofo::DoFObject{B,T_s,T,Ti}
     cycles::AbstractVector{<:NamedTuple}
     check::Function
@@ -60,14 +60,14 @@ struct SymGroup{B,T_s,T<:Integer,Ti<:Integer,T_f<:Union{Number,Complex{<:Number}
         apply::Function,
         factors::AbstractVector{T_f},
         N::Integer
-    ) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Union{Number,Complex{<:Number}}}
+    ) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
         @assert length(cycles) == length(factors)
         return new{B,T_s,T,Ti,T_f}(dofo, cycles, check, apply, factors, N)
     end
 end
 
 """
-    CombSymGroup{B,T_s,T<:Integer,Ti<:Integer,T_f<:Union{Number,Complex{<:Number}}}
+    CombSymGroup{B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
     CombSymGroup(
         dofo::DoFObject{B,T_s,T,Ti},
         cycles::AbstractArray{<:AbstractVector{<:NamedTuple}},
@@ -75,7 +75,7 @@ end
         apply::AbstractVector{<:Function},
         factors::AbstractArray{T_f},
         N::Integer
-    ) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Union{Number,Complex{<:Number}}}
+    ) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
 
 A combined symmetry group formed by the composition of multiple symmetry groups acting on
 the same DoF-object. This structure allows for the representation of more complex symmetry
@@ -116,7 +116,7 @@ operations by combining simpler ones.
 The constructor checks that the size of cycles matches the size of factors and that the
 number of dimensions matches the number of check and apply functions to ensure consistency.
 """
-struct CombSymGroup{B,T_s,T<:Integer,Ti<:Integer,T_f<:Union{Number,Complex{<:Number}}}
+struct CombSymGroup{B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
     dofo::DoFObject{B,T_s,T,Ti}
     cycles::AbstractArray{<:AbstractVector{<:NamedTuple}}
     check::AbstractVector{<:Function}
@@ -130,7 +130,7 @@ struct CombSymGroup{B,T_s,T<:Integer,Ti<:Integer,T_f<:Union{Number,Complex{<:Num
         apply::AbstractVector{<:Function},
         factors::AbstractArray{T_f},
         N::Integer
-    ) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Union{Number,Complex{<:Number}}}
+    ) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
         @assert size(cycles) == size(factors)
         @assert ndims(cycles) == length(check)
         @assert ndims(cycles) == length(apply)
@@ -218,41 +218,27 @@ end
 
 """
     ∘(
-        sg1::SymGroup{B,T_s,T,Ti,T_f1},
-        sg2::SymGroup{B,T_s,T,Ti,T_f2}
-    ) where {
-        B,
-        T_s,
-        T<:Integer,
-        Ti<:Integer,
-        T_f1<:Union{Number,Complex{<:Number}},
-        T_f2<:Union{Number,Complex{<:Number}}
-    }
+        sg1::SymGroup{B,T_s,T,Ti,<:T_f},
+        sg2::SymGroup{B,T_s,T,Ti,<:T_f}
+    ) where {B,T_s,T,Ti,T_f<:Number}
 
 Composition of two symmetry groups acting on the same DoF-object. The resulting symmetry
 group combines the cycles, check functions, apply functions, and factors of the input
 symmetry groups.
 
 # Arguments
-- `sg1::`[`SymBasis.SymGroups.SymGroup`](@ref)`{B,T_s,T,Ti,T_f1}`: The first symmetry group.
-- `sg2::`[`SymBasis.SymGroups.SymGroup`](@ref)`{B,T_s,T,Ti,T_f2}`: The second symmetry group
-    .
+- `sg1::`[`SymBasis.SymGroups.SymGroup`](@ref)`{B,T_s,T,Ti,<:T_f}`: The first symmetry
+    group.
+- `sg2::`[`SymBasis.SymGroups.SymGroup`](@ref)`{B,T_s,T,Ti,<:T_f}`: The second symmetry
+    group.
 
 # Returns
-- [`SymBasis.SymGroups.CombSymGroup`](@ref)`{B,T_s,T,Ti,typeof(*(one(T_f1), one(T_f2)))}`:
-    The combined symmetry group.
+- [`SymBasis.SymGroups.CombSymGroup`](@ref)`{B,T_s,T,Ti,T_f}`: The combined symmetry group.
 """
 function Base.:(∘)(
-    sg1::SymGroup{B,T_s,T,Ti,T_f1},
-    sg2::SymGroup{B,T_s,T,Ti,T_f2}
-) where {
-    B,
-    T_s,
-    T<:Integer,
-    Ti<:Integer,
-    T_f1<:Union{Number,Complex{<:Number}},
-    T_f2<:Union{Number,Complex{<:Number}}
-}
+    sg1::SymGroup{B,T_s,T,Ti,<:T_f},
+    sg2::SymGroup{B,T_s,T,Ti,<:T_f}
+) where {B,T_s,T,Ti,T_f<:Number}
     @assert sg1.dofo == sg2.dofo
     @assert sg1.N == sg2.N
     return CombSymGroup(
@@ -267,41 +253,26 @@ end
 
 """
     ∘(
-        csg::CombSymGroup{B,T_s,T,Ti,T_f1},
-        sg::SymGroup{B,T_s,T,Ti,T_f2}
-    ) where {
-        B,
-        T_s,
-        T<:Integer,
-        Ti<:Integer,
-        T_f1<:Union{Number,Complex{<:Number}},
-        T_f2<:Union{Number,Complex{<:Number}}
-    }
+        csg::CombSymGroup{B,T_s,T,Ti,<:T_f},
+        sg::SymGroup{B,T_s,T,Ti,<:T_f}
+    ) where {B,T_s,T,Ti,T_f<:Number}
 
 Composition of a combined symmetry group with a symmetry group acting on the same
 DoF-object. The resulting symmetry group combines the cycles, check functions, apply
 functions, and factors of the input symmetry groups.
 
 # Arguments
-- `csg::`[`SymBasis.SymGroups.CombSymGroup`](@ref)`{B,T_s,T,Ti,T_f1}`: The combined symmetry
+- `csg::`[`SymBasis.SymGroups.CombSymGroup`](@ref)`{B,T_s,T,Ti,T_f}`: The combined symmetry
     group.
-- `sg::`[`SymBasis.SymGroups.SymGroup`](@ref)`{B,T_s,T,Ti,T_f2}`: The symmetry group.
+- `sg::`[`SymBasis.SymGroups.SymGroup`](@ref)`{B,T_s,T,Ti,T_f}`: The symmetry group.
 
 # Returns
-- [`SymBasis.SymGroups.CombSymGroup`](@ref)`{B,T_s,T,Ti,typeof(*(one(T_f1), one(T_f2)))}`:
-    The combined symmetry group.
+- [`SymBasis.SymGroups.CombSymGroup`](@ref)`{B,T_s,T,Ti,T_f}`: The combined symmetry group.
 """
 function Base.:(∘)(
-    csg::CombSymGroup{B,T_s,T,Ti,T_f1},
-    sg::SymGroup{B,T_s,T,Ti,T_f2}
-) where {
-    B,
-    T_s,
-    T<:Integer,
-    Ti<:Integer,
-    T_f1<:Union{Number,Complex{<:Number}},
-    T_f2<:Union{Number,Complex{<:Number}}
-}
+    csg::CombSymGroup{B,T_s,T,Ti,<:T_f},
+    sg::SymGroup{B,T_s,T,Ti,<:T_f}
+) where {B,T_s,T,Ti,T_f<:Number}
     @assert csg.dofo == sg.dofo
     @assert csg.N == sg.N
     return CombSymGroup(
@@ -316,41 +287,26 @@ end
 
 """
     ∘(
-        csg::SymGroup{B,T_s,T,Ti,T_f1},
-        sg::CombSymGroup{B,T_s,T,Ti,T_f2}
-    ) where {
-        B,
-        T_s,
-        T<:Integer,
-        Ti<:Integer,
-        T_f1<:Union{Number,Complex{<:Number}},
-        T_f2<:Union{Number,Complex{<:Number}}
-    }
+        csg::SymGroup{B,T_s,T,Ti,<:T_f},
+        sg::CombSymGroup{B,T_s,T,Ti,<:T_f}
+    ) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
 
 Composition of a combined symmetry group with a symmetry group acting on the same
 DoF-object. The resulting symmetry group combines the cycles, check functions, apply
 functions, and factors of the input symmetry groups.
 
 # Arguments
-- `csg::`[`SymBasis.SymGroups.SymGroup`](@ref)`{B,T_s,T,Ti,T_f1}`: The symmetry group.
-- `sg::`[`SymBasis.SymGroups.CombSymGroup`](@ref)`{B,T_s,T,Ti,T_f2}`: The combined symmetry
+- `csg::`[`SymBasis.SymGroups.SymGroup`](@ref)`{B,T_s,T,Ti,<:T_f}`: The symmetry group.
+- `sg::`[`SymBasis.SymGroups.CombSymGroup`](@ref)`{B,T_s,T,Ti,<:T_f}`: The combined symmetry
     group.
 
 # Returns
-- [`SymBasis.SymGroups.CombSymGroup`](@ref)`{B,T_s,T,Ti,typeof(*(one(T_f1), one(T_f2)))}`:
-    The combined symmetry group.
+- [`SymBasis.SymGroups.CombSymGroup`](@ref)`{B,T_s,T,Ti,T_f}`: The combined symmetry group.
 """
 function Base.:(∘)(
-    sg::SymGroup{B,T_s,T,Ti,T_f1},
-    csg::CombSymGroup{B,T_s,T,Ti,T_f2}
-) where {
-    B,
-    T_s,
-    T<:Integer,
-    Ti<:Integer,
-    T_f1<:Union{Number,Complex{<:Number}},
-    T_f2<:Union{Number,Complex{<:Number}}
-}
+    sg::SymGroup{B,T_s,T,Ti,<:T_f},
+    csg::CombSymGroup{B,T_s,T,Ti,<:T_f}
+) where {B,T_s,T,Ti,T_f<:Number}
     @assert csg.dofo == sg.dofo
     @assert csg.N == sg.N
     return CombSymGroup(
@@ -365,41 +321,27 @@ end
 
 """
     ∘(
-        csg1::CombSymGroup{B,T_s,T,Ti,T_f1},
-        csg2::CombSymGroup{B,T_s,T,Ti,T_f2}
-    ) where {
-        B,
-        T_s,
-        T<:Integer,
-        Ti<:Integer,
-        T_f1<:Union{Number,Complex{<:Number}},
-        T_f2<:Union{Number,Complex{<:Number}}
-    }
+        csg1::CombSymGroup{B,T_s,T,Ti,<:T_f},
+        csg2::CombSymGroup{B,T_s,T,Ti,<:T_f}
+    ) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
 
 Composition of two combined symmetry groups acting on the same DoF-object. The resulting
 symmetry group combines the cycles, check functions, apply functions, and factors of the
 input symmetry groups.
 
 # Arguments
-- `csg1::`[`SymBasis.SymGroups.CombSymGroup`](@ref)`{B,T_s,T,Ti,T_f1}`: The first combined
+- `csg1::`[`SymBasis.SymGroups.CombSymGroup`](@ref)`{B,T_s,T,Ti,<:T_f}`: The first combined
     symmetry group.
-- `csg2::`[`SymBasis.SymGroups.CombSymGroup`](@ref)`{B,T_s,T,Ti,T_f2}`: The second combined
+- `csg2::`[`SymBasis.SymGroups.CombSymGroup`](@ref)`{B,T_s,T,Ti,<:T_f}`: The second combined
     symmetry group.
 
 # Returns
-- [`SymBasis.SymGroups.CombSymGroup`](@ref)`{B,T_s,T,Ti,typeof(*(one(T_f1), one(T_f2)))}`:
-    The combined symmetry group.
+- [`SymBasis.SymGroups.CombSymGroup`](@ref)`{B,T_s,T,Ti,T_f}`: The combined symmetry group.
 """
 function Base.:(∘)(
-    csg1::CombSymGroup{B,T_s,T,Ti,T_f1},
-    csg2::CombSymGroup{B,T_s,T,Ti,T_f2}
-) where {
-    B,
-    T_s,
-    T<:Integer,
-    Ti<:Integer,
-    T_f1<:Union{Number,Complex{<:Number}},T_f2<:Union{Number,Complex{<:Number}}
-}
+    csg1::CombSymGroup{B,T_s,T,Ti,<:T_f},
+    csg2::CombSymGroup{B,T_s,T,Ti,<:T_f}
+) where {B,T_s,T,Ti,T_f<:Number}
     @assert csg1.dofo == csg2.dofo
     @assert csg1.N == csg2.N
     return CombSymGroup(

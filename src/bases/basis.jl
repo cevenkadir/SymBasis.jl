@@ -45,48 +45,48 @@ struct Basis{T<:Integer,Ti<:Integer,B,T_n<:Number}
         return new{T,Ti,B,T_n}(states, norms)
     end
 end
-Base.iterate(B::Basis) = (B.states, Val(:norms))
-Base.iterate(B::Basis, ::Val{:norms}) = (B.norms, Val(:done))
-Base.iterate(B::Basis, ::Val{:done}) = nothing
+Base.iterate(b::Basis) = (b.states, Val(:norms))
+Base.iterate(b::Basis, ::Val{:norms}) = (b.norms, Val(:done))
+Base.iterate(b::Basis, ::Val{:done}) = nothing
 
-function Base.summary(io::IO, B::Basis{T,Ti,BaseVal,Tn}) where {T,Ti,BaseVal,Tn}
-    print(io, "Basis{$T,$Ti,$BaseVal,$Tn} with ", length(B.states), " states")
+function Base.summary(io::IO, b::Basis{T,Ti,B,Tn}) where {T,Ti,B,Tn}
+    print(io, "Basis{$T,$Ti,$B,$Tn} with ", length(b.states), " states")
 end
 
-function Base.show(io::IO, B::Basis{T,Ti,BaseVal,Tn}) where {T,Ti,BaseVal,Tn}
+function Base.show(io::IO, b::Basis{T,Ti,B,Tn}) where {T,Ti,B,Tn}
     compact = get(io, :compact, false)
-    print(io, "Basis{$T,$Ti,$BaseVal,$Tn}(")
+    print(io, "Basis{$T,$Ti,$B,$Tn}(")
     if compact
-        print(io, "states=", length(B.states), ", norms=", length(B.norms))
+        print(io, "states=", length(b.states), ", norms=", length(b.norms))
     else
         print(io, "\n\tstates = ")
-        show(io, B.states)
+        show(io, b.states)
         print(io, ",\n\tnorms  = ")
-        show(io, B.norms)
+        show(io, b.norms)
         print(io, "\n")
     end
     print(io, ")")
 end
 
 function Base.show(
-    io::IO, ::MIME"text/plain", B::Basis{T,Ti,BaseVal,Tn}
-) where {T,Ti,BaseVal,Tn}
-    n = length(B.states)
-    println(io, "Basis{$T,$Ti,$BaseVal,$Tn} with $n state$(n == 1 ? "" : "s")")
+    io::IO, ::MIME"text/plain", b::Basis{T,Ti,B,Tn}
+) where {T,Ti,B,Tn}
+    n = length(b.states)
+    println(io, "Basis{$T,$Ti,$B,$Tn} with $n state$(n == 1 ? "" : "s")")
 
     # shorter indent (2 spaces)
     ind = "  "
     ind2 = "    "
 
-    println(io, ind, "states: ", typeof(B.states))
-    println(io, ind, "norms : ", typeof(B.norms))
+    println(io, ind, "states: ", typeof(b.states))
+    println(io, ind, "norms : ", typeof(b.norms))
 
     n == 0 && return
 
     m = min(n, get(io, :limit, true) ? 10 : n)
     println(io, ind, "first $(m) state$(m == 1 ? "" : "s")/norm$(m == 1 ? "" : "s"):")
 
-    st_strs = [sprint(show, B.states[i]) for i in 1:m]
+    st_strs = [sprint(show, b.states[i]) for i in 1:m]
     wmax = maximum(textwidth.(st_strs))
     gap = 2
 
@@ -95,7 +95,7 @@ function Base.show(
         print(io, ind2, s)
         print(io, ' '^max(gap, wmax - textwidth(s) + gap))
         print(io, "(norm=")
-        show(io, B.norms[i])
+        show(io, b.norms[i])
         println(io, ")")
     end
 
@@ -109,7 +109,7 @@ end
         dofo::DoFObject{B,T_s,T,Ti},
         N::Integer;
         norm_type=Float64
-    ) where {B,T_s,T<:Integer,Ti<:Integer}
+    ) where {B,T_s,T,Ti}
 
 Generates the full basis for a DoF-object without symmetry considerations.
 
@@ -133,7 +133,7 @@ function basis(
     N::Integer;
     norm_type::DataType=Float64,
     is_sorted::Bool=false
-) where {B,T_s,T<:Integer,Ti<:Integer}
+) where {B,T_s,T,Ti}
     states = collect(BaseInt(T(0); base=B, Ti=Ti):BaseInt(T(B^N - 1); base=B, Ti=Ti))
     norms = ones(norm_type, length(states))
     if is_sorted
@@ -150,7 +150,7 @@ end
         N::Integer,
         sg::SymGroup{B,T_s,T,Ti,Ts};
         norm_type=Float64
-    ) where {T<:Integer,Ti<:Integer,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
+    ) where {T,Ti,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
 
 Generates the symmetry-resolved basis for a DoF-object under the action of a symmetry group.
 
@@ -178,7 +178,7 @@ function basis(
     sg::SymGroup{B,T_s,T,Ti,Ts};
     norm_type::DataType=Float64,
     is_sorted::Bool=false
-) where {T<:Integer,Ti<:Integer,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
+) where {T,Ti,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
     nthreads = Threads.nthreads()
 
     F₀ = zero(Complex{norm_type})
@@ -252,7 +252,7 @@ end
         csg::CombSymGroup{B,T_s,T,Ti,Ts};
         norm_type::DataType=Float64,
         is_sorted::Bool=false
-    ) where {T<:Integer,Ti<:Integer,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
+    ) where {T,Ti,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
 
 Generates the symmetry-resolved basis for a DoF-object under the action of a combined
     symmetry group.
@@ -281,7 +281,7 @@ function basis(
     csg::CombSymGroup{B,T_s,T,Ti,Ts};
     norm_type::DataType=Float64,
     is_sorted::Bool=false
-) where {T<:Integer,Ti<:Integer,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
+) where {T,Ti,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
     nthreads = Threads.nthreads()
 
     F₀ = zero(Complex{norm_type})
@@ -360,26 +360,20 @@ function basis(
 end
 
 """
-    is_commutative(
-        b::Basis{T,Ti,B,T_n},
-        csg::CombSymGroup{B,T_s,T,Ti,Ts}
-    ) where {T<:Integer,Ti<:Integer,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
+    is_commutative(b::Basis, csg::CombSymGroup)
 
 Checks whether the given symmetries commute with each other in the given basis.
 
 # Arguments
-- `b::`[`SymBasis.Bases.Basis`](@ref)`{T,Ti,B,T_n}`: The basis to be checked.
-- `csg::`[`SymBasis.SymGroups.CombSymGroup`](@ref)`{T_s,T,Ti,Ts}`: The combined symmetry
-    group under which the basis states are expected to be consistent.
+- `b::`[`SymBasis.Bases.Basis`](@ref): The basis to be checked.
+- `csg::`[`SymBasis.SymGroups.CombSymGroup`](@ref): The combined symmetry group under which
+    the basis states are expected to be consistent.
 
 # Returns
 - `Bool`: Returns `true` if the basis states are consistent under the action of the combined
     symmetry group, and `false` otherwise.
 """
-function is_commutative(
-    b::Basis{T,Ti,B,T_n},
-    csg::CombSymGroup{B,T_s,T,Ti,Ts}
-) where {T<:Integer,Ti<:Integer,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
+function is_commutative(b::Basis, csg::CombSymGroup)
     n_cycles = csg.cycles |> length
     ndims_cycles = csg.cycles |> ndims
     nthreads = Threads.nthreads()
@@ -387,7 +381,9 @@ function is_commutative(
     state_indices = eachindex(b.states)
 
     # Partition work and spawn tasks
-    tasks = map(Iterators.partition(state_indices, length(state_indices) ÷ nthreads + 1)) do chunk
+    tasks = map(
+        Iterators.partition(state_indices, length(state_indices) ÷ nthreads + 1)
+    ) do chunk
         Threads.@spawn begin
             for s_idx in chunk
                 test_state = b.states[s_idx]
@@ -427,7 +423,7 @@ end
     representative(
         state::SymBasis.DigitBase.BaseInt{T,Ti,B},
         sg::SymGroup{B,T_s,T,Ti,Ts}
-    ) where {T<:Integer,Ti<:Integer,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
+    ) where {T,Ti,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
 
 Finds the representative state and corresponding factor for a given state under the action
 of a symmetry group.
@@ -444,7 +440,7 @@ of a symmetry group.
 function representative(
     state::BaseInt{T,Ti,B},
     sg::SymGroup{B,T_s,T,Ti,Ts}
-) where {T<:Integer,Ti<:Integer,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
+) where {T,Ti,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
     n_cycles = length(sg.cycles)
 
     # Preallocate matrices for temp_stateₛ
@@ -464,7 +460,7 @@ end
     representative(
         state::SymBasis.DigitBase.BaseInt{T,Ti,B},
         csg::CombSymGroup{B,T_s,T,Ti,Ts}
-    ) where {T<:Integer,Ti<:Integer,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
+    ) where {T,Ti,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
 
 Finds the representative state and corresponding factor for a given state under the action
 of a combined symmetry group.
@@ -482,7 +478,7 @@ of a combined symmetry group.
 function representative(
     state::BaseInt{T,Ti,B},
     csg::CombSymGroup{B,T_s,T,Ti,Ts}
-) where {T<:Integer,Ti<:Integer,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
+) where {T,Ti,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
     n_cycles = length(csg.cycles)
     ndims_cycles = ndims(csg.cycles)
 

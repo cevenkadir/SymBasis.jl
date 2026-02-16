@@ -44,29 +44,20 @@ struct DoFObject{B,T_ldof,T<:Integer,Ti<:Integer} <: AbstractDoFObject
     end
 end
 
-function Base.:(==)(
-    dofo1::DoFObject{B,T_ldof,T,Ti}, dofo2::DoFObject{B,T_ldof,T,Ti}
-) where {B,T_ldof,T<:Integer,Ti<:Integer}
+function Base.:(==)(dofo1::TDOFO, dofo2::TDOFO) where {TDOFO<:DoFObject}
     return (dofo1.ldof == dofo2.ldof) && (dofo1.type == dofo2.type)
 end
 
-function Base.isequal(
-    dofo1::DoFObject{B,T_ldof,T,Ti}, dofo2::DoFObject{B,T_ldof,T,Ti}
-) where {B,T_ldof,T<:Integer,Ti<:Integer}
+function Base.isequal(dofo1::TDOFO, dofo2::TDOFO) where {TDOFO<:DoFObject}
     return isequal(dofo1.ldof, dofo2.ldof) && isequal(dofo1.type, dofo2.type)
 end
 
-function Base.hash(
-    dofo::DoFObject{B,T_ldof,T,Ti},
-    h::UInt
-) where {B,T_ldof,T<:Integer,Ti<:Integer}
+function Base.hash(dofo::DoFObject, h::UInt)
     return hash(dofo.type, hash(dofo.ldof, hash(:BaseNumber, h)))
 end
 
 """
-    bint(
-        dofo::SymBasis.DoFObjects.DoFObject{B,T_ldof,T,Ti}
-    ) where {B,T_ldof,T<:Integer,Ti<:Integer}
+    bint(dofo::SymBasis.DoFObjects.DoFObject{B,T_ldof,T,Ti}) where {B,T_ldof,T,Ti}
 
 Returns [`SymBasis.DigitBase.BaseInt`](@ref) corresponding to the object.
 
@@ -78,17 +69,15 @@ create the base integer.
 - [`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: The base integer type corresponding
     to the object.
 """
-function bint(dofo::DoFObject{B,T_ldof,T,Ti}) where {B,T_ldof,T<:Integer,Ti<:Integer}
+function bint(dofo::DoFObject{B,T_ldof,T,Ti}) where {B,T_ldof,T,Ti}
     return BaseInt{T,Ti,B}
 end
 
-function Base.length(dofo::DoFObject{B,T_ldof,T,Ti}) where {B,T_ldof,T<:Integer,Ti<:Integer}
+function Base.length(dofo::DoFObject{B,T_ldof,T,Ti}) where {B,T_ldof,T,Ti}
     return B
 end
 
-function Base.summary(
-    io::IO, dofo::DoFObject{B,T_ldof,T,Ti}
-) where {B,T_ldof,T<:Integer,Ti<:Integer}
+function Base.summary(io::IO, dofo::DoFObject{B,T_ldof,T,Ti}) where {B,T_ldof,T,Ti}
     print(io, "DoFObject(", dofo.type, ", B=", B, ")")
 end
 
@@ -103,7 +92,7 @@ end
 
 function Base.show(
     io::IO, ::MIME"text/plain", dofo::DoFObject{B,T_ldof,T,Ti}
-) where {B,T_ldof,T<:Integer,Ti<:Integer}
+) where {B,T_ldof,T,Ti}
     print(io, "DoFObject: ", String(dofo.type), " (B=", B, ")\n")
     print(io, "  ldof: ")
     show(io, dofo.ldof)

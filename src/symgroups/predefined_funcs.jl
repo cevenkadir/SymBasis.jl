@@ -10,8 +10,8 @@ using SymBasis.DigitBase: BaseInt, permute, count
         state::SymBasis.DigitBase.BaseInt{T,Ti,B},
         prev_bool::Bool
     ) where {
-        T<:Integer,
-        Ti<:Integer,
+        T,
+        Ti,
         B,
         Tperm<:Union{
             AbstractVector{<:Ti},
@@ -35,8 +35,8 @@ function check_perm(
     state::BaseInt{T,Ti,B},
     prev_bool::Bool
 ) where {
-    T<:Integer,
-    Ti<:Integer,
+    T,
+    Ti,
     B,
     Tperm<:Union{AbstractVector{<:Ti},BitPermutation{T,<:PermutationBackend{T}}}
 }
@@ -48,7 +48,7 @@ end
     apply_perm(
         p::@NamedTuple{perm::Tperm},
         state::SymBasis.DigitBase.BaseInt{T,Ti,B}
-    ) where {T<:Integer,Ti<:Integer,B,Tperm<:AbstractVector{<:Ti}}
+    ) where {T,Ti,B,Tperm<:AbstractVector{<:Ti}}
 
 Apply the permutation `p.perm` to the given state.
 
@@ -63,7 +63,7 @@ Apply the permutation `p.perm` to the given state.
 function apply_perm(
     p::@NamedTuple{perm::Tperm},
     state::BaseInt{T,Ti,B}
-) where {T<:Integer,Ti<:Integer,B,Tperm<:AbstractVector{<:Ti}}
+) where {T,Ti,B,Tperm<:AbstractVector{<:Ti}}
     return permute(state, p.perm)
 end
 
@@ -72,8 +72,8 @@ end
         p::@NamedTuple{perm::Tperm},
         state::SymBasis.DigitBase.BaseInt{T,Ti,2}
     ) where {
-        T<:Integer,
-        Ti<:Integer,
+        T,
+        Ti,
         Tperm<:BitPermutations.BitPermutation{T,<:BitPermutations.PermutationBackend{T}}
     }
 
@@ -91,23 +91,23 @@ Apply the bit permutation `p.perm` to the given binary state in a more efficient
 function apply_perm(
     p::@NamedTuple{perm::Tperm},
     state::BaseInt{T,Ti,2}
-) where {T<:Integer,Ti<:Integer,Tperm<:BitPermutation{T,<:PermutationBackend{T}}}
+) where {T,Ti,Tperm<:BitPermutation{T,<:PermutationBackend{T}}}
     return BaseInt(bitpermute(state.value, p.perm); base=2, Ti=Ti)
 end
 
 """
     check_Nₛ(
         p::NamedTuple{names,NT},
-        state::SymBasis.DigitBase.BaseInt{T,Ti,B},
+        state::SymBasis.DigitBase.BaseInt,
         prev_bool::Bool,
-    ) where {names,NT<:Tuple{Vararg{Integer}},T<:Integer,Ti<:Integer,B}
+    ) where {names,NT<:Tuple{Vararg{Integer}}}
 
 Check if the given state has the specified digit counts as defined in the named tuple `p`.
 Since this is a symmetry check, the result is combined with `prev_bool`.
 
 # Arguments
 - `p::NamedTuple{names,NT}`: A named tuple containing the digit counts.
-- `state::`[`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: The state to be checked.
+- `state::`[`SymBasis.DigitBase.BaseInt`](@ref): The state to be checked.
 - `prev_bool::Bool`: The previous boolean value to be combined with the check result.
 
 # Returns
@@ -115,9 +115,9 @@ Since this is a symmetry check, the result is combined with `prev_bool`.
 """
 function check_Nₛ(
     p::NamedTuple{names,NT},
-    state::BaseInt{T,Ti,B},
+    state::BaseInt,
     prev_bool::Bool
-) where {names,NT<:Tuple{Vararg{Integer}},T<:Integer,Ti<:Integer,B}
+) where {names,NT<:Tuple{Vararg{Integer}}}
     return prev_bool * _check_Nₛ(state, p)
 end
 
@@ -125,7 +125,7 @@ end
     _check_Nₛ(
         state::SymBasis.DigitBase.BaseInt{T,Ti,B},
         p::NamedTuple{names,NT}
-    ) where {T<:Integer,Ti<:Integer,B,names,NT<:Tuple{Vararg{Integer}}}
+    ) where {T,Ti,B,names,NT<:Tuple{Vararg{Integer}}}
 
 Internal function to check if the given state has the specified digit counts as defined in
 the named tuple `p`.
@@ -140,7 +140,7 @@ the named tuple `p`.
 function _check_Nₛ(
     state::BaseInt{T,Ti,B},
     p::NamedTuple{names,NT}
-) where {T<:Integer,Ti<:Integer,B,names,NT<:Tuple{Vararg{Integer}}}
+) where {T,Ti,B,names,NT<:Tuple{Vararg{Integer}}}
     sites = 1:p.N |> collect
 
     return all((j, p[Symbol("N$j")]) for j in 0:(B-1)) do (digit, Nᵢ)
@@ -152,7 +152,7 @@ end
     _check_Nₛ(
         state::SymBasis.DigitBase.BaseInt{T,Ti,2},
         p::NamedTuple{N0::TN, N1::TN, N::TN}
-    ) where {T<:Integer,Ti<:Integer,TN<:Integer}
+    ) where {T,Ti,TN<:Integer}
 
 Internal function to check if the given binary state has the specified counts of 0s and 1s
 as defined in the named tuple `p`.
@@ -167,7 +167,7 @@ as defined in the named tuple `p`.
 function _check_Nₛ(
     state::BaseInt{T,Ti,2},
     p::@NamedTuple{N0::TN, N1::TN, N::TN}
-) where {T<:Integer,Ti<:Integer,TN<:Integer}
+) where {T,Ti,TN<:Integer}
     _N1 = count_ones(state.value)
     _N0 = p.N - _N1
 
@@ -177,8 +177,8 @@ end
 """
     apply_Nₛ(
         p::NamedTuple{names,NT},
-        state::SymBasis.DigitBase.BaseInt{T,Ti,B}
-    ) where {names,NT<:Tuple{Vararg{Integer}},T<:Integer,Ti<:Integer,B}
+        state::SymBasis.DigitBase.BaseInt
+    ) where {names,NT<:Tuple{Vararg{Integer}}}
 
 Apply the symmetry operation defined by the digit counts in `p` to the given state. Since
 this is a symmetry where the state remains unchanged, the function simply returns the input
@@ -186,16 +186,16 @@ state.
 
 # Arguments
 - `p::NamedTuple{names,NT}`: A named tuple containing the digit counts.
-- `state::`[`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: The state to which the symmetry
+- `state::`[`SymBasis.DigitBase.BaseInt`](@ref): The state to which the symmetry
     operation will be applied.
 
 # Returns
-- [`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: The unchanged state.
+- [`SymBasis.DigitBase.BaseInt`](@ref): The unchanged state.
 """
 function apply_Nₛ(
     p::NamedTuple{names,NT},
-    state::BaseInt{T,Ti,B}
-) where {names,NT<:Tuple{Vararg{Integer}},T<:Integer,Ti<:Integer,B}
+    state::BaseInt
+) where {names,NT<:Tuple{Vararg{Integer}}}
     return state
 end
 # END -- check and apply functions for predefined symmetries
@@ -225,14 +225,13 @@ sym(s::Symbol, args...; kwargs...) = sym(Val(s), args...; kwargs...)
         dofo::SymBasis.DoFObjects.DoFObject{B,T_s,T,Ti},
         mag::T_s,
         N::Integer
-    ) where {B,T_s<:Rational,T<:Integer,Ti<:Integer}
+    ) where {B,T_s,T,Ti}
 
 Create a total magnetization symmetry group for the given spin object `dofo`, target
 magnetization `mag`, and number of sites `N`.
 
 # Arguments
-- `dofo::`[`SymBasis.DoFObjects.DoFObject`](@ref)`{B,T_s,T,Ti}`: The DoF-object representing
-    the quantum mechanical spin.
+- `dofo::`[`SymBasis.DoFObjects.DoFObject`](@ref)`{B,T_s,T,Ti}`: The DoF-object.
 - `mag::T_s`: The target total magnetization.
 - `N::Integer`: The total number of DoF-objects in the system.
 
@@ -244,7 +243,7 @@ function sym(
     dofo::DoFObject{B,T_s,T,Ti},
     mag::T_s,
     N::Integer
-) where {B,T_s<:Rational,T<:Integer,Ti<:Integer}
+) where {B,T_s,T,Ti}
     @assert dofo.type == :Spin
     s = T_s((length(dofo) - 1) // 2)
 
@@ -268,7 +267,7 @@ end
         dofo::SymBasis.DoFObjects.DoFObject{B,T_s,T,Ti},
         k::T_k,
         perm::AbstractVector{Ti}
-    ) where {B,T_s,T<:Integer,Ti<:Integer,T_k<:Integer}
+    ) where {B,T_s,T,Ti,T_k<:Integer}
 
 Create a translational symmetry group for the given DoF-object `dofo`, momentum `k`, and
 permutation `perm`.
@@ -286,7 +285,7 @@ function sym(
     dofo::DoFObject{B,T_s,T,Ti},
     k::T_k,
     perm::AbstractVector{Ti}
-) where {B,T_s,T<:Integer,Ti<:Integer,T_k<:Integer}
+) where {B,T_s,T,Ti,T_k<:Integer}
     N = length(perm)
     @assert N == length(unique(perm))
 
@@ -329,7 +328,7 @@ end
         dofo::SymBasis.DoFObjects.DoFObject{B,T_s,T,Ti},
         p::T_p,
         perm::AbstractVector{Ti}
-    ) where {B,T_s,T<:Integer,Ti<:Integer,T_p<:Integer}
+    ) where {B,T_s,T,Ti,T_p<:Integer}
 
 Create a spatial reflection symmetry group for the given DoF-object `dofo`, parity `p`, and
 permutation `perm`.
@@ -347,7 +346,7 @@ function sym(
     dofo::DoFObject{B,T_s,T,Ti},
     p::T_p,
     perm::AbstractVector{Ti}
-) where {B,T_s,T<:Integer,Ti<:Integer,T_p<:Integer}
+) where {B,T_s,T,Ti,T_p<:Integer}
     N = length(perm)
     @assert N == length(unique(perm))
 

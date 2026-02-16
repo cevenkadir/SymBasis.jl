@@ -16,7 +16,7 @@ struct BaseIntRange{T<:Integer,Ti<:Integer,B}
     last::BaseInt{T,Ti,B}
 end
 
-function Base.show(io::IO, r::BaseIntRange{T,Ti,B}) where {T<:Integer,Ti<:Integer,B}
+function Base.show(io::IO, r::BaseIntRange)
     show(io, r.first)
 
     print(io, ':')
@@ -29,26 +29,17 @@ function Base.show(io::IO, r::BaseIntRange{T,Ti,B}) where {T<:Integer,Ti<:Intege
     return nothing
 end
 
-function Base.:(:)(
-    first::BaseInt{T,Ti,B},
-    last::BaseInt{T,Ti,B}
-) where {T<:Integer,Ti<:Integer,B}
+function Base.:(:)(first::TB, last::TB) where {T,Ti,B,TB<:BaseInt{T,Ti,B}}
     BaseIntRange{T,Ti,B}(first, BaseInt(T(1); base=B, Ti=Ti), last)
 end
 
-function Base.:(:)(
-    a::BaseInt{T,Ti,B},
-    s::BaseInt{T,Ti,B},
-    b::BaseInt{T,Ti,B}
-) where {T<:Integer,Ti<:Integer,B}
+function Base.:(:)(a::TB, s::TB, b::TB) where {T,Ti,B,TB<:BaseInt{T,Ti,B}}
     s.value <= 0 && throw(ArgumentError("step must be positive, got $(s.value)"))
     a.value > b.value && return BaseIntStepRange(a, s, a)
     return BaseIntRange{T,Ti,B}(a, s, b)
 end
 
-function Base.length(
-    r::BaseIntRange{T,Ti,B}
-) where {T<:Integer,Ti<:Integer,B}
+function Base.length(r::BaseIntRange)
     a = r.first.value
     s = r.step.value
     b = r.last.value
@@ -61,14 +52,14 @@ end
 function Base.iterate(
     r::BaseIntRange{T,Ti,B},
     state::BaseInt{T,Ti,B}=r.first
-) where {T<:Integer,Ti<:Integer,B}
+) where {T,Ti,B}
     state.value > r.last.value && return nothing
 
     next_state = BaseInt(state.value + r.step.value; base=B, Ti=Ti)
     return (state, next_state)
 end
 
-function Base.collect(r::BaseIntRange{T,Ti,B}) where {T<:Integer,Ti<:Integer,B}
+function Base.collect(r::BaseIntRange{T,Ti,B}) where {T,Ti,B}
     len = length(r)
     out = Vector{BaseInt{T,Ti,B}}(undef, len)
 
@@ -81,14 +72,14 @@ function Base.collect(r::BaseIntRange{T,Ti,B}) where {T<:Integer,Ti<:Integer,B}
     return out
 end
 
-function Base.eltype(::Type{<:BaseIntRange{T,Ti,B}}) where {T<:Integer,Ti<:Integer,B}
+function Base.eltype(::Type{<:BaseIntRange{T,Ti,B}}) where {T,Ti,B}
     return BaseInt{T,Ti,B}
 end
 Base.IteratorSize(::Type{<:BaseIntRange}) = Base.HasLength()
 Base.IteratorEltype(::Type{<:BaseIntRange}) = Base.HasEltype()
 
-Base.firstindex(::BaseIntRange{T,Ti,B}) where {T<:Integer,Ti<:Integer,B} = 1
-function Base.getindex(r::BaseIntRange{T,Ti,B}, x::Ti) where {T<:Integer,Ti<:Integer,B}
+Base.firstindex(::BaseIntRange) = 1
+function Base.getindex(r::BaseIntRange{T,Ti,B}, x::Ti) where {T,Ti,B}
     new_val = r.first.value + (x - 1) * r.step.value
     new_val > r.last.value && throw(BoundsError(r, x))
     return BaseInt(T(new_val); base=B, Ti=Ti)

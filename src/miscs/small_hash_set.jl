@@ -40,14 +40,14 @@ function Base.empty!(s::SmallHashSet{N,T}) where {N,T}
     s.data = ntuple(_ -> zero(T), N)
 end
 
-Base.iterate(s::SmallHashSet{N,T}) where {N,T} = s.count == 0 ? nothing : (s.data[1], 2)
-function Base.iterate(s::SmallHashSet{N,T}, i) where {N,T}
+Base.iterate(s::SmallHashSet) = s.count == 0 ? nothing : (s.data[1], 2)
+function Base.iterate(s::SmallHashSet, i)
     return i > s.count ? nothing : (s.data[i], i + 1)
 end
 
-Base.in(x, s::SmallHashSet{N,T}) where {N,T} = any(e -> e == x, s.data[1:s.count])
+Base.in(x, s::SmallHashSet) = any(e -> e == x, s.data[1:s.count])
 
-Base.length(s::SmallHashSet{N,T}) where {N,T} = s.count
+Base.length(s::SmallHashSet) = s.count
 
 function Base.push!(s::SmallHashSet{N,T}, x::T) where {N,T}
     @assert s.count ≤ N "SmallHashSet overflow – increase N"
@@ -64,14 +64,14 @@ function Base.push!(s::SmallHashSet{N,T}, x::T) where {N,T}
     return s
 end
 
-function Base.hash(s::SmallHashSet{N,T}, h::UInt) where {N,T}
+function Base.hash(s::SmallHashSet, h::UInt)
     return hash(s.data, hash(s.count, hash(:BaseNumber, h)))
 end
 
-function Base.:(==)(s1::SmallHashSet{N,T}, s2::SmallHashSet{N,T}) where {N,T}
+function Base.:(==)(s1::TSHS, s2::TSHS) where {TSHS<:SmallHashSet}
     return (s1.count == s2.count) && (s1.data == s2.data)
 end
 
-function Base.isequal(s1::SmallHashSet{N,T}, s2::SmallHashSet{N,T}) where {N,T}
+function Base.isequal(s1::TSHS, s2::TSHS) where {TSHS<:SmallHashSet}
     return (s1.count == s2.count) && (s1.data == s2.data)
 end

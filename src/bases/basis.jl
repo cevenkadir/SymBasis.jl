@@ -5,57 +5,56 @@ using SymBasis.SymGroups: SymGroup, CombSymGroup
 using SymBasis.DoFObjects: DoFObject
 
 """
-    Basis{T<:Integer,Ti<:Integer,B,T_n<:Number}
+    Basis{T,T_n<:Number}
     Basis(
-        states::AbstractVector{BaseInt{T,Ti,B}},
+        states::AbstractVector{T},
         norms::AbstractVector{T_n}
-    ) where {T<:Integer,Ti<:Integer,B,T_n<:Number}
+    ) where {T,T_n<:Number}
 
 A basis struct consisting of a collection of basis states and their corresponding norms. The
 basis states are represented using [`SymBasis.DigitBase.BaseInt`](@ref), which allows for
 efficient representation and manipulation of states in different bases.
 
 # Fields
-- `states::AbstractVector{`[`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}}`: A vector of
-    basis states represented as [`SymBasis.DigitBase.BaseInt`](@ref) DoF-objects, where `B`
-    is the base corresponding to the number of local degrees of freedom of the DoF-object.
+- `states::AbstractVector{T}`: A vector of basis states, where `T` is the type of the basis
+    states.
 - `norms::AbstractVector{T_n}`: A vector of norms corresponding to each basis state, where
     `T_n` is the data type for the norms.
 
 # Constructor Arguments
-- `states::AbstractVector{`[`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}}`: A vector of
-    basis states represented as [`SymBasis.DigitBase.BaseInt`](@ref) DoF-objects.
+- `states::AbstractVector{T}`: A vector of basis states, where `T` is the type of the basis
+    states.
 - `norms::AbstractVector{T_n}`: A vector of norms corresponding to each basis state.
 
 # Returns
-- [`SymBasis.Bases.Basis`](@ref)`{T,Ti,B,T_n}`: A new [`SymBasis.Bases.Basis`](@ref)
+- [`SymBasis.Bases.Basis`](@ref)`{T,T_n}`: A new [`SymBasis.Bases.Basis`](@ref)
     instance containing the provided states and norms.
 
 The constructor checks that the length of states matches the length of norms to ensure
 consistency.
 """
-struct Basis{T<:Integer,Ti<:Integer,B,T_n<:Number}
-    states::AbstractVector{BaseInt{T,Ti,B}}
+struct Basis{T,T_n<:Number}
+    states::AbstractVector{T}
     norms::AbstractVector{T_n}
     function Basis(
-        states::AbstractVector{BaseInt{T,Ti,B}},
+        states::AbstractVector{T},
         norms::AbstractVector{T_n}
-    ) where {T<:Integer,Ti<:Integer,B,T_n<:Number}
+    ) where {T,T_n<:Number}
         @assert length(states) == length(norms) "Length of states and norms must be equal"
-        return new{T,Ti,B,T_n}(states, norms)
+        return new{T,T_n}(states, norms)
     end
 end
 Base.iterate(b::Basis) = (b.states, Val(:norms))
 Base.iterate(b::Basis, ::Val{:norms}) = (b.norms, Val(:done))
 Base.iterate(b::Basis, ::Val{:done}) = nothing
 
-function Base.summary(io::IO, b::Basis{T,Ti,B,Tn}) where {T,Ti,B,Tn}
-    print(io, "Basis{$T,$Ti,$B,$Tn} with ", length(b.states), " states")
+function Base.summary(io::IO, b::Basis{T,T_n}) where {T,T_n}
+    print(io, "Basis{$T,$T_n} with ", length(b.states), " states")
 end
 
-function Base.show(io::IO, b::Basis{T,Ti,B,Tn}) where {T,Ti,B,Tn}
+function Base.show(io::IO, b::Basis{T,T_n}) where {T,T_n}
     compact = get(io, :compact, false)
-    print(io, "Basis{$T,$Ti,$B,$Tn}(")
+    print(io, "Basis{$T,$T_n}(")
     if compact
         print(io, "states=", length(b.states), ", norms=", length(b.norms))
     else
@@ -69,10 +68,10 @@ function Base.show(io::IO, b::Basis{T,Ti,B,Tn}) where {T,Ti,B,Tn}
 end
 
 function Base.show(
-    io::IO, ::MIME"text/plain", b::Basis{T,Ti,B,Tn}
-) where {T,Ti,B,Tn}
+    io::IO, ::MIME"text/plain", b::Basis{T,Tn}
+) where {T,Tn}
     n = length(b.states)
-    println(io, "Basis{$T,$Ti,$B,$Tn} with $n state$(n == 1 ? "" : "s")")
+    println(io, "Basis{$T,$Tn} with $n state$(n == 1 ? "" : "s")")
 
     # shorter indent (2 spaces)
     ind = "  "
@@ -125,8 +124,7 @@ Generates the full basis for a DoF-object without symmetry considerations.
     `false`.
 
 # Returns
-- [`SymBasis.Bases.Basis`](@ref)`{T,Ti,B,T_n}`: The generated basis, where `B` is the number
-    of local degrees of freedom of the DoF-object and `T_n` is the specified norm type.
+- [`SymBasis.Bases.Basis`](@ref): The generated basis.
 """
 function basis(
     dofo::DoFObject{B,T_s,T,Ti},
@@ -168,9 +166,7 @@ Generates the symmetry-resolved basis for a DoF-object under the action of a sym
     `false`.
 
 # Returns
-- [`SymBasis.Bases.Basis`](@ref)`{T,Ti,B,T_n}`: The generated symmetry-resolved basis, where
-    `B` is the number of local degrees of freedom of the DoF-object and `T_n` is the
-    specified norm type.
+- [`SymBasis.Bases.Basis`](@ref): The generated symmetry-resolved basis.
 """
 function basis(
     dofo::DoFObject{B,T_s,T,Ti},
@@ -271,9 +267,7 @@ Generates the symmetry-resolved basis for a DoF-object under the action of a com
     `false`.
 
 # Returns
-- [`SymBasis.Bases.Basis`](@ref)`{T,Ti,B,T_n}`: The generated symmetry-resolved basis, where
-    `B` is the number of local degrees of freedom of the DoF-object and `T_n` is the
-    specified norm type.
+- [`SymBasis.Bases.Basis`](@ref): The generated symmetry-resolved basis.
 """
 function basis(
     dofo::DoFObject{B,T_s,T,Ti},

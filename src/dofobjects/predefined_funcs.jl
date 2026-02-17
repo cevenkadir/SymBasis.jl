@@ -1,43 +1,61 @@
 """
-    dof_object(sym::Symbol, args...; kwargs...)
+    AbstractDoFSpec{T,Ti}
 
-Create an object with degrees of freedom based on the specified symbol `sym` and additional
-arguments.
-
-# Arguments
-- `sym::Symbol`: The symbol representing the type of object to create.
-- `args...`: Additional positional arguments required for the object constructor.
-
-# Keyword Arguments
-- `kwargs...`: Additional keyword arguments required for the object constructor.
-
-# Returns
-- [`SymBasis.DoFObjects.DoFObject`](@ref): The created degree of freedom object.
+An abstract type representing a specification for degrees of freedom (DoF) objects. This
+type serves as a base for concrete DoF specifications, such as
+[`SymBasis.DoFObjects.Spin`](@ref SymBasis.DoFObjects.Spin), which define predefined
+specific types of DoF objects.
 """
-function dof_object(sym::Symbol, args...; kwargs...)
-    return dof_object(Val(sym), args...; kwargs...)
-end
+abstract type AbstractDoFSpec{T,Ti} end
 
 """
-    dof_object(type::Val{:Spin}, s::Rational; T::Type=UInt, Ti::Type=Int)
+    Spin{Ts<:Rational,T,Ti} <: AbstractDoFSpec{T,Ti}
 
-Create a quantum mechanical spin object with spin `s`.
+A concrete type representing a quantum mechanical spin specification. The spin value `s` is
+a rational number that can be either an integer or a half-integer, and it defines the local
+degrees of freedom for the spin object.
 
-# Arguments
-- `type::Val{:Spin}`: The type of the object, fixed to `:Spin`.
-- `s::Rational`: The spin value.
+# Fields
+- `s::Ts`: The spin value, which must be a positive rational number with a denominator of 1
+    or 2.
+
+# Constructor Arguments
+- `s::Ts`: The spin value, which must be a positive rational number with a denominator of 1
+    or 2.
 - `T::Type=UInt`: The underlying integer type for storage (default is `UInt`).
 - `Ti::Type=Int`: The integer type used for indexing (default is `Int`).
 
 # Returns
-- [`SymBasis.DoFObjects.DoFObject`](@ref)`{B,T_ldof,T,Ti}`: The object representing the
-    spin.
+- `Spin{Ts,T,Ti}`: A new `Spin` instance representing the specified spin.
 """
-function dof_object(type::Val{:Spin}, s::Rational; T::Type=UInt, Ti::Type=Int)
-    @assert numerator(s) > 0
-    @assert denominator(s) == 1 || denominator(s) == 2
+struct Spin{Ts<:Rational,T,Ti} <: AbstractDoFSpec{T,Ti}
+    s::Ts
 
-    ldof = -s:s |> Tuple
+    function Spin(s::Ts; T::Type=UInt, Ti::Type=Int) where {Ts}
+        @assert numerator(s) > 0
+        @assert denominator(s) == 1 || denominator(s) == 2
+
+        return new{Ts,T,Ti}(s)
+    end
+end
+
+function dof_object(type::Spin{Ts,T,Ti}) where {Ts,T,Ti}
+    ldof = -type.s:type.s |> Tuple
 
     return DoFObject(:Spin, ldof; T=T, Ti=Ti)
 end
+
+@deprecate dof_object(
+    sym::Symbol, args...;
+    kwargs...
+) dof_object(
+    getfield(DoFObjects, sym)(args...;
+        kwargs...)
+)
+
+@deprecate dof_object(
+    sym::Val{:Spin}, args...;
+    kwargs...
+) dof_object(
+    Spin(args...; kwargs...)
+)

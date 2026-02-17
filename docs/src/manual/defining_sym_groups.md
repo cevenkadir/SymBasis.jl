@@ -26,7 +26,7 @@ You can define a translation symmetry group for a system with a certain number o
 using SymBasis.DoFObjects
 using SymBasis.SymGroups
 
-dofo = dof_object(:Spin, 1 // 2) # define, for example, a spin-1/2
+dofo = dof_object(Spin(1 // 2)) # define, for example, a spin-1/2
 
 N = 4 # number of sites
 perm = mod1.((1:N) .+ 1, N) # permutation for translational symmetry
@@ -73,7 +73,7 @@ You can define a total magnetization symmetry group for a system with a certain 
 using SymBasis.DoFObjects
 using SymBasis.SymGroups
 
-dofo = dof_object(:Spin, 1 // 1) # define, for example, a spin-1
+dofo = dof_object(Spin(1 // 1)) # define, for example, a spin-1
 N = 5 # number of sites
 Sz = 0//1 # total magnetization quantum number
 
@@ -170,7 +170,7 @@ For example, if you want to combine the total magnetization symmetry and the tra
 using SymBasis.DoFObjects
 using SymBasis.SymGroups
 
-dofo = dof_object(:Spin, 1 // 2) # define, for example, a spin-1/2
+dofo = dof_object(Spin(1 // 2)) # define, for example, a spin-1/2
 
 N = 4 # number of sites
 

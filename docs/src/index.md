@@ -44,7 +44,7 @@ N = 4 # number of sites
 Sz = 0//1 # total magnetization
 
 # define an object for spin-1/2
-dofo = dof_object(:Spin, 1 // 2)
+dofo = dof_object(Spin(1 // 2))
 
 # define the symmetry group for total magnetization
 sg = sym(:TotalMagnetization, dofo, Sz, N)

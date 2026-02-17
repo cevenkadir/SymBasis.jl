@@ -54,7 +54,7 @@ using SymBasis.SymGroups
 using SymBasis.Bases
 
 N = 4 # number of sites
-dofo = dof_object(:Spin, 1 // 2) # define a DoF-object for spin-1/2
+dofo = dof_object(Spin(1 // 2)) # define a DoF-object for spin-1/2
 
 Sz = 0 // 1 # total magnetization quantum number
 # define the symmetry group for total magnetization symmetry

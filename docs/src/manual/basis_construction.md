@@ -16,7 +16,7 @@ using SymBasis.Bases
 Next, we define a DoF object for a system, for example, containing spin-1/2 particles:
 ```@example basis_construction
 N = 4 # number of sites
-dofo = dof_object(:Spin, 1 // 2) # define, for example, a spin-1/2
+dofo = dof_object(Spin(1 // 2)) # define, for example, a spin-1/2
 ```
 
 ## Without any symmetries

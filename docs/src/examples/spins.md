@@ -7,7 +7,7 @@ using SymBasis.DoFObjects
 using SymBasis.Bases
 
 N = 4 # number of sites
-dofo = dof_object(:Spin, 1 // 2) # define a DoF-object for spin-1/2
+dofo = dof_object(Spin(1 // 2)) # define a DoF-object for spin-1/2
 
 b = basis(dofo, N) # generate the full basis without any symmetries
 ```
@@ -21,7 +21,7 @@ using SymBasis.SymGroups
 using SymBasis.Bases
 
 N = 4 # number of sites
-dofo = dof_object(:Spin, 1//1) # define a DoF-object for spin-1
+dofo = dof_object(Spin(1 // 1)) # define a DoF-object for spin-1
 
 Sz = 0 // 1 # total magnetization quantum number
 sg_Sz = sym(:TotalMagnetization, dofo, Sz, N) # define the symmetry group for total magnetization
@@ -38,7 +38,7 @@ using SymBasis.SymGroups
 using SymBasis.Bases
 
 N = 4 # number of sites
-dofo = dof_object(:Spin, 1 // 2) # define a DoF-object for spin-1/2
+dofo = dof_object(Spin(1 // 2)) # define a DoF-object for spin-1/2
 
 Sz = 0 // 1 # total magnetization quantum number
 sg_Sz = sym(:TotalMagnetization, dofo, Sz, N) # define the symmetry group for total magnetization
@@ -64,7 +64,7 @@ using SymBasis.Bases
 
 Lₛ = (4, 3) # dimensions of the square lattice (x and y directions)
 N = prod(Lₛ) # total number of sites
-dofo = dof_object(:Spin, 1 // 2) # define a DoF-object for spin-1
+dofo = dof_object(Spin(1 // 2)) # define a DoF-object for spin-1/2
 
 Sz = 0 // 1 # total magnetization quantum number
 # define the symmetry group for total magnetization

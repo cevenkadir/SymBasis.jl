@@ -15,7 +15,7 @@ You can define a DoF-object for quantum mechanical spins using the [`dof_object`
 ```@example
 using SymBasis.DoFObjects
 s = 1//2 # spin quantum number
-dofo = dof_object(:Spin, s)
+dofo = dof_object(Spin(s))
 ```
 This will create a DoF-object for spin-1/2, which can then be used to specify symmetries and generate bases for systems containing spin-1/2 particles.
 

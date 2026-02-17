@@ -3,7 +3,7 @@
 
 An abstract type representing a specification for degrees of freedom (DoF) objects. This
 type serves as a base for concrete DoF specifications, such as
-[`SymBasis.DoFObjects.Spin`](@ref SymBasis.DoFObjects.Spin), which define predefined
+[`SymBasis.DoFObjects.Spin`](@ref), which define predefined
 specific types of DoF objects.
 """
 abstract type AbstractDoFSpec{T,Ti} end
@@ -39,6 +39,21 @@ struct Spin{Ts<:Rational,T,Ti} <: AbstractDoFSpec{T,Ti}
     end
 end
 
+"""
+    dof_object(type::Spin{Ts,T,Ti}) where {Ts,T,Ti}
+
+Constructs a `DoFObject` based on the provided
+[`SymBasis.DoFObjects.Spin`](@ref) specification. The local degrees
+of freedom are determined by the spin value `s`, which defines a range from `-s` to `s`.
+
+# Arguments
+- `type::Spin{Ts,T,Ti}`: A [`SymBasis.DoFObjects.Spin`](@ref) specification that defines the
+    spin value and associated types.
+
+# Returns
+- [`SymBasis.DoFObjects.DoFObject`](@ref): A DoF-object representing the degrees of freedom
+    for the specified spin.
+"""
 function dof_object(type::Spin{Ts,T,Ti}) where {Ts,T,Ti}
     ldof = -type.s:type.s |> Tuple
 

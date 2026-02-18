@@ -44,6 +44,34 @@
         @test apply_Nₛ((; N0=1, N1=1, N2=1, N3=1, N4=0, N=4), state2) == bi"1302"5
     end
 
+    @testset "TotalMagnetization constructors" begin
+        # Test Integer constructor
+        tm1 = TotalMagnetization(2, 5)
+        @test tm1.mag == 2 // 1
+        @test tm1.N == 5
+
+        tm2 = TotalMagnetization(-3, 10)
+        @test tm2.mag == -3 // 1
+        @test tm2.N == 10
+
+        tm3 = TotalMagnetization(0, 4)
+        @test tm3.mag == 0 // 1
+        @test tm3.N == 4
+
+        # Test AbstractFloat constructor
+        tm4 = TotalMagnetization(0.5, 6)
+        @test tm4.mag == 1 // 2
+        @test tm4.N == 6
+
+        tm5 = TotalMagnetization(-1.5, 8)
+        @test tm5.mag == -3 // 2
+        @test tm5.N == 8
+
+        tm6 = TotalMagnetization(2.0, 7)
+        @test tm6.mag == 2 // 1
+        @test tm6.N == 7
+    end
+
     @testset "sym of TotalMagnetization" begin
         dofo1 = dof_object(Spin(1 // 2))
         Sz_sym1ₛ = [sym(TotalMagnetization(Sz, 2), dofo1) for Sz in -1//1:1//1]

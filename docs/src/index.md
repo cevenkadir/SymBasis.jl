@@ -35,22 +35,42 @@ pkg> add SymBasis
 
 ## Quick example
 You can determine the basis with zero total magnetization for a spin-1/2 system with 4 sites as follows:
-```@example
-using SymBasis.DoFObjects
-using SymBasis.SymGroups
-using SymBasis.Bases
+```julia
+julia> using SymBasis.DoFObjects
+julia> using SymBasis.SymGroups
+julia> using SymBasis.Bases
 
-N = 4 # number of sites
-Sz = 0 # total magnetization
+julia> N = 4; # number of sites
+julia> Sz = 0; # total magnetization
 
 # define an object for spin-1/2
-dofo = dof_object(Spin(1 // 2))
+julia> dofo = dof_object(Spin(1 // 2))
+DoFObject: Spin (B=2)
+  ldof: (-1//2, 1//2)
+  index types: T=UInt64, Ti=Int64
 
 # define the symmetry group for total magnetization
-sg = sym(TotalMagnetization(Sz, N), dofo)
+julia> sg = sym(TotalMagnetization(Sz, N), dofo)
+SymGroup{2,Rational{Int64},UInt64,Int64,Float64} with 1 cycle(s)
+  N:             4
+  DoF-object:    DoFObject(Spin, B=2)
+  cycles:        (N0 = 2, N1 = 2, N = 4)
+  factors:       1 element(s), eltype=Float64
+  check:         check_Nₛ
+  apply:         apply_Nₛ
 
 # generate the basis
-basis(dofo, N, sg)
+julia> basis(dofo, N, sg)
+Basis{SymBasis.DigitBase.BaseInt{UInt64, Int64, 2},Float64} with 6 states
+  states: Vector{SymBasis.DigitBase.BaseInt{UInt64, Int64, 2}}
+  norms : Vector{Float64}
+  first 6 states/norms:
+    (11)₂    (norm=1.0)
+    (101)₂   (norm=1.0)
+    (110)₂   (norm=1.0)
+    (1001)₂  (norm=1.0)
+    (1010)₂  (norm=1.0)
+    (1100)₂  (norm=1.0)
 ```
 
 ## Supporting and citing

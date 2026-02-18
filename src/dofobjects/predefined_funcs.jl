@@ -9,7 +9,7 @@ specific types of DoF objects.
 abstract type AbstractDoFSpec{T,Ti} end
 
 """
-    Spin{Ts<:Rational,T,Ti} <: AbstractDoFSpec{T,Ti}
+    Spin{Ts<:Rational,T,Ti} <: SymBasis.DoFObjects.AbstractDoFSpec{T,Ti}
 
 A concrete type representing a quantum mechanical spin specification. The spin value `s` is
 a rational number that can be either an integer or a half-integer, and it defines the local

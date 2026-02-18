@@ -212,11 +212,11 @@ symmetry groups.
 abstract type AbstractSymSpec end
 
 """
-    TotalMagnetization{T_s<:Rational,T_N<:Integer}
+    TotalMagnetization{T_s<:Rational,T_N<:Integer} <: SymBasis.SymGroups.AbstractSymSpec
 
-A concrete subtype of `AbstractSymSpec` representing a total magnetization symmetry
-specification. The type parameter `T_s` represents the target total magnetization value,
-while `T_N` represents the total number of DoF-objects in the system.
+A concrete subtype of [`SymBasis.SymGroups.AbstractSymSpec`](@ref) representing a total
+magnetization symmetry specification. The type parameter `T_s` represents the target total
+magnetization value, while `T_N` represents the total number of DoF-objects in the system.
 
 # Constructor Arguments
 - `mag::T_s`: The target total magnetization value for the symmetry specification.
@@ -271,7 +271,7 @@ TotalMagnetization(mag::AbstractFloat, N) = TotalMagnetization(rationalize(mag),
 
 """
     sym(
-        ss::SymBasis.DoFObjects.TotalMagnetization{T_s,T_N},
+        ss::SymBasis.SymGroups.TotalMagnetization{T_s,T_N},
         dofo::SymBasis.DoFObjects.DoFObject{B,T_s,T,Ti}
     ) where {B,T_s,T,Ti,T_N}
 
@@ -279,7 +279,7 @@ Create a total magnetization symmetry group for the given spin DoF-object `dofo`
 total magnetization specification `ss`.
 
 # Arguments
-- `ss::`[`SymBasis.DoFObjects.TotalMagnetization`](@ref)`{T_s,T_N}`: The total magnetization
+- `ss::`[`SymBasis.SymGroups.TotalMagnetization`](@ref)`{T_s,T_N}`: The total magnetization
     symmetry specification.
 - `dofo::`[`SymBasis.DoFObjects.DoFObject`](@ref)`{B,T_s,T,Ti}`: The DoF-object.
 
@@ -308,7 +308,7 @@ function sym(
 end
 
 """
-    Translational{T_k<:Integer,Ti} <: AbstractSymSpec
+    Translational{T_k<:Integer,Ti} <: SymBasis.SymGroups.AbstractSymSpec
 
 A concrete subtype of [`SymBasis.SymGroups.AbstractSymSpec`](@ref) representing a
 translational symmetry specification. The type parameter `T_k` represents the momentum
@@ -396,7 +396,7 @@ function sym(
 end
 
 """
-    SpatialReflection{T_p<:Integer,Ti} <: AbstractSymSpec
+    SpatialReflection{T_p<:Integer,Ti} <: SymBasis.SymGroups.AbstractSymSpec
 
 A concrete subtype of [`SymBasis.SymGroups.AbstractSymSpec`](@ref) representing a spatial
 reflection symmetry specification. The type parameter `T_p` represents the parity quantum

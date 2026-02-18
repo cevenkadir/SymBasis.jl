@@ -29,10 +29,10 @@ This will generate the full basis for a system of 4 spin-1/2 particles, which co
 ## With symmetries
 To construct a basis that resolves one or more symmetries, you can first define the corresponding symmetry group(s) and then pass them to the `basis` function. For example, if you want to construct a basis that resolves the total magnetization symmetry, you can define the symmetry group for total magnetization and then call the `basis` function as follows:
 ```@example basis_construction
-Sz = 0//1 # total magnetization quantum number
+Sz = 0 # total magnetization quantum number
 
 # Define the symmetry group for total magnetization
-sg_Sz = sym(:TotalMagnetization, dofo, Sz, N)
+sg_Sz = sym(TotalMagnetization(Sz, N), dofo)
 
 # Construct the basis that resolves the total magnetization symmetry
 b_with_Sz_sym = basis(dofo, N, sg_Sz)
@@ -45,7 +45,7 @@ perm = mod1.((1:N) .+ 1, N) # permutation for translational symmetry
 k = 0 # momentum quantum number
 
 # Define the symmetry group for translational symmetry
-sg_translational = sym(:Translational, dofo, k, perm)
+sg_translational = sym(Translational(k, perm), dofo)
 
 # Combine the total magnetization symmetry and the translational symmetry
 csg = sg_Sz ∘ sg_translational

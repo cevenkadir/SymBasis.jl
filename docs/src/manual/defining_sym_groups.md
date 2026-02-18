@@ -21,7 +21,7 @@ where $N_a$ is the normalization factor, $k$ is the momentum quantum number, and
 ```math
 \hat{T} \vert a(k) \rangle =  e^{i k} \vert a(k) \rangle
 ```
-You can define a translation symmetry group for a system with a certain number of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function as follows:
+You can define a translation symmetry group for a system with a certain number of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function and the [`Translational`](@ref SymBasis.SymGroups.Translational) type as follows:
 ```@example
 using SymBasis.DoFObjects
 using SymBasis.SymGroups
@@ -32,7 +32,7 @@ N = 4 # number of sites
 perm = mod1.((1:N) .+ 1, N) # permutation for translational symmetry
 k = 0 # momentum quantum number
 
-sg = sym(:Translational, dofo, k, perm)
+sg = sym(Translational(k, perm), dofo)
 ```
 
 #### Spatial-reflection symmetry
@@ -44,7 +44,7 @@ where $N_a$ is the normalization factor, $p$ is the parity quantum number, and $
 ```math
 \hat{R} \vert a(p) \rangle =  p \vert a(p) \rangle
 ```
-You can define a spatial reflection symmetry group for a system with a certain number of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function as follows:
+You can define a spatial reflection symmetry group for a system with a certain number of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function and the [`SpatialReflection`](@ref SymBasis.SymGroups.SpatialReflection) type as follows:
 ```@example
 using SymBasis.DoFObjects
 using SymBasis.SymGroups
@@ -54,7 +54,7 @@ N = 4 # number of sites
 perm = reverse(1:N) |> collect # permutation for reflection symmetry
 p = -1 # parity number
 
-sg = sym(:SpatialReflection, dofo, p, perm)
+sg = sym(SpatialReflection(p, perm), dofo)
 ```
 
 ### DoF-object-dependent symmetry groups
@@ -68,16 +68,16 @@ Total magnetization symmetry is a symmetry where the system is invariant under t
 \hat{S}^z \vert a(S^z) \rangle = \sum_{i=1}^{N} S_i^z \vert a(S^z) \rangle = S^z \vert a(S^z) \rangle
 ```
 where $S_i^z$ is the magnetization of the $i$-th site, and $S^z$ is the total magnetization quantum number.
-You can define a total magnetization symmetry group for a system with a certain number of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function as follows:
+You can define a total magnetization symmetry group for a system with a certain number of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function and the [`TotalMagnetization`](@ref SymBasis.SymGroups.TotalMagnetization) type as follows:
 ```@example
 using SymBasis.DoFObjects
 using SymBasis.SymGroups
 
 dofo = dof_object(Spin(1 // 1)) # define, for example, a spin-1
 N = 5 # number of sites
-Sz = 0//1 # total magnetization quantum number
+Sz = 0 # total magnetization quantum number
 
-sg = sym(:TotalMagnetization, dofo, Sz, N)
+sg = sym(TotalMagnetization(Sz, N), dofo)
 ```
 
 ## Custom symmetry groups
@@ -174,13 +174,13 @@ dofo = dof_object(Spin(1 // 2)) # define, for example, a spin-1/2
 
 N = 4 # number of sites
 
-Sz = 0//1 # total magnetization quantum number
+Sz = 0 # total magnetization quantum number
 
 perm = mod1.((1:N) .+ 1, N) # permutation for translational symmetry
 k = 0 # momentum quantum number
 
-sg_total_magnetization = sym(:TotalMagnetization, dofo, Sz, N)
-sg_translational = sym(:Translational, dofo, k, perm)
+sg_total_magnetization = sym(TotalMagnetization(Sz, N), dofo)
+sg_translational = sym(Translational(k, perm), dofo)
 
 csg = sg_total_magnetization ∘ sg_translational
 ```

@@ -56,14 +56,14 @@ using SymBasis.Bases
 N = 4 # number of sites
 dofo = dof_object(Spin(1 // 2)) # define a DoF-object for spin-1/2
 
-Sz = 0 // 1 # total magnetization quantum number
+Sz = 0 # total magnetization quantum number
 # define the symmetry group for total magnetization symmetry
-sg_Sz = sym(:TotalMagnetization, dofo, Sz, N)
+sg_Sz = sym(TotalMagnetization(Sz, N), dofo)
 
 perm = mod1.((1:N) .+ 1, N) # permutation for translational symmetry
 k = 0 # momentum quantum number
 # define the symmetry group for translational symmetry
-sg_translational = sym(:Translational, dofo, k, perm)
+sg_translational = sym(Translational(k, perm), dofo)
 
 # combine the total magnetization symmetry and the translational symmetry
 csg = sg_Sz ∘ sg_translational

@@ -23,8 +23,8 @@ using SymBasis.Bases
 N = 4 # number of sites
 dofo = dof_object(Spin(1 // 1)) # define a DoF-object for spin-1
 
-Sz = 0 // 1 # total magnetization quantum number
-sg_Sz = sym(:TotalMagnetization, dofo, Sz, N) # define the symmetry group for total magnetization
+Sz = 0 # total magnetization quantum number
+sg_Sz = sym(TotalMagnetization(Sz, N), dofo) # define the symmetry group for total magnetization
 
 b = basis(dofo, N, sg_Sz) # generate the basis that resolves the total magnetization symmetry
 ```
@@ -40,12 +40,12 @@ using SymBasis.Bases
 N = 4 # number of sites
 dofo = dof_object(Spin(1 // 2)) # define a DoF-object for spin-1/2
 
-Sz = 0 // 1 # total magnetization quantum number
-sg_Sz = sym(:TotalMagnetization, dofo, Sz, N) # define the symmetry group for total magnetization
+Sz = 0 # total magnetization quantum number
+sg_Sz = sym(TotalMagnetization(Sz, N), dofo) # define the symmetry group for total magnetization
 
 perm = mod1.((1:N) .+ 1, N) # permutation for translational symmetry
 k = 0 # momentum quantum number
-sg_translational = sym(:Translational, dofo, k, perm) # define the symmetry group for translational symmetry
+sg_translational = sym(Translational(k, perm), dofo) # define the symmetry group for translational symmetry
 
 # Combine the total magnetization symmetry and the translational symmetry
 csg = sg_Sz ∘ sg_translational
@@ -66,41 +66,41 @@ Lₛ = (4, 3) # dimensions of the square lattice (x and y directions)
 N = prod(Lₛ) # total number of sites
 dofo = dof_object(Spin(1 // 2)) # define a DoF-object for spin-1/2
 
-Sz = 0 // 1 # total magnetization quantum number
+Sz = 0 # total magnetization quantum number
 # define the symmetry group for total magnetization
-sg_Sz = sym(:TotalMagnetization, dofo, Sz, N)
+sg_Sz = sym(TotalMagnetization(Sz, N), dofo)
 
 Tx_perm = LinearIndices(Lₛ)[
     [CartesianIndex(mod1(r[1] + 1, Lₛ[1]), r[2]) for r in CartesianIndices(Lₛ)][:]
 ]
 kx = 0 # momentum quantum number for x-direction
 # define the symmetry group for translational symmetry in x-direction
-sg_translational_x = sym(:Translational, dofo, kx, Tx_perm)
+sg_translational_x = sym(Translational(kx, Tx_perm), dofo)
 
 Rx_perm = LinearIndices(Lₛ)[
     [CartesianIndex(Lₛ[1] - r[1] + 1, r[2]) for r in CartesianIndices(Lₛ)][:]
 ]
 px = -1 # parity quantum number for reflection in x-direction
 # define the symmetry group for spatial reflection symmetry in x-direction
-sg_reflection_x = sym(:SpatialReflection, dofo, px, Rx_perm)
+sg_reflection_x = sym(SpatialReflection(px, Rx_perm), dofo)
 
 Ty_perm = LinearIndices(Lₛ)[
     [CartesianIndex(r[1], mod1(r[2] + 1, Lₛ[2])) for r in CartesianIndices(Lₛ)][:]
 ]
 ky = 0 # momentum quantum number for y-direction
 # define the symmetry group for translational symmetry in y-direction
-sg_translational_y = sym(:Translational, dofo, ky, Ty_perm)
+sg_translational_y = sym(Translational(ky, Ty_perm), dofo)
 
 Ry_perm = LinearIndices(Lₛ)[
     [CartesianIndex(r[1], Lₛ[2] - r[2] + 1) for r in CartesianIndices(Lₛ)][:]
 ]
 py = 1 # parity quantum number for reflection in y-direction
 # define the symmetry group for spatial reflection symmetry in y-direction
-sg_reflection_y = sym(:SpatialReflection, dofo, py, Ry_perm)
+sg_reflection_y = sym(SpatialReflection(py, Ry_perm), dofo)
 
 # Combine all the symmetry groups
 csg = sg_Sz ∘ sg_translational_x ∘ sg_reflection_x ∘ sg_translational_y ∘ sg_reflection_y
 
 b = basis(dofo, N, csg) # generate the basis that resolves all three symmetries
 ```
-This will generate a basis that consists of the basis states with total magnetization quantum number $S^z = 0$, momentum quantum numbers $k_x = 0$ and $k_y = 0$, and parity quantum numbers $p_x = -1$ and $p_y = 1$ for a system of 12 spin-1/2 objects on a 2D square lattice. The basis states in this combined symmetry sector will be linear combinations of the basis states from the previous examples that are invariant under the total magnetization, translational, and spatial reflection symmetry operations. Each basis state in this combined symmetry sector will have a specific normalization factor that accounts for the number of states that are combined to form the invariant state under the symmetry operations.
+This will generate a basis that consists of the basis states with total magnetization quantum number $S^z = 0$, momentum quantum numbers $k_x = 0$ and $k_y = 0$, and parity quantum numbers $p_x = -1$ and $p_y = 1$ for a system of 14 spin-1/2 objects on a 2D square lattice. The basis states in this combined symmetry sector will be linear combinations of the basis states from the previous examples that are invariant under the total magnetization, translational, and spatial reflection symmetry operations. Each basis state in this combined symmetry sector will have a specific normalization factor that accounts for the number of states that are combined to form the invariant state under the symmetry operations.

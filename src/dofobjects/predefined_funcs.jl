@@ -22,6 +22,8 @@ degrees of freedom for the spin object.
 # Constructor Arguments
 - `s::Ts`: The spin value, which must be a positive rational number with a denominator of 1
     or 2.
+
+# Constructor Keyword Arguments
 - `T::Type=UInt`: The underlying integer type for storage (default is `UInt`).
 - `Ti::Type=Int`: The integer type used for indexing (default is `Int`).
 

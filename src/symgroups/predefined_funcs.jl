@@ -203,51 +203,68 @@ end
 
 # START -- predefined symmetry group wrappers for end users
 """
-    sym(s::Symbol, args...; kwargs...)
+    AbstractSymSpec
 
-Create a symmetry group based on the specified symbol `s` and additional arguments.
+An abstract type representing a symmetry specification. Concrete subtypes of
+`AbstractSymSpec` define specific symmetry specifications that can be used to create
+symmetry groups.
+"""
+abstract type AbstractSymSpec end
 
-# Arguments
-- `s::Symbol`: The symbol representing the type of symmetry group to create.
-- `args...`: Additional positional arguments required for the specific symmetry group.
+"""
+    TotalMagnetization{T_s<:Rational,T_N<:Integer}
 
-# Keyword Arguments
-- `kwargs...`: Additional keyword arguments required for the specific symmetry group.
+A concrete subtype of `AbstractSymSpec` representing a total magnetization symmetry
+specification. The type parameter `T_s` represents the target total magnetization value,
+while `T_N` represents the total number of DoF-objects in the system.
+
+# Constructor Arguments
+- `mag::T_s`: The target total magnetization value for the symmetry specification.
+- `N::T_N`: The total number of DoF-objects in the system.
 
 # Returns
-- [`SymBasis.SymGroups.SymGroup`](@ref): The created symmetry group.
+- `TotalMagnetization{T_s,T_N}`: An instance of `TotalMagnetization` representing the
+    specified total magnetization symmetry.
 """
-sym(s::Symbol, args...; kwargs...) = sym(Val(s), args...; kwargs...)
+struct TotalMagnetization{T_s<:Rational,T_N<:Integer} <: AbstractSymSpec
+    mag::T_s
+    N::T_N
+
+    function TotalMagnetization(mag::T_s, N::T_N) where {T_s,T_N}
+        @assert denominator(mag) == 1 || denominator(mag) == 2
+
+        return new{T_s,T_N}(mag, N)
+    end
+end
+
+TotalMagnetization(mag::Integer, N) = TotalMagnetization(rationalize(mag), N)
+TotalMagnetization(mag::AbstractFloat, N) = TotalMagnetization(rationalize(mag), N)
 
 """
     sym(
-        ::Val{:TotalMagnetization},
-        dofo::SymBasis.DoFObjects.DoFObject{B,T_s,T,Ti},
-        mag::T_s,
-        N::Integer
-    ) where {B,T_s,T,Ti}
+        ss::SymBasis.DoFObjects.TotalMagnetization{T_s,T_N},
+        dofo::SymBasis.DoFObjects.DoFObject{B,T_s,T,Ti}
+    ) where {B,T_s,T,Ti,T_N}
 
-Create a total magnetization symmetry group for the given spin object `dofo`, target
-magnetization `mag`, and number of sites `N`.
+Create a total magnetization symmetry group for the given spin DoF-object `dofo`, and target
+total magnetization specification `ss`.
 
 # Arguments
+- `ss::`[`SymBasis.DoFObjects.TotalMagnetization`](@ref)`{T_s,T_N}`: The total magnetization
+    symmetry specification.
 - `dofo::`[`SymBasis.DoFObjects.DoFObject`](@ref)`{B,T_s,T,Ti}`: The DoF-object.
-- `mag::T_s`: The target total magnetization.
-- `N::Integer`: The total number of DoF-objects in the system.
 
 # Returns
 - [`SymBasis.SymGroups.SymGroup`](@ref): The total magnetization symmetry group.
 """
 function sym(
-    ::Val{:TotalMagnetization},
-    dofo::DoFObject{B,T_s,T,Ti},
-    mag::T_s,
-    N::Integer
-) where {B,T_s,T,Ti}
+    ss::TotalMagnetization{T_s,T_N},
+    dofo::DoFObject{B,T_s,T,Ti}
+) where {B,T_s,T,Ti,T_N}
     @assert dofo.type == :Spin
     s = T_s((length(dofo) - 1) // 2)
 
-    all_spin_sumₛ = combos_spin_sum(s, mag, N)
+    all_spin_sumₛ = combos_spin_sum(s, ss.mag, ss.N)
 
     Sz_sym = SymGroup(
         dofo,
@@ -255,46 +272,73 @@ function sym(
         check_Nₛ,
         apply_Nₛ,
         ones(length(all_spin_sumₛ)),
-        N
+        ss.N
     )
 
     return Sz_sym
 end
 
 """
-    sym(
-        ::Val{:Translational},
-        dofo::SymBasis.DoFObjects.DoFObject{B,T_s,T,Ti},
-        k::T_k,
-        perm::AbstractVector{Ti}
-    ) where {B,T_s,T,Ti,T_k<:Integer}
+    Translational{T_k<:Integer,Ti} <: AbstractSymSpec
 
-Create a translational symmetry group for the given DoF-object `dofo`, momentum `k`, and
-permutation `perm`.
+A concrete subtype of [`SymBasis.SymGroups.AbstractSymSpec`](@ref) representing a
+translational symmetry specification. The type parameter `T_k` represents the momentum
+quantum number, while `Ti` represents the type of the permutation indices.
 
-# Arguments
-- `dofo::`[`SymBasis.DoFObjects.DoFObject`](@ref)`{B,T_s,T,Ti}`: The DoF-object.
+# Fields
 - `k::T_k`: The momentum number.
 - `perm::AbstractVector{Ti}`: The permutation vector defining the translation.
+
+# Constructor Arguments
+- `k::T_k`: The momentum number.
+- `perm::AbstractVector{Ti}`: The permutation vector defining the translation.
+
+# Returns
+- `Translational{T_k,Ti}`: An instance of `Translational` representing the specified
+translational symmetry.
+"""
+struct Translational{T_k<:Integer,Ti} <: AbstractSymSpec
+    k::T_k
+    perm::AbstractVector{Ti}
+
+    function Translational(k::T_k, perm::AbstractVector{Ti}) where {T_k,Ti}
+        N = length(perm)
+        @assert N == length(unique(perm))
+
+        Id_vec = 1:N .|> Ti
+        @assert perm != Id_vec
+
+        return new{T_k,Ti}(k, perm)
+    end
+end
+
+"""
+    sym(
+        ss::SymBasis.SymGroups.Translational{T_k,Ti},
+        dofo::SymBasis.DoFObjects.DoFObject{B,T_s,T,Ti}
+    ) where {B,T_s,T,Ti,T_k}
+
+Create a translational symmetry group for the given DoF-object `dofo`, and translational
+symmetry specification `ss`.
+
+# Arguments
+- `ss::`[`SymBasis.SymGroups.Translational`](@ref)`{T_k,Ti}`: The translational symmetry
+    specification.
+- `dofo::`[`SymBasis.DoFObjects.DoFObject`](@ref)`{B,T_s,T,Ti}`: The DoF-object.
 
 # Returns
 - [`SymBasis.SymGroups.SymGroup`](@ref): The translational symmetry group.
 """
 function sym(
-    ::Val{:Translational},
-    dofo::DoFObject{B,T_s,T,Ti},
-    k::T_k,
-    perm::AbstractVector{Ti}
-) where {B,T_s,T,Ti,T_k<:Integer}
-    N = length(perm)
-    @assert N == length(unique(perm))
-
+    ss::Translational{T_k,Ti},
+    dofo::DoFObject{B,T_s,T,Ti}
+) where {B,T_s,T,Ti,T_k}
+    N = length(ss.perm)
     Id_vec = 1:N .|> Ti
-    @assert perm != Id_vec
 
     R = 1
     for r in 1:(N-1)
-        if Id_vec != perm_k(perm, r)
+        if Id_vec != perm_k(ss.perm, r)
             R += 1
         else
             break
@@ -307,13 +351,13 @@ function sym(
     T_sym = SymGroup(
         dofo,
         [
-            (; perm=perm_wrapper(perm_k(perm, i), length(dofo)))
+            (; perm=perm_wrapper(perm_k(ss.perm, i), length(dofo)))
             for i in rₛ
         ],
         check_perm,
         apply_perm,
         [
-            cis(-2π * r * k / R)
+            cis(-2π * r * ss.k / R)
             for r in rₛ
         ],
         N
@@ -323,41 +367,68 @@ function sym(
 end
 
 """
-    sym(
-        ::Val{:SpatialReflection},
-        dofo::SymBasis.DoFObjects.DoFObject{B,T_s,T,Ti},
-        p::T_p,
-        perm::AbstractVector{Ti}
-    ) where {B,T_s,T,Ti,T_p<:Integer}
+    SpatialReflection{T_p<:Integer,Ti} <: AbstractSymSpec
 
-Create a spatial reflection symmetry group for the given DoF-object `dofo`, parity `p`, and
-permutation `perm`.
+A concrete subtype of [`SymBasis.SymGroups.AbstractSymSpec`](@ref) representing a spatial
+reflection symmetry specification. The type parameter `T_p` represents the parity quantum
+number, while `Ti` represents the type of the permutation indices.
 
-# Arguments
-- `dofo::`[`SymBasis.DoFObjects.DoFObject`](@ref)`{B,T_s,T,Ti}`: The DoF-object.
+# Fields
 - `p::T_p`: The parity number (either `-1` or `1`).
 - `perm::AbstractVector{Ti}`: The permutation vector defining the spatial reflection.
+
+# Constructor Arguments
+- `p::T_p`: The parity number (either `-1` or `1`).
+- `perm::AbstractVector{Ti}`: The permutation vector defining the spatial reflection.
+
+# Returns
+- `SpatialReflection{T_p,Ti}`: An instance of `SpatialReflection` representing the specified
+spatial reflection symmetry.
+"""
+struct SpatialReflection{T_p<:Integer,Ti} <: AbstractSymSpec
+    p::T_p
+    perm::AbstractVector{Ti}
+
+    function SpatialReflection(p::T_p, perm::AbstractVector{Ti}) where {T_p,Ti}
+        N = length(perm)
+        @assert N == length(unique(perm))
+
+        @assert p == T_p(-1) || p == T_p(1)
+
+        Id_vec = 1:N .|> Ti
+        @assert perm != Id_vec
+
+        return new{T_p,Ti}(p, perm)
+    end
+end
+
+"""
+    sym(
+        ss::SymBasis.SymGroups.SpatialReflection{T_p,Ti},
+        dofo::SymBasis.DoFObjects.DoFObject{B,T_s,T,Ti}
+    ) where {B,T_s,T,Ti,T_p}
+
+Create a spatial reflection symmetry group for the given DoF-object `dofo`, and spatial
+reflection symmetry specification `ss`.
+
+# Arguments
+- `ss::`[`SymBasis.SymGroups.SpatialReflection`](@ref)`{T_p,Ti}`: The spatial reflection
+    symmetry specification.
+- `dofo::`[`SymBasis.DoFObjects.DoFObject`](@ref)`{B,T_s,T,Ti}`: The DoF-object.
 
 # Returns
 - [`SymBasis.SymGroups.SymGroup`](@ref): The spatial reflection symmetry group.
 """
 function sym(
-    ::Val{:SpatialReflection},
-    dofo::DoFObject{B,T_s,T,Ti},
-    p::T_p,
-    perm::AbstractVector{Ti}
-) where {B,T_s,T,Ti,T_p<:Integer}
-    N = length(perm)
-    @assert N == length(unique(perm))
-
-    @assert p == T_p(-1) || p == T_p(1)
-
+    ss::SpatialReflection{T_p,Ti},
+    dofo::DoFObject{B,T_s,T,Ti}
+) where {B,T_s,T,Ti,T_p}
+    N = length(ss.perm)
     Id_vec = 1:N .|> Ti
-    @assert perm != Id_vec
 
     R = 1
     for r in 1:(N-1)
-        if Id_vec != perm_k(perm, r)
+        if Id_vec != perm_k(ss.perm, r)
             R += 1
         else
             break
@@ -369,13 +440,19 @@ function sym(
 
     P_sym = SymGroup(
         dofo,
-        [(; perm=perm_wrapper(perm_k(perm, i), length(dofo))) for i in rₛ],
+        [(; perm=perm_wrapper(perm_k(ss.perm, i), length(dofo))) for i in rₛ],
         check_perm,
         apply_perm,
-        [p^r for r in rₛ],
+        [ss.p^r for r in rₛ],
         N
     )
 
     return P_sym
 end
+
+@deprecate sym(
+    s::Symbol,
+    dofo::DoFObject{B,T_s,T,Ti},
+    args...; kwargs...
+) where {B,T_s,T,Ti} sym(getfield(SymGroups, s)(args...), dofo; kwargs...)
 # END -- predefined symmetry group wrappers for end users

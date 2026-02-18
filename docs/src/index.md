@@ -77,10 +77,10 @@ Basis{SymBasis.DigitBase.BaseInt{UInt64, Int64, 2},Float64} with 6 states
 This package was developed for academic purposes. If you find SymBasis.jl useful and use it in your research, please consider citing it as follows:
 ```bibtex
 @misc{symbasis,
-  title={{SymBasis.jl}: {A generator of basis with symmetries for {Julia}}},
+  title={{SymBasis}.jl: {A} generator of basis with symmetries for {Julia}},
   author={Kadir Çeven},
   year={2026},
   url={https://github.com/cevenkadir/SymBasis.jl}
-  version={v0.1.1}
+  version={v0.1.2}
 }
 ```

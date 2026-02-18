@@ -19,7 +19,7 @@ end
     @testset "Construction of Basis" begin
         # Test basic construction and iterator protocol
         N = 2
-        dofo = dof_object(:Spin, 1 // 2)
+        dofo = dof_object(Spin(1 // 2))
         b = basis(dofo, N; is_sorted=true)
 
         # Test that Basis is properly constructed
@@ -104,7 +104,7 @@ end
 
     @testset "basis without any symmetry" begin
         N1 = 2
-        dofo1 = dof_object(:Spin, 1 // 2)
+        dofo1 = dof_object(Spin(1 // 2))
         states1, norms1 = basis(dofo1, N1; is_sorted=true)
         @test states1 == [bi"0"2, bi"1"2, bi"10"2, bi"11"2]
         @test norms1 == ones(Float64, 2^N1)
@@ -126,7 +126,7 @@ end
         test_unsorted_basis(dofo1, N2; sorted_states=states2, sorted_norms=norms2)
 
         N3 = 2
-        dofo3 = dof_object(:Spin, 1 // 1)
+        dofo3 = dof_object(Spin(1 // 1))
         states3, norms3 = basis(dofo3, N3; is_sorted=true)
         @test states3 == [
             bi"0"3,
@@ -146,8 +146,8 @@ end
     @testset "basis with one symmetry" begin
         @testset "spin-1/2 with Sz symmetry" begin
             N = 3
-            dofo = dof_object(:Spin, 1 // 2)
-            sg = sym(:TotalMagnetization, dofo, -1 // 2, N)
+            dofo = dof_object(Spin(1 // 2))
+            sg = sym(TotalMagnetization(-1 // 2, N), dofo)
             states, norms = basis(dofo, N, sg; is_sorted=true)
             @test states == [bi"001"2, bi"010"2, bi"100"2]
             @test norms == ones(Float64, 3)
@@ -156,8 +156,8 @@ end
 
         @testset "spin-1 with Sz symmetry" begin
             N = 2
-            dofo = dof_object(:Spin, 1 // 1)
-            sg = sym(:TotalMagnetization, dofo, 0 // 1, N)
+            dofo = dof_object(Spin(1 // 1))
+            sg = sym(TotalMagnetization(0 // 1, N), dofo)
             states, norms = basis(dofo, N, sg; is_sorted=true)
             @test states == [bi"02"3, bi"11"3, bi"20"3]
             @test norms == ones(Float64, 3)
@@ -166,11 +166,11 @@ end
 
         @testset "spin-1/2 with translational symmetry" begin
             N = 4
-            dofo = dof_object(:Spin, 1 // 2)
+            dofo = dof_object(Spin(1 // 2))
             perm = [2, 3, 4, 1] # cyclic translation
 
             @testset "k = 0 for N = 4" begin
-                sg = sym(:Translational, dofo, 0, perm)
+                sg = sym(Translational(0, perm), dofo)
                 states, norms = basis(dofo, N, sg; is_sorted=true)
                 if VERSION.major == 1 && VERSION.minor < 13
                     @test states == [
@@ -197,7 +197,7 @@ end
             end
 
             @testset "k = 1" begin
-                sg = sym(:Translational, dofo, 1, perm)
+                sg = sym(Translational(1, perm), dofo)
                 states, norms = basis(dofo, N, sg; is_sorted=true)
                 if VERSION.major == 1 && VERSION.minor < 13
                     @test states == [
@@ -219,11 +219,11 @@ end
 
         @testset "spin-1 with translational symmetry" begin
             N = 3
-            dofo = dof_object(:Spin, 1 // 1)
+            dofo = dof_object(Spin(1 // 1))
             perm = [2, 3, 1] # cyclic translation
 
             @testset "k = 0 for N = 3" begin
-                sg = sym(:Translational, dofo, 0, perm)
+                sg = sym(Translational(0, perm), dofo)
                 states, norms = basis(dofo, N, sg; is_sorted=true)
                 if VERSION.major == 1 && VERSION.minor < 13
                     @test states == [
@@ -260,7 +260,7 @@ end
             end
 
             @testset "k = 1" begin
-                sg = sym(:Translational, dofo, 1, perm)
+                sg = sym(Translational(1, perm), dofo)
                 states, norms = basis(dofo, N, sg; is_sorted=true)
                 if VERSION.major == 1 && VERSION.minor < 13
                     @test states == [
@@ -292,10 +292,10 @@ end
 
         @testset "spin-1/2 with spatial reflection symmetry" begin
             N = 3
-            dofo = dof_object(:Spin, 1 // 2)
+            dofo = dof_object(Spin(1 // 2))
             perm = [3, 2, 1] # reflection
 
-            sg = sym(:SpatialReflection, dofo, 1, perm)
+            sg = sym(SpatialReflection(1, perm), dofo)
             states, norms = basis(dofo, N, sg; is_sorted=true)
             if VERSION.major == 1 && VERSION.minor < 13
                 @test states == [
@@ -323,10 +323,10 @@ end
 
         @testset "spin-1 with spatial reflection symmetry" begin
             N = 2
-            dofo = dof_object(:Spin, 2 // 1)
+            dofo = dof_object(Spin(2 // 1))
             perm = [2, 1] # reflection
 
-            sg = sym(:SpatialReflection, dofo, -1, perm)
+            sg = sym(SpatialReflection(-1, perm), dofo)
             states, norms = basis(dofo, N, sg; is_sorted=true)
             if VERSION.major == 1 && VERSION.minor < 13
                 @test states == [
@@ -362,12 +362,12 @@ end
     @testset "basis with multiple symmetries + check" begin
         @testset "spin-1/2 with Sz and translational symmetries" begin
             N = 4
-            dofo = dof_object(:Spin, 1 // 2)
+            dofo = dof_object(Spin(1 // 2))
             perm = [2, 3, 4, 1] # cyclic translation
 
             @testset "k = 0 and Sz = 0 for N = 4" begin
-                sg1 = sym(:TotalMagnetization, dofo, 0 // 1, N)
-                sg2 = sym(:Translational, dofo, 0, perm)
+                sg1 = sym(TotalMagnetization(0 // 1, N), dofo)
+                sg2 = sym(Translational(0, perm), dofo)
                 csg = sg1 ∘ sg2
                 b = basis(dofo, N, csg; is_sorted=true)
                 @test is_commutative(b, csg)
@@ -382,8 +382,8 @@ end
             end
 
             @testset "k = 1 and Sz = 0 for N = 4" begin
-                sg1 = sym(:TotalMagnetization, dofo, 0 // 1, N)
-                sg2 = sym(:Translational, dofo, 1, perm)
+                sg1 = sym(TotalMagnetization(0 // 1, N), dofo)
+                sg2 = sym(Translational(1, perm), dofo)
                 csg = sg1 ∘ sg2
                 b = basis(dofo, N, csg; is_sorted=true)
                 @test is_commutative(b, csg)
@@ -397,8 +397,8 @@ end
             end
 
             @testset "k = 0 and Sz = -1 for N = 4" begin
-                sg1 = sym(:TotalMagnetization, dofo, -1 // 1, N)
-                sg2 = sym(:Translational, dofo, 0, perm)
+                sg1 = sym(TotalMagnetization(-1 // 1, N), dofo)
+                sg2 = sym(Translational(0, perm), dofo)
                 csg = sg1 ∘ sg2
                 b = basis(dofo, N, csg; is_sorted=true)
                 @test is_commutative(b, csg)
@@ -412,8 +412,8 @@ end
             end
 
             @testset "k = 3 and Sz = -1 for N = 4" begin
-                sg1 = sym(:TotalMagnetization, dofo, -1 // 1, N)
-                sg2 = sym(:Translational, dofo, 3, perm)
+                sg1 = sym(TotalMagnetization(-1 // 1, N), dofo)
+                sg2 = sym(Translational(3, perm), dofo)
                 csg = sg1 ∘ sg2
                 b = basis(dofo, N, csg; is_sorted=true)
                 @test is_commutative(b, csg)
@@ -429,14 +429,14 @@ end
 
         @testset "spin-1 with Sz, translational and spatial reflection symmetries" begin
             N = 4
-            dofo = dof_object(:Spin, 1 // 1)
+            dofo = dof_object(Spin(1 // 1))
             perm_T = [2, 3, 4, 1] # cyclic translation
             perm_R = [4, 3, 2, 1] # reflection
 
             @testset "k = 0, Sz = 0 and R = 1 for N = 4" begin
-                sg1 = sym(:TotalMagnetization, dofo, 0 // 1, N)
-                sg2 = sym(:Translational, dofo, 0, perm_T)
-                sg3 = sym(:SpatialReflection, dofo, 1, perm_R)
+                sg1 = sym(TotalMagnetization(0 // 1, N), dofo)
+                sg2 = sym(Translational(0, perm_T), dofo)
+                sg3 = sym(SpatialReflection(1, perm_R), dofo)
                 csg = sg1 ∘ sg2 ∘ sg3
                 b = basis(dofo, N, csg; is_sorted=true)
                 @test is_commutative(b, csg)
@@ -462,19 +462,19 @@ end
                 test_unsorted_basis(dofo, N, csg; sorted_states=b.states, sorted_norms=b.norms)
             end
 
-            @testset "k = 1, Sz = 0 and R = 1 for N = 4" begin
-                sg1 = sym(:TotalMagnetization, dofo, 0 // 1, N)
-                sg2 = sym(:Translational, dofo, 1, perm_T)
-                sg3 = sym(:SpatialReflection, dofo, -1, perm_R)
+            @testset "k = 1, Sz = 0 and R = -1 for N = 4" begin
+                sg1 = sym(TotalMagnetization(0 // 1, N), dofo)
+                sg2 = sym(Translational(1, perm_T), dofo)
+                sg3 = sym(SpatialReflection(-1, perm_R), dofo)
                 csg = sg1 ∘ sg2 ∘ sg3
                 b = basis(dofo, N, csg; is_sorted=true)
                 @test !is_commutative(b, csg)
             end
 
             @testset "k = 3, Sz = 0 and R = 1 for N = 4" begin
-                sg1 = sym(:TotalMagnetization, dofo, 0 // 1, N)
-                sg2 = sym(:Translational, dofo, 3, perm_T)
-                sg3 = sym(:SpatialReflection, dofo, 1, perm_R)
+                sg1 = sym(TotalMagnetization(0 // 1, N), dofo)
+                sg2 = sym(Translational(3, perm_T), dofo)
+                sg3 = sym(SpatialReflection(1, perm_R), dofo)
                 csg = sg1 ∘ sg2 ∘ sg3
                 b = basis(dofo, N, csg; is_sorted=true)
                 @test !is_commutative(b, csg)
@@ -486,8 +486,8 @@ end
         @testset "spin-1/2 with Sz symmetry" begin
             @testset "Sz = -1/2 for N = 3" begin
                 N = 3
-                dofo = dof_object(:Spin, 1 // 2)
-                sg = sym(:TotalMagnetization, dofo, -1 // 2, N)
+                dofo = dof_object(Spin(1 // 2))
+                sg = sym(TotalMagnetization(-1 // 2, N), dofo)
 
                 test_states = [bi"001"2, bi"010"2, bi"100"2]
                 test_factors = ones(Float64, 3)
@@ -499,8 +499,8 @@ end
         @testset "spin-1 with Sz symmetry" begin
             @testset "Sz = 0 for N = 2" begin
                 N = 2
-                dofo = dof_object(:Spin, 1 // 1)
-                sg = sym(:TotalMagnetization, dofo, 0 // 1, N)
+                dofo = dof_object(Spin(1 // 1))
+                sg = sym(TotalMagnetization(0 // 1, N), dofo)
 
                 test_states = [bi"02"3, bi"11"3, bi"20"3]
                 test_factors = ones(Float64, 3)
@@ -512,9 +512,9 @@ end
         @testset "spin-1/2 with translational symmetry" begin
             @testset "k = 1 for N = 4" begin
                 N = 4
-                dofo = dof_object(:Spin, 1 // 2)
+                dofo = dof_object(Spin(1 // 2))
                 perm = [2, 3, 4, 1] # cyclic translation
-                sg = sym(:Translational, dofo, 1, perm)
+                sg = sym(Translational(1, perm), dofo)
 
                 if VERSION.major == 1 && VERSION.minor < 13
                     test_states = [bi"0001"2, bi"0111"2, bi"0110"2]
@@ -533,9 +533,9 @@ end
         @testset "spin-1 with translational symmetry" begin
             @testset "k = 1 for N = 3" begin
                 N = 3
-                dofo = dof_object(:Spin, 1 // 1)
+                dofo = dof_object(Spin(1 // 1))
                 perm = [2, 3, 1] # cyclic translation
-                sg = sym(:Translational, dofo, 1, perm)
+                sg = sym(Translational(1, perm), dofo)
 
                 if VERSION.major == 1 && VERSION.minor < 13
                     test_states = [bi"001"3, bi"020"3, bi"101"3, bi"012"3]
@@ -564,9 +564,9 @@ end
         @testset "spin-1/2 with spatial reflection symmetry" begin
             @testset "R = -1 for N = 3" begin
                 N = 3
-                dofo = dof_object(:Spin, 1 // 2)
+                dofo = dof_object(Spin(1 // 2))
                 perm = [3, 2, 1] # reflection
-                sg = sym(:SpatialReflection, dofo, -1, perm)
+                sg = sym(SpatialReflection(-1, perm), dofo)
 
                 if VERSION.major == 1 && VERSION.minor < 13
                     test_states = [bi"001"2, bi"011"2]
@@ -585,9 +585,9 @@ end
         @testset "spin-1 with spatial reflection symmetry" begin
             @testset "R = -1 for N = 2" begin
                 N = 2
-                dofo = dof_object(:Spin, 1 // 1)
+                dofo = dof_object(Spin(1 // 1))
                 perm = [2, 1] # reflection
-                sg = sym(:SpatialReflection, dofo, -1, perm)
+                sg = sym(SpatialReflection(-1, perm), dofo)
 
                 if VERSION.major == 1 && VERSION.minor < 13
                     test_states = [bi"01"3, bi"20"3, bi"21"3]
@@ -607,14 +607,14 @@ end
     @testset "representative with CombSymGroup" begin
         @testset "spin-1/2 with Sz, translational and spatial reflection symmetries" begin
             N = 4
-            dofo = dof_object(:Spin, 1 // 2)
+            dofo = dof_object(Spin(1 // 2))
             perm_T = [2, 3, 4, 1] # cyclic translation
             perm_R = [4, 3, 2, 1] # reflection
 
             @testset "Sz = 0, k = 2, R = -1 for N = 4" begin
-                sg1 = sym(:TotalMagnetization, dofo, 0 // 1, N)
-                sg2 = sym(:Translational, dofo, 2, perm_T)
-                sg3 = sym(:SpatialReflection, dofo, -1, perm_R)
+                sg1 = sym(TotalMagnetization(0 // 1, N), dofo)
+                sg2 = sym(Translational(2, perm_T), dofo)
+                sg3 = sym(SpatialReflection(-1, perm_R), dofo)
                 csg = sg1 ∘ sg2 ∘ sg3
 
                 if VERSION.major == 1 && VERSION.minor < 13
@@ -631,9 +631,9 @@ end
             end
 
             @testset "Sz = 1, k = 0, R = 1 for N = 4" begin
-                sg1 = sym(:TotalMagnetization, dofo, 1 // 1, N)
-                sg2 = sym(:Translational, dofo, 0, perm_T)
-                sg3 = sym(:SpatialReflection, dofo, 1, perm_R)
+                sg1 = sym(TotalMagnetization(1 // 1, N), dofo)
+                sg2 = sym(Translational(0, perm_T), dofo)
+                sg3 = sym(SpatialReflection(1, perm_R), dofo)
                 csg = sg1 ∘ sg2 ∘ sg3
 
                 if VERSION.major == 1 && VERSION.minor < 13

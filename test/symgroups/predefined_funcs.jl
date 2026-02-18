@@ -45,8 +45,8 @@
     end
 
     @testset "sym of TotalMagnetization" begin
-        dofo1 = dof_object(:Spin, 1 // 2)
-        Sz_sym1ₛ = [sym(:TotalMagnetization, dofo1, Sz, 2) for Sz in -1//1:1//1]
+        dofo1 = dof_object(Spin(1 // 2))
+        Sz_sym1ₛ = [sym(TotalMagnetization(Sz, 2), dofo1) for Sz in -1//1:1//1]
         cycle1ₛ = [
             [(; N0=2, N1=0, N=2)],
             [(; N0=1, N1=1, N=2)],
@@ -61,8 +61,8 @@
             @test Sz_symᵢ.factors == factor1ₛ[i]
         end
 
-        dofo2 = dof_object(:Spin, 1 // 1)
-        Sz_sym2ₛ = [sym(:TotalMagnetization, dofo2, Sz, 3) for Sz in -3//2:3//2]
+        dofo2 = dof_object(Spin(1 // 1))
+        Sz_sym2ₛ = [sym(TotalMagnetization(Sz, 3), dofo2) for Sz in -3//2:3//2]
         cycle2ₛ = [
             [(; N0=3, N1=0, N2=0, N=3)],
             [(; N0=1, N1=2, N2=0, N=3), (; N0=2, N1=0, N2=1, N=3)],
@@ -84,7 +84,7 @@
             dofo1 = DoFObject(:Emoji, (:🥳, :🙈, :👀))
             perm1 = [2, 3, 1]
             for k in 0:(length(perm1)-1)
-                transl_sym1ₛ = sym(:Translational, dofo1, k, perm1)
+                transl_sym1ₛ = sym(Translational(k, perm1), dofo1)
                 @test transl_sym1ₛ.dofo == dofo1
                 @test transl_sym1ₛ.cycles == [
                     (; perm=[1, 2, 3]), (; perm=perm1), (; perm=perm1[perm1])
@@ -106,7 +106,7 @@
                 (; perm=BitPermutation{UInt}(perm2))
             ]
             for k in 0:(length(perm2)-1)
-                transl_sym2ₛ = sym(:Translational, dofo2, k, perm2)
+                transl_sym2ₛ = sym(Translational(k, perm2), dofo2)
                 @test transl_sym2ₛ.dofo == dofo2
                 @test all(
                     transl_sym2ₛ.cycles[i].perm.vector == cycles[i].perm.vector
@@ -125,7 +125,7 @@
             dofo3 = DoFObject(:Test, (:A, :B, :C))
             perm3 = [2, 3, 1, 5, 6, 4]
             for k in 0:(length(perm3)÷2-1)
-                transl_sym3ₛ = sym(:Translational, dofo3, k, perm3)
+                transl_sym3ₛ = sym(Translational(k, perm3), dofo3)
                 @test transl_sym3ₛ.dofo == dofo3
                 @test transl_sym3ₛ.cycles == [
                     (; perm=1:length(perm3) |> collect),
@@ -143,7 +143,7 @@
     end
 
     @testset "sym of SpatialReflection" begin
-        dofo1 = dof_object(:Spin, 1 // 2)
+        dofo1 = dof_object(Spin(1 // 2))
         q_nums1 = [-1, 1]
         perm1 = [5, 4, 3, 2, 1]
         cycles1 = [
@@ -151,7 +151,7 @@
             (; perm=BitPermutation{UInt}(perm1))
         ]
         refl_sym1ₛ = [
-            sym(:SpatialReflection, dofo1, p, perm1) for p in q_nums1
+            sym(SpatialReflection(p, perm1), dofo1) for p in q_nums1
         ]
         for (i, qᵢ) in enumerate(q_nums1)
             refl_symᵢ = refl_sym1ₛ[i]
@@ -169,7 +169,7 @@
         q_nums2 = [1, -1]
         perm2 = [4, 3, 2, 1]
         refl_sym2ₛ = [
-            sym(:SpatialReflection, dofo2, p, perm2) for p in q_nums2
+            sym(SpatialReflection(p, perm2), dofo2) for p in q_nums2
         ]
         for (i, qᵢ) in enumerate(q_nums2)
             refl_symᵢ = refl_sym2ₛ[i]

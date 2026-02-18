@@ -21,7 +21,7 @@
 
     @testset "Construction of CombSymGroup" begin
 
-        dofo = dof_object(:Spin, 1 // 2)
+        dofo = dof_object(Spin(1 // 2))
         N = 3
         perm = mod1.((1:N) .+ 1, N)
         cycle = [
@@ -57,11 +57,11 @@
     end
 
     @testset "∘ for SymGroup" begin
-        dofo = dof_object(:Spin, 3 // 2)
+        dofo = dof_object(Spin(3 // 2))
         N = 3
-        sg1 = sym(:TotalMagnetization, dofo, 1 // 2, N)
-        sg2 = sym(:Translational, dofo, 1, mod1.((1:N) .+ 1, N))
-        sg3 = sym(:SpatialReflection, dofo, -1, mod1.(N:-1:1, N))
+        sg1 = sym(TotalMagnetization(1 // 2, N), dofo)
+        sg2 = sym(Translational(1, mod1.((1:N) .+ 1, N)), dofo)
+        sg3 = sym(SpatialReflection(-1, mod1.(N:-1:1, N)), dofo)
         csg = sg1 ∘ sg2
 
         @testset "SymGroup ∘ SymGroup" begin
@@ -74,7 +74,7 @@
             end
 
             @test_throws AssertionError begin
-                sg1 ∘ sym(:TotalMagnetization, dof_object(:Spin, 3 // 2), 1 // 2, N + 1)
+                sg1 ∘ sym(TotalMagnetization(1 // 2, N + 1), dof_object(Spin(3 // 2)))
             end
         end
 
@@ -93,7 +93,7 @@
 
             @test_throws AssertionError begin
                 csg ∘ sym(
-                    :SpatialReflection, dof_object(:Spin, 3 // 2), -1, mod1.((N-1):-1:1, N)
+                    SpatialReflection(-1, mod1.((N-1):-1:1, N)), dof_object(Spin(3 // 2))
                 )
             end
         end
@@ -113,7 +113,7 @@
 
             @test_throws AssertionError begin
                 sym(
-                    :SpatialReflection, dof_object(:Spin, 3 // 2), -1, mod1.((N-1):-1:1, N)
+                    SpatialReflection(-1, mod1.((N-1):-1:1, N)), dof_object(Spin(3 // 2))
                 ) ∘ csg
             end
         end
@@ -135,9 +135,9 @@
     end
 
     @testset "_make_hashset for SymGroup" begin
-        dofo = dof_object(:Spin, 1 // 2)
+        dofo = dof_object(Spin(1 // 2))
         N = 3
-        sg1 = sym(:TotalMagnetization, dofo, 1 // 2, N)
+        sg1 = sym(TotalMagnetization(1 // 2, N), dofo)
 
         hashset_sg1 = _make_hashset(sg1)
 
@@ -145,10 +145,10 @@
     end
 
     @testset "_make_hashset for CombSymGroup" begin
-        dofo = dof_object(:Spin, 1 // 2)
+        dofo = dof_object(Spin(1 // 2))
         N = 3
-        sg1 = sym(:TotalMagnetization, dofo, 1 // 2, N)
-        sg2 = sym(:Translational, dofo, 1, mod1.((1:N) .+ 1, N))
+        sg1 = sym(TotalMagnetization(1 // 2, N), dofo)
+        sg2 = sym(Translational(1, mod1.((1:N) .+ 1, N)), dofo)
         csg = sg1 ∘ sg2
 
         hashset_csg = _make_hashset(csg)
@@ -195,9 +195,9 @@
     # end
 
     @testset "Base.summary for SymGroup" begin
-        dofo = dof_object(:Spin, 1 // 2)
+        dofo = dof_object(Spin(1 // 2))
         N = 3
-        sg = sym(:TotalMagnetization, dofo, 1 // 2, N)
+        sg = sym(TotalMagnetization(1 // 2, N), dofo)
 
         summ = summary(sg)
         @test contains(summ, "SymGroup")
@@ -206,10 +206,10 @@
     end
 
     @testset "Base.summary for CombSymGroup" begin
-        dofo = dof_object(:Spin, 1 // 2)
+        dofo = dof_object(Spin(1 // 2))
         N = 3
-        sg1 = sym(:TotalMagnetization, dofo, 1 // 2, N)
-        sg2 = sym(:Translational, dofo, 1, mod1.((1:N) .+ 1, N))
+        sg1 = sym(TotalMagnetization(1 // 2, N), dofo)
+        sg2 = sym(Translational(1, mod1.((1:N) .+ 1, N)), dofo)
         csg = sg1 ∘ sg2
 
         summ = summary(csg)
@@ -219,9 +219,9 @@
     end
 
     @testset "Base.show for SymGroup" begin
-        dofo = dof_object(:Spin, 1 // 2)
+        dofo = dof_object(Spin(1 // 2))
         N = 3
-        sg = sym(:TotalMagnetization, dofo, 1 // 2, N)
+        sg = sym(TotalMagnetization(1 // 2, N), dofo)
 
         # Test compact show
         io_compact = IOContext(IOBuffer(), :compact => true)
@@ -259,10 +259,10 @@
     end
 
     @testset "Base.show for CombSymGroup" begin
-        dofo = dof_object(:Spin, 1 // 2)
+        dofo = dof_object(Spin(1 // 2))
         N = 3
-        sg1 = sym(:TotalMagnetization, dofo, 1 // 2, N)
-        sg2 = sym(:Translational, dofo, 1, mod1.((1:N) .+ 1, N))
+        sg1 = sym(TotalMagnetization(1 // 2, N), dofo)
+        sg2 = sym(Translational(1, mod1.((1:N) .+ 1, N)), dofo)
         csg = sg1 ∘ sg2
 
         # Test compact show

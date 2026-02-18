@@ -237,7 +237,36 @@ struct TotalMagnetization{T_s<:Rational,T_N<:Integer} <: AbstractSymSpec
     end
 end
 
+"""
+    TotalMagnetization(mag::Integer, N)
+
+Convenience constructor for `TotalMagnetization` that accepts an integer magnetization value
+and converts it to a rational number.
+
+# Arguments
+- `mag::Integer`: The target total magnetization value as an integer.
+- `N`: The total number of DoF-objects in the system.
+
+# Returns
+- [`SymBasis.SymGroups.TotalMagnetization`](@ref): An instance of `TotalMagnetization` with
+    the magnetization value converted to a rational number.
+"""
 TotalMagnetization(mag::Integer, N) = TotalMagnetization(rationalize(mag), N)
+
+"""
+    TotalMagnetization(mag::AbstractFloat, N)
+
+Convenience constructor for `TotalMagnetization` that accepts a floating-point magnetization
+value and converts it to a rational number.
+
+# Arguments
+- `mag::AbstractFloat`: The target total magnetization value as a floating-point number.
+- `N`: The total number of DoF-objects in the system.
+
+# Returns
+- [`SymBasis.SymGroups.TotalMagnetization`](@ref): An instance of `TotalMagnetization` with
+    the magnetization value converted to a rational number.
+"""
 TotalMagnetization(mag::AbstractFloat, N) = TotalMagnetization(rationalize(mag), N)
 
 """

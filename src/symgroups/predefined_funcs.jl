@@ -1,7 +1,7 @@
 using SymBasis.Miscs: combos_spin_sum, perm_k, perm_wrapper
 using BitPermutations: bitpermute, PermutationBackend, BitPermutation
 using SymBasis.DoFObjects: DoFObject
-using SymBasis.DigitBase: BaseInt, permute, count
+using SymBasis.DigitBase: BaseInt, permute, count, flip
 
 # START -- check and apply functions for predefined symmetries
 """
@@ -124,23 +124,24 @@ end
 """
     _check_Nₛ(
         state::SymBasis.DigitBase.BaseInt{T,Ti,B},
-        p::NamedTuple{names,NT}
-    ) where {T,Ti,B,names,NT<:Tuple{Vararg{Integer}}}
+        p::NamedTuple{names}
+    ) where {T,Ti,B,names}
 
 Internal function to check if the given state has the specified digit counts as defined in
-the named tuple `p`.
+the named tuple `p`. Accepts any named tuple that contains the fields `N`, `N0`, `N1`, ...,
+`N(B-1)` (e.g. from both `check_Nₛ` and `check_flip` parameter tuples).
 
 # Arguments
 - `state::`[`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: The state to be checked.
-- `p::NamedTuple{names,NT}`: A named tuple containing the digit counts.
+- `p::NamedTuple{names}`: A named tuple containing at least the digit count fields.
 
 # Returns
 - `Bool`: `true` if the state has the specified digit counts, `false` otherwise.
 """
 function _check_Nₛ(
     state::BaseInt{T,Ti,B},
-    p::NamedTuple{names,NT}
-) where {T,Ti,B,names,NT<:Tuple{Vararg{Integer}}}
+    p::NamedTuple{names}
+) where {T,Ti,B,names}
     sites = 1:p.N |> collect
 
     return all((j, p[Symbol("N$j")]) for j in 0:(B-1)) do (digit, Nᵢ)
@@ -197,6 +198,65 @@ function apply_Nₛ(
     state::BaseInt
 ) where {names,NT<:Tuple{Vararg{Integer}}}
     return state
+end
+
+"""
+    check_flip(
+        p::NamedTuple{names,<:Tuple{Bool,<:AbstractVector{Ti},Vararg{Integer}}},
+        state::SymBasis.DigitBase.BaseInt{T,Ti,B},
+        prev_bool::Bool
+    ) where {names,T,Ti,B}
+
+Check if the given state (for base `B > 2`) has the specified digit counts as defined in the
+named tuple `p`. The function checks if the flipped state has the specified digit counts.
+The result is combined with `prev_bool`.
+
+# Arguments
+- `p::NamedTuple{names,<:Tuple{Bool,<:AbstractVector{Ti},Vararg{Integer}}}`: A named tuple
+    containing `is_flipped`, `sites`, and digit count fields `N0`, `N1`, ..., `N(B-1)`, `N`.
+- `state::`[`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: The state to be checked.
+- `prev_bool::Bool`: The previous boolean value to be combined with the check result.
+
+# Returns
+- `Bool`: The combined result of the previous boolean and the digit count check.
+"""
+function check_flip(
+    p::NamedTuple{names,<:Tuple{Bool,<:AbstractVector{Ti},Vararg{Integer}}},
+    state::BaseInt{T,Ti,B},
+    prev_bool::Bool
+) where {names,T,Ti,B}
+    return prev_bool && _check_Nₛ(state, p)
+end
+
+"""
+    apply_flip(
+        p::NamedTuple{is_flipped::Bool, sites::T_site, N0::TN, N1::TN, N::TN},
+        state::SymBasis.DigitBase.BaseInt{T,Ti,2}
+    ) where {T,Ti,TN<:Integer,T_site<:AbstractVector{Ti}}
+
+Apply the flip operation defined by `p` to the given binary state if `p.is_flipped` is
+`true`. If the state is flipped, the function returns the flipped state; otherwise, it
+returns the original state.
+
+# Arguments
+- `p::@NamedTuple{is_flipped::Bool, sites::T_site, N0::TN, N1::TN, N::TN}`: A named tuple
+    containing the flip flag, sites to be flipped, and the expected counts of 0s and 1s.
+- `state::`[`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,2}`: The binary state to which the
+    flip operation will be applied.
+
+# Returns
+- [`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,2}`: The state after applying the flip
+    operation.
+"""
+function apply_flip(
+    p::NamedTuple{names,<:Tuple{Bool,<:AbstractVector{Ti},Vararg{Integer}}},
+    state::BaseInt{T,Ti,B}
+) where {names,T,Ti,B}
+    if p.is_flipped
+        return flip(state, p.sites)
+    else
+        return state
+    end
 end
 # END -- check and apply functions for predefined symmetries
 
@@ -305,6 +365,82 @@ function sym(
     )
 
     return Sz_sym
+end
+
+"""
+    Parity{T_z<:Integer,T_N<:Integer} <: SymBasis.SymGroups.AbstractSymSpec
+
+A concrete subtype of [`SymBasis.SymGroups.AbstractSymSpec`](@ref) representing a parity
+symmetry specification. The type parameter `T_z` represents the parity quantum number, while
+`T_N` represents the total number of DoF-objects in the system.
+
+# Fields
+- `z::T_z`: The parity quantum number (either `-1` or `1`).
+- `N::T_N`: The total number of DoF-objects in the system.
+
+# Constructor Arguments
+- `z::T_z`: The parity quantum number (either `-1` or `1`).
+- `N::T_N`: The total number of DoF-objects in the system.
+
+# Returns
+- `Parity{T_z,T_N}`: An instance of `Parity` representing the specified parity symmetry.
+"""
+struct Parity{T_z<:Integer,T_N<:Integer} <: AbstractSymSpec
+    z::T_z
+    N::T_N
+
+    function Parity(z::T_z, N::T_N) where {T_z,T_N}
+        @assert z == T_z(-1) || z == T_z(1)
+
+        return new{T_z,T_N}(z, N)
+    end
+end
+
+"""
+    sym(
+        ss::SymBasis.SymGroups.Parity{T_z,T_N},
+        dofo::SymBasis.DoFObjects.DoFObject{B,T_s,T,Ti}
+    ) where {B,T_s,T,Ti,T_z,T_N}
+
+Create a parity symmetry group for the given DoF-object `dofo`, and parity symmetry
+specification `ss`. The function generates all combinations of spin projections that sum to
+zero, and constructs the parity symmetry group using the `check_flip` and `apply_flip`
+functions.
+
+# Arguments
+- `ss::`[`SymBasis.SymGroups.Parity`](@ref)`{T_z,T_N}`: The parity symmetry specification.
+- `dofo::`[`SymBasis.DoFObjects.DoFObject`](@ref)`{B,T_s,T,Ti}`: The DoF-object.
+
+# Returns
+- [`SymBasis.SymGroups.SymGroup`](@ref): The parity symmetry group.
+"""
+function sym(
+    ss::Parity{T_z,T_N},
+    dofo::DoFObject{B,T_s,T,Ti}
+) where {B,T_s,T,Ti,T_z,T_N}
+    @assert dofo.type == :Spin
+    s = T_s((length(dofo) - 1) // 2)
+
+    sites = 1:ss.N |> collect
+
+    all_spin_sumₛ = combos_spin_sum(s, 0 // 1, ss.N)
+
+    rₛ = 0:1
+
+    Z_sym = SymGroup(
+        dofo,
+        [
+            merge((; is_flipped=Bool(r), sites=sites,), sumⱼ)
+            for r in rₛ
+            for sumⱼ in all_spin_sumₛ
+        ],
+        check_flip,
+        apply_flip,
+        [ss.z^r for r in rₛ for sumⱼ in all_spin_sumₛ],
+        ss.N
+    )
+
+    return Z_sym
 end
 
 """

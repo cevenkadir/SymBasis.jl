@@ -16,7 +16,7 @@ specified `target` value.
 - `n::T_n`: The number of spins.
 
 # Returns
-- `Vector{NT_last}`: A vector of named tuples, each representing a valid combination of spin
+- `Vector`: A vector of named tuples, each representing a valid combination of spin
     projections that sum to the target. Each named tuple contains counts of each spin
     projection and the total number of spins `N`.
 """

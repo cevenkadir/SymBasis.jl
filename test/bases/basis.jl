@@ -358,6 +358,78 @@ end
             @test norms == Float64[2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
             test_unsorted_basis(dofo, N, sg; sorted_states=states, sorted_norms=norms)
         end
+
+        @testset "spin-1/2 with parity symmetry" begin
+            N = 2
+            dofo = dof_object(Spin(1 // 2))
+
+            for z in [1, -1]
+                sg = sym(Parity(z, N), dofo)
+                states, norms = basis(dofo, N, sg; is_sorted=true)
+                # For spin-1/2, no state is its own flip, so both parity sectors
+                # have the same representative (one state from the pair {bi"01"2, bi"10"2})
+                @test length(states) == 1
+                @test norms == Float64[2]
+                # Representative is whichever of the flip pair has the smaller hash
+                expected_rep = hash(bi"10"2) < hash(bi"01"2) ? bi"10"2 : bi"01"2
+                @test states == [expected_rep]
+                test_unsorted_basis(dofo, N, sg; sorted_states=states, sorted_norms=norms)
+            end
+        end
+
+        @testset "spin-1 with parity symmetry" begin
+            N = 2
+            dofo = dof_object(Spin(1 // 1))
+
+            @testset "z = 1" begin
+                sg = sym(Parity(1, N), dofo)
+                states, norms = basis(dofo, N, sg; is_sorted=true)
+                # bi"11"3 maps to itself under flip (self-conjugate), so it's included
+                # for z=1 (norm=4) but not z=-1 (norm=0)
+                @test length(states) == 2
+                if VERSION.major == 1 && VERSION.minor < 13
+                    @test states == [bi"2"3, bi"11"3]
+                    @test norms == Float64[2, 4]
+                else
+                    @test states == [bi"11"3, bi"20"3]
+                    @test norms == Float64[4, 2]
+                end
+                test_unsorted_basis(dofo, N, sg; sorted_states=states, sorted_norms=norms)
+            end
+
+            @testset "z = -1" begin
+                sg = sym(Parity(-1, N), dofo)
+                states, norms = basis(dofo, N, sg; is_sorted=true)
+                # bi"11"3 is excluded (norm=0 for z=-1), leaving one state from the pair
+                @test length(states) == 1
+                @test norms == Float64[2]
+                if VERSION.major == 1 && VERSION.minor < 13
+                    @test states == [bi"2"3]
+                else
+                    @test states == [bi"20"3]
+                end
+                test_unsorted_basis(dofo, N, sg; sorted_states=states, sorted_norms=norms)
+            end
+        end
+
+        @testset "spin-1/2 with parity symmetry for N=4" begin
+            N = 4
+            dofo = dof_object(Spin(1 // 2))
+
+            for z in [1, -1]
+                sg = sym(Parity(z, N), dofo)
+                states, norms = basis(dofo, N, sg; is_sorted=true)
+                # Sz=0 sector has C(4,2)=6 states forming 3 flip pairs → 3 representatives
+                @test length(states) == 3
+                @test norms == Float64[2, 2, 2]
+                if VERSION.major == 1 && VERSION.minor < 13
+                    @test states == [bi"1001"2, bi"1010"2, bi"1100"2]
+                else
+                    @test states == [bi"0011"2, bi"0101"2, bi"0110"2]
+                end
+                test_unsorted_basis(dofo, N, sg; sorted_states=states, sorted_norms=norms)
+            end
+        end
     end
     @testset "basis with multiple symmetries + check" begin
         @testset "spin-1/2 with Sz and translational symmetries" begin
@@ -597,6 +669,64 @@ end
                     test_states = [bi"10"3, bi"02"3, bi"21"3]
                     test_reps = [bi"01"3, bi"20"3, bi"21"3]
                     test_factors = Float64[-1, -1, 1]
+                end
+
+                test_representatives(test_states, test_reps, test_factors, sg)
+            end
+        end
+
+        @testset "spin-1/2 with parity symmetry" begin
+            @testset "z = -1 for N = 2" begin
+                N = 2
+                dofo = dof_object(Spin(1 // 2))
+                sg = sym(Parity(-1, N), dofo)
+
+                # Representative is whichever of the flip pair has the smaller hash
+                test_states = [bi"01"2, bi"10"2]
+                if hash(bi"10"2) < hash(bi"01"2)
+                    test_reps    = [bi"10"2, bi"10"2]
+                    test_factors = Float64[-1, 1]
+                else
+                    test_reps    = [bi"01"2, bi"01"2]
+                    test_factors = Float64[1, -1]
+                end
+
+                test_representatives(test_states, test_reps, test_factors, sg)
+            end
+        end
+
+        @testset "spin-1 with parity symmetry" begin
+            @testset "z = 1 for N = 2" begin
+                N = 2
+                dofo = dof_object(Spin(1 // 1))
+                sg = sym(Parity(1, N), dofo)
+
+                if VERSION.major == 1 && VERSION.minor < 13
+                    test_states  = [bi"2"3, bi"11"3, bi"20"3]
+                    test_reps    = [bi"2"3, bi"11"3, bi"2"3]
+                    test_factors = Float64[1, 1, 1]
+                else
+                    test_states  = [bi"2"3, bi"11"3, bi"20"3]
+                    test_reps    = [bi"20"3, bi"11"3, bi"20"3]
+                    test_factors = Float64[1, 1, 1]
+                end
+
+                test_representatives(test_states, test_reps, test_factors, sg)
+            end
+
+            @testset "z = -1 for N = 2" begin
+                N = 2
+                dofo = dof_object(Spin(1 // 1))
+                sg = sym(Parity(-1, N), dofo)
+
+                if VERSION.major == 1 && VERSION.minor < 13
+                    test_states  = [bi"2"3, bi"11"3, bi"20"3]
+                    test_reps    = [bi"2"3, bi"11"3, bi"2"3]
+                    test_factors = Float64[1, 1, -1]
+                else
+                    test_states  = [bi"2"3, bi"11"3, bi"20"3]
+                    test_reps    = [bi"20"3, bi"11"3, bi"20"3]
+                    test_factors = Float64[-1, 1, 1]
                 end
 
                 test_representatives(test_states, test_reps, test_factors, sg)

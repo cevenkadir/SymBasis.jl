@@ -44,6 +44,77 @@
         @test apply_Nₛ((; N0=1, N1=1, N2=1, N3=1, N4=0, N=4), state2) == bi"1302"5
     end
 
+    @testset "check_flip" begin
+        # Binary state: bi"11010"2 has N0=2, N1=3
+        state1 = bi"11010"2
+        sites1 = collect(1:5)
+        @test !check_flip(
+            (; is_flipped=false, sites=sites1, N0=2, N1=3, N=5),
+            state1,
+            false
+        )
+        @test check_flip((; is_flipped=false, sites=sites1, N0=2, N1=3, N=5), state1, true)
+        # Mismatched counts return false regardless of prev_bool
+        @test !check_flip((; is_flipped=false, sites=sites1, N0=3, N1=2, N=5), state1, true)
+        # is_flipped flag does not affect the check
+        @test check_flip((; is_flipped=true, sites=sites1, N0=2, N1=3, N=5), state1, true)
+
+        # Non-binary state (base 5): bi"1302"5 has N0=1, N1=1, N2=1, N3=1, N4=0 at sites 1-4
+        state2 = bi"1302"5
+        sites2 = collect(1:4)
+        @test !check_flip(
+            (; is_flipped=false, sites=sites2, N0=1, N1=1, N2=1, N3=1, N4=0, N=4),
+            state2,
+            false
+        )
+        @test check_flip(
+            (; is_flipped=false, sites=sites2, N0=1, N1=1, N2=1, N3=1, N4=0, N=4),
+            state2,
+            true
+        )
+        # Mismatched counts
+        @test !check_flip(
+            (; is_flipped=false, sites=sites2, N0=2, N1=1, N2=1, N3=0, N4=0, N=4),
+            state2,
+            true
+        )
+    end
+
+    @testset "apply_flip" begin
+        # Binary state: bi"11010"2 (value=26)
+        state1 = bi"11010"2
+        sites1 = collect(1:5)
+        # is_flipped=false: returns unchanged state
+        @test apply_flip(
+            (; is_flipped=false, sites=sites1, N0=2, N1=3, N=5),
+            state1
+        ) == state1
+        # is_flipped=true: flip all 5 bits → value 5 = bi"101"2
+        @test apply_flip(
+            (; is_flipped=true, sites=sites1, N0=2, N1=3, N=5),
+            state1
+        ) == bi"101"2
+        # Flip only sites [1, 2]: 26 → 25 = bi"11001"2
+        @test apply_flip(
+            (; is_flipped=true, sites=collect(1:2), N0=2, N1=3, N=5),
+            state1
+        ) == bi"11001"2
+
+        # Non-binary state (base 5): bi"1302"5 (digits pos1=2,pos2=0,pos3=3,pos4=1)
+        state2 = bi"1302"5
+        sites2 = collect(1:4)
+        # is_flipped=false: returns unchanged state
+        @test apply_flip(
+            (; is_flipped=false, sites=sites2, N0=1, N1=1, N2=1, N3=1, N4=0, N=4),
+            state2
+        ) == state2
+        # is_flipped=true: flip all 4 digits → bi"3142"5
+        @test apply_flip(
+            (; is_flipped=true, sites=sites2, N0=1, N1=1, N2=1, N3=1, N4=0, N=4),
+            state2
+        ) == bi"3142"5
+    end
+
     @testset "TotalMagnetization constructors" begin
         # Test Integer constructor
         tm1 = TotalMagnetization(2, 5)
@@ -104,6 +175,56 @@
             @test Sz_symᵢ.check == check_Nₛ
             @test Sz_symᵢ.apply == apply_Nₛ
             @test Sz_symᵢ.factors == factor2ₛ[i]
+        end
+    end
+
+    @testset "Parity constructor" begin
+        p1 = Parity(1, 4)
+        @test p1.z == 1
+        @test p1.N == 4
+
+        p2 = Parity(-1, 6)
+        @test p2.z == -1
+        @test p2.N == 6
+
+        # Invalid parity quantum number should throw
+        @test_throws AssertionError Parity(0, 4)
+        @test_throws AssertionError Parity(2, 4)
+    end
+
+    @testset "sym of Parity" begin
+        # Spin-1/2, N=2: combos_spin_sum(1//2, 0, 2) = [(; N0=1, N1=1, N=2)]
+        dofo1 = dof_object(Spin(1 // 2))
+        sites1 = collect(1:2)
+        cycle1 = [
+            (; is_flipped=false, sites=sites1, N0=1, N1=1, N=2),
+            (; is_flipped=true,  sites=sites1, N0=1, N1=1, N=2),
+        ]
+        for z in [1, -1]
+            Z_sym1 = sym(Parity(z, 2), dofo1)
+            @test Z_sym1.dofo == dofo1
+            @test Z_sym1.cycles == cycle1
+            @test Z_sym1.check == check_flip
+            @test Z_sym1.apply == apply_flip
+            @test Z_sym1.factors == [z^0, z^1]
+        end
+
+        # Spin-1, N=2: combos_spin_sum(1//1, 0, 2) gives two combos
+        dofo2 = dof_object(Spin(1 // 1))
+        sites2 = collect(1:2)
+        cycle2 = [
+            (; is_flipped=false, sites=sites2, N0=0, N1=2, N2=0, N=2),
+            (; is_flipped=false, sites=sites2, N0=1, N1=0, N2=1, N=2),
+            (; is_flipped=true,  sites=sites2, N0=0, N1=2, N2=0, N=2),
+            (; is_flipped=true,  sites=sites2, N0=1, N1=0, N2=1, N=2),
+        ]
+        for z in [1, -1]
+            Z_sym2 = sym(Parity(z, 2), dofo2)
+            @test Z_sym2.dofo == dofo2
+            @test Z_sym2.cycles == cycle2
+            @test Z_sym2.check == check_flip
+            @test Z_sym2.apply == apply_flip
+            @test Z_sym2.factors == [z^0, z^0, z^1, z^1]
         end
     end
 

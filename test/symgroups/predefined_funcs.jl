@@ -178,30 +178,30 @@
         end
     end
 
-    @testset "Parity constructor" begin
-        p1 = Parity(1, 4)
+    @testset "SpinInversion constructor" begin
+        p1 = SpinInversion(1, 4)
         @test p1.z == 1
         @test p1.N == 4
 
-        p2 = Parity(-1, 6)
+        p2 = SpinInversion(-1, 6)
         @test p2.z == -1
         @test p2.N == 6
 
         # Invalid parity quantum number should throw
-        @test_throws AssertionError Parity(0, 4)
-        @test_throws AssertionError Parity(2, 4)
+        @test_throws AssertionError SpinInversion(0, 4)
+        @test_throws AssertionError SpinInversion(2, 4)
     end
 
-    @testset "sym of Parity" begin
+    @testset "sym of SpinInversion" begin
         # Spin-1/2, N=2: combos_spin_sum(1//2, 0, 2) = [(; N0=1, N1=1, N=2)]
         dofo1 = dof_object(Spin(1 // 2))
         sites1 = collect(1:2)
         cycle1 = [
             (; is_flipped=false, sites=sites1, N0=1, N1=1, N=2),
-            (; is_flipped=true,  sites=sites1, N0=1, N1=1, N=2),
+            (; is_flipped=true, sites=sites1, N0=1, N1=1, N=2),
         ]
         for z in [1, -1]
-            Z_sym1 = sym(Parity(z, 2), dofo1)
+            Z_sym1 = sym(SpinInversion(z, 2), dofo1)
             @test Z_sym1.dofo == dofo1
             @test Z_sym1.cycles == cycle1
             @test Z_sym1.check == check_flip
@@ -215,11 +215,11 @@
         cycle2 = [
             (; is_flipped=false, sites=sites2, N0=0, N1=2, N2=0, N=2),
             (; is_flipped=false, sites=sites2, N0=1, N1=0, N2=1, N=2),
-            (; is_flipped=true,  sites=sites2, N0=0, N1=2, N2=0, N=2),
-            (; is_flipped=true,  sites=sites2, N0=1, N1=0, N2=1, N=2),
+            (; is_flipped=true, sites=sites2, N0=0, N1=2, N2=0, N=2),
+            (; is_flipped=true, sites=sites2, N0=1, N1=0, N2=1, N=2),
         ]
         for z in [1, -1]
-            Z_sym2 = sym(Parity(z, 2), dofo2)
+            Z_sym2 = sym(SpinInversion(z, 2), dofo2)
             @test Z_sym2.dofo == dofo2
             @test Z_sym2.cycles == cycle2
             @test Z_sym2.check == check_flip

@@ -368,11 +368,11 @@ function sym(
 end
 
 """
-    Parity{T_z<:Integer,T_N<:Integer} <: SymBasis.SymGroups.AbstractSymSpec
+    SpinInversion{T_z<:Integer,T_N<:Integer} <: SymBasis.SymGroups.AbstractSymSpec
 
-A concrete subtype of [`SymBasis.SymGroups.AbstractSymSpec`](@ref) representing a parity
-symmetry specification. The type parameter `T_z` represents the parity quantum number, while
-`T_N` represents the total number of DoF-objects in the system.
+A concrete subtype of [`SymBasis.SymGroups.AbstractSymSpec`](@ref) representing a spin
+inversion symmetry specification. The type parameter `T_z` represents the spin inversion
+quantum number, while `T_N` represents the total number of DoF-objects in the system.
 
 # Fields
 - `z::T_z`: The parity quantum number (either `-1` or `1`).
@@ -383,13 +383,14 @@ symmetry specification. The type parameter `T_z` represents the parity quantum n
 - `N::T_N`: The total number of DoF-objects in the system.
 
 # Returns
-- `Parity{T_z,T_N}`: An instance of `Parity` representing the specified parity symmetry.
+- `SpinInversion{T_z,T_N}`: An instance of `SpinInversion` representing the specified spin
+    inversion symmetry.
 """
-struct Parity{T_z<:Integer,T_N<:Integer} <: AbstractSymSpec
+struct SpinInversion{T_z<:Integer,T_N<:Integer} <: AbstractSymSpec
     z::T_z
     N::T_N
 
-    function Parity(z::T_z, N::T_N) where {T_z,T_N}
+    function SpinInversion(z::T_z, N::T_N) where {T_z,T_N}
         @assert z == T_z(-1) || z == T_z(1)
 
         return new{T_z,T_N}(z, N)
@@ -398,24 +399,25 @@ end
 
 """
     sym(
-        ss::SymBasis.SymGroups.Parity{T_z,T_N},
+        ss::SymBasis.SymGroups.SpinInversion{T_z,T_N},
         dofo::SymBasis.DoFObjects.DoFObject{B,T_s,T,Ti}
     ) where {B,T_s,T,Ti,T_z,T_N}
 
-Create a parity symmetry group for the given DoF-object `dofo`, and parity symmetry
-specification `ss`. The function generates all combinations of spin projections that sum to
-zero, and constructs the parity symmetry group using the `check_flip` and `apply_flip`
-functions.
+Create a spin inversion symmetry group for the given DoF-object `dofo`, and spin inversion
+symmetry specification `ss`. The function generates all combinations of spin projections
+that sum to zero, and constructs the spin inversion symmetry group using the `check_flip`
+and `apply_flip` functions.
 
 # Arguments
-- `ss::`[`SymBasis.SymGroups.Parity`](@ref)`{T_z,T_N}`: The parity symmetry specification.
+- `ss::`[`SymBasis.SymGroups.SpinInversion`](@ref)`{T_z,T_N}`: The spin inversion symmetry
+    specification.
 - `dofo::`[`SymBasis.DoFObjects.DoFObject`](@ref)`{B,T_s,T,Ti}`: The DoF-object.
 
 # Returns
-- [`SymBasis.SymGroups.SymGroup`](@ref): The parity symmetry group.
+- [`SymBasis.SymGroups.SymGroup`](@ref): The spin inversion symmetry group.
 """
 function sym(
-    ss::Parity{T_z,T_N},
+    ss::SpinInversion{T_z,T_N},
     dofo::DoFObject{B,T_s,T,Ti}
 ) where {B,T_s,T,Ti,T_z,T_N}
     @assert dofo.type == :Spin

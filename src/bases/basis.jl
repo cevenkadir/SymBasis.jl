@@ -141,6 +141,80 @@ function basis(
     end
 end
 
+function _basis_impl(
+    all_bints::BaseIntRange{T,Ti,B},
+    n_cycles::Int,
+    factors,
+    F₀::Complex{T_n},
+    eps_norm_type::T_n,
+    get_temp_state,
+    is_sorted::Bool
+) where {T,Ti,B,T_n<:Real}
+    nthreads = Threads.nthreads()
+
+    tasks = map(Iterators.partition(all_bints, length(all_bints) ÷ nthreads + 1)) do chunk
+        Threads.@spawn begin
+            local_norms = T_n[]
+            local_states = BaseInt{T,Ti,B}[]
+            local_F = F₀
+            local_hashbuf = Vector{UInt}(undef, n_cycles)
+            local_count = 0
+
+            for state₀ in chunk
+                local_F = F₀
+                h_state₀ = hash(state₀)
+                local_count = 0
+
+                @inbounds for idx in 1:n_cycles
+                    is_valid_state, temp_state = get_temp_state(idx, state₀)
+
+                    if is_valid_state
+                        h_temp_state = hash(temp_state)
+
+                        is_new = true
+                        @inbounds for k in 1:local_count
+                            if local_hashbuf[k] == h_temp_state
+                                is_new = false
+                                break
+                            end
+                        end
+                        if is_new
+                            local_count += 1
+                            @inbounds local_hashbuf[local_count] = h_temp_state
+                        end
+
+                        if h_temp_state < h_state₀
+                            local_F = F₀
+                            break
+                        elseif h_temp_state == h_state₀
+                            local_F += factors[idx]
+                        end
+                    end
+                end
+
+                norm₀ = local_count * abs2(local_F)
+                if norm₀ > eps_norm_type
+                    push!(local_norms, norm₀)
+                    push!(local_states, state₀)
+                end
+            end
+
+            (local_states, local_norms)
+        end
+    end
+
+    results = fetch.(tasks)
+    states = vcat((r[1] for r in results)...)
+    norms = vcat((r[2] for r in results)...)
+
+    if is_sorted
+        sorted_indices = sortperm(states)
+        return Basis(states[sorted_indices], norms[sorted_indices])
+    else
+        return Basis(states, norms)
+    end
+end
+
 """
     basis(
         dofo::DoFObject{B,T_s,T,Ti},
@@ -174,84 +248,26 @@ function basis(
     norm_type::DataType=Float64,
     is_sorted::Bool=false
 ) where {T,Ti,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
-    nthreads = Threads.nthreads()
-
     F₀ = zero(Complex{norm_type})
     eps_norm_type = eps(norm_type)
-    n_cycles = sg.cycles |> length
     c = true
-
     all_bints = BaseInt(T(0); base=B, Ti=Ti):BaseInt(T(B^N - 1); base=B, Ti=Ti)
 
-    # Partition work and spawn tasks
-    tasks = map(Iterators.partition(all_bints, length(all_bints) ÷ nthreads + 1)) do chunk
-        Threads.@spawn begin
-            # Local buffers for this task
-            local_norms = norm_type[]
-            local_states = BaseInt{T,Ti,B}[]
-            local_F = F₀
-            # Pre-allocated hash buffer replaces SmallHashSet to avoid NTuple allocations
-            local_hashbuf = Vector{UInt}(undef, n_cycles)
-            local_count = 0
-
-            for state₀ in chunk
-                local_F = F₀
-                h_state₀ = hash(state₀)
-                local_count = 0
-
-                @inbounds for idx in 1:n_cycles
-                    cycleᵢ = sg.cycles[idx]
-
-                    temp_state₀ = sg.apply(cycleᵢ, state₀)
-                    is_valid_state = sg.check(cycleᵢ, temp_state₀, c)
-
-                    if is_valid_state
-                        h_temp_state = hash(temp_state₀)
-
-                        # Inline push_unique! without NTuple allocation
-                        is_new = true
-                        @inbounds for k in 1:local_count
-                            if local_hashbuf[k] == h_temp_state
-                                is_new = false
-                                break
-                            end
-                        end
-                        if is_new
-                            local_count += 1
-                            @inbounds local_hashbuf[local_count] = h_temp_state
-                        end
-
-                        if h_temp_state < h_state₀
-                            local_F = F₀
-                            break
-                        elseif h_temp_state == h_state₀
-                            local_F += sg.factors[idx]
-                        end
-                    end
-                end
-
-                norm₀ = local_count * abs2(local_F)
-                if norm₀ > eps_norm_type
-                    push!(local_norms, norm₀)
-                    push!(local_states, state₀)
-                end
-            end
-
-            (local_states, local_norms)
-        end
+    get_temp_state = (idx, state₀) -> begin
+        cycleᵢ = sg.cycles[idx]
+        temp_state = sg.apply(cycleᵢ, state₀)
+        (sg.check(cycleᵢ, temp_state, c), temp_state)
     end
 
-    # Fetch results from all tasks
-    results = fetch.(tasks)
-    states = vcat((r[1] for r in results)...)
-    norms = vcat((r[2] for r in results)...)
-
-    if is_sorted
-        sorted_indices = sortperm(states)
-        return Basis(states[sorted_indices], norms[sorted_indices])
-    else
-        return Basis(states, norms)
-    end
+    return _basis_impl(
+        all_bints,
+        length(sg.cycles),
+        sg.factors,
+        F₀,
+        eps_norm_type,
+        get_temp_state,
+        is_sorted
+    )
 end
 
 """
@@ -289,94 +305,37 @@ function basis(
     norm_type::DataType=Float64,
     is_sorted::Bool=false
 ) where {T,Ti,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
-    nthreads = Threads.nthreads()
-
     F₀ = zero(Complex{norm_type})
     eps_norm_type = eps(norm_type)
-    n_cycles = csg.cycles |> length
-    ndims_cycles = csg.cycles |> ndims
     c = true
-
+    ndims_cycles = ndims(csg.cycles)
     all_bints = BaseInt(T(0); base=B, Ti=Ti):BaseInt(T(B^N - 1); base=B, Ti=Ti)
 
-    # Partition work and spawn tasks
-    tasks = map(Iterators.partition(all_bints, length(all_bints) ÷ nthreads + 1)) do chunk
-        Threads.@spawn begin
-            # Local buffers for this task
-            local_norms = norm_type[]
-            local_states = BaseInt{T,Ti,B}[]
-            local_F = F₀
-            # Pre-allocated hash buffer replaces SmallHashSet to avoid NTuple allocations
-            local_hashbuf = Vector{UInt}(undef, n_cycles)
-            local_count = 0
-
-            for state₀ in chunk
-                local_F = F₀
-                h_state₀ = hash(state₀)
-                local_count = 0
-
-                @inbounds for idx in 1:n_cycles
-                    is_valid_state = c
-                    temp_state = state₀
-                    cycle = csg.cycles[idx]
-
-                    for i in 1:ndims_cycles
-                        if is_valid_state
-                            is_valid_state = csg.check[i](cycle[i], state₀, is_valid_state)
-                        end
-                    end
-
-                    if is_valid_state
-                        @inbounds for i in 1:ndims_cycles
-                            temp_state = csg.apply[i](cycle[i], temp_state)
-                        end
-
-                        h_temp_state = hash(temp_state)
-
-                        # Inline push_unique! without NTuple allocation
-                        is_new = true
-                        @inbounds for k in 1:local_count
-                            if local_hashbuf[k] == h_temp_state
-                                is_new = false
-                                break
-                            end
-                        end
-                        if is_new
-                            local_count += 1
-                            @inbounds local_hashbuf[local_count] = h_temp_state
-                        end
-
-                        if h_temp_state < h_state₀
-                            local_F = F₀
-                            break
-                        elseif h_temp_state == h_state₀
-                            local_F += csg.factors[idx]
-                        end
-                    end
-                end
-
-                norm₀ = local_count * abs2(local_F)
-                if norm₀ > eps_norm_type
-                    push!(local_norms, norm₀)
-                    push!(local_states, state₀)
-                end
-            end
-
-            (local_states, local_norms)
+    get_temp_state = (idx, state₀) -> begin
+        is_valid = c
+        temp_state = state₀
+        cycle = csg.cycles[idx]
+        for i in 1:ndims_cycles
+            is_valid || break
+            is_valid = csg.check[i](cycle[i], state₀, is_valid)
         end
+        if is_valid
+            for i in 1:ndims_cycles
+                temp_state = csg.apply[i](cycle[i], temp_state)
+            end
+        end
+        (is_valid, temp_state)
     end
 
-    # Fetch results from all tasks
-    results = fetch.(tasks)
-    states = vcat((r[1] for r in results)...)
-    norms = vcat((r[2] for r in results)...)
-
-    if is_sorted
-        sorted_indices = sortperm(states)
-        return Basis(states[sorted_indices], norms[sorted_indices])
-    else
-        return Basis(states, norms)
-    end
+    return _basis_impl(
+        all_bints,
+        length(csg.cycles),
+        csg.factors,
+        F₀,
+        eps_norm_type,
+        get_temp_state,
+        is_sorted
+    )
 end
 
 """

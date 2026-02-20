@@ -450,7 +450,10 @@ end
                     @test b.states == [bi"0011"2, bi"0101"2]
                     @test b.norms == Float64[4, 8]
                 end
-                test_unsorted_basis(dofo, N, csg; sorted_states=b.states, sorted_norms=b.norms)
+                test_unsorted_basis(
+                    dofo, N, csg;
+                    sorted_states=b.states, sorted_norms=b.norms
+                )
             end
 
             @testset "k = 1 and Sz = 0 for N = 4" begin
@@ -465,7 +468,10 @@ end
                     @test b.states == [bi"0011"2]
                 end
                 @test b.norms == Float64[4,]
-                test_unsorted_basis(dofo, N, csg; sorted_states=b.states, sorted_norms=b.norms)
+                test_unsorted_basis(
+                    dofo, N, csg;
+                    sorted_states=b.states, sorted_norms=b.norms
+                )
             end
 
             @testset "k = 0 and Sz = -1 for N = 4" begin
@@ -480,7 +486,10 @@ end
                     @test b.states == [bi"0010"2,]
                 end
                 @test b.norms == Float64[4,]
-                test_unsorted_basis(dofo, N, csg; sorted_states=b.states, sorted_norms=b.norms)
+                test_unsorted_basis(
+                    dofo, N, csg;
+                    sorted_states=b.states, sorted_norms=b.norms
+                )
             end
 
             @testset "k = 3 and Sz = -1 for N = 4" begin
@@ -495,7 +504,10 @@ end
                     @test b.states == [bi"0010"2,]
                 end
                 @test b.norms == Float64[4,]
-                test_unsorted_basis(dofo, N, csg; sorted_states=b.states, sorted_norms=b.norms)
+                test_unsorted_basis(
+                    dofo, N, csg;
+                    sorted_states=b.states, sorted_norms=b.norms
+                )
             end
         end
 
@@ -531,7 +543,10 @@ end
                     ]
                     @test b.norms == Float64[16, 16, 32, 64, 8]
                 end
-                test_unsorted_basis(dofo, N, csg; sorted_states=b.states, sorted_norms=b.norms)
+                test_unsorted_basis(
+                    dofo, N, csg;
+                    sorted_states=b.states, sorted_norms=b.norms
+                )
             end
 
             @testset "k = 1, Sz = 0 and R = -1 for N = 4" begin

@@ -617,6 +617,87 @@ function sym(
     return P_sym
 end
 
+"""
+    SpatialRotational{T_r<:Integer,Ti} <: SymBasis.SymGroups.AbstractSymSpec
+
+A concrete subtype of [`SymBasis.SymGroups.AbstractSymSpec`](@ref) representing a spatial
+rotational symmetry specification. The type parameter `T_r` represents the spatial rotation
+number, while `Ti` represents the type of the permutation indices.
+
+# Fields
+- `r::T_r`: The spatial rotation number.
+- `perm::AbstractVector{Ti}`: The permutation vector defining the rotation.
+
+# Constructor Arguments
+- `r::T_r`: The spatial rotation number.
+- `perm::AbstractVector{Ti}`: The permutation vector defining the rotation.
+
+# Returns
+- `SpatialRotational{T_r,Ti}`: An instance of `SpatialRotational` representing the specified
+spatial rotational symmetry.
+"""
+struct SpatialRotational{T_r<:Integer,Ti} <: AbstractSymSpec
+    r::T_r
+    perm::AbstractVector{Ti}
+
+    function SpatialRotational(r::T_r, perm::AbstractVector{Ti}) where {T_r,Ti}
+        N = length(perm)
+        @assert N == length(unique(perm))
+
+        Id_vec = 1:N .|> Ti
+        @assert perm != Id_vec
+
+        return new{T_r,Ti}(r, perm)
+    end
+end
+
+"""
+    sym(
+        ss::SymBasis.SymGroups.SpatialRotational{T_r,Ti},
+        dofo::SymBasis.DoFObjects.DoFObject{B,T_s,T,Ti}
+    ) where {B,T_s,T,Ti,T_r}
+
+Create a spatial rotational symmetry group for the given DoF-object `dofo`, and spatial
+rotational symmetry specification `ss`. The function generates the rotation symmetry group
+by applying the permutation defined in `ss` repeatedly until it returns to the identity, and
+constructs the spatial rotational symmetry group using the `check_perm` and `apply_perm`
+functions.
+
+# Arguments
+- `ss::`[`SymBasis.SymGroups.SpatialRotational`](@ref)`{T_r,Ti}`: The spatial rotational
+    symmetry specification.
+- `dofo::`[`SymBasis.DoFObjects.DoFObject`](@ref)`{B,T_s,T,Ti}`: The DoF-object.
+
+# Returns
+- [`SymBasis.SymGroups.SymGroup`](@ref): The spatial rotational symmetry group.
+"""
+function sym(
+    ss::SpatialRotational{T_r,Ti},
+    dofo::DoFObject{B,T_s,T,Ti}
+) where {B,T_s,T,Ti,T_r}
+    N = length(ss.perm)
+    Id_vec = 1:N .|> Ti
+
+    R = 1
+
+    while Id_vec != perm_k(ss.perm, R)
+        R += 1
+    end
+
+    rₛ = 0:(R-1)
+
+    R_sym = SymGroup(
+        dofo,
+        [(; perm=perm_wrapper(perm_k(ss.perm, i), length(dofo))) for i in rₛ],
+        check_perm,
+        apply_perm,
+        [cis(-2π * r * ss.r / R) for r in rₛ],
+        N
+    )
+
+    return R_sym
+end
+
 @deprecate sym(
     s::Symbol,
     dofo::DoFObject{B,T_s,T,Ti},

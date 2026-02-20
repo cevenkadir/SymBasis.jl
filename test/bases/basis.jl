@@ -780,4 +780,461 @@ end
             end
         end
     end
+
+    @testset "basis with SpatialRotational symmetry" begin
+        # 2x2 square lattice, sites labeled row-major:  [1 2; 3 4]
+        # 90-degree CW rotation: new site i receives old site perm_R2[i]
+        #   [1 2]  ->  [3 1]
+        #   [3 4]      [4 2]
+        perm_R2 = [3, 1, 4, 2]
+
+        # 3x3 square lattice, sites labeled row-major: [1 2 3; 4 5 6; 7 8 9]
+        # 90-degree CW rotation:
+        #   [1 2 3]       [7 4 1]
+        #   [4 5 6]  ->   [8 5 2]
+        #   [7 8 9]       [9 6 3]
+        perm_R3 = [7, 4, 1, 8, 5, 2, 9, 6, 3]
+
+        @testset "2x2 spin-1/2 with SpatialRotational symmetry" begin
+            N = 4
+            dofo = dof_object(Spin(1 // 2))
+
+            @testset "SpatialRotational only" begin
+                @testset "r = 0" begin
+                    sg = sym(SpatialRotational(0, perm_R2), dofo)
+                    b = basis(dofo, N, sg; is_sorted=true)
+                    @test length(b.states) == 6
+                    if VERSION.major == 1 && VERSION.minor < 13
+                        @test b.states == [
+                            bi"0"2, bi"1000"2, bi"1001"2, bi"1011"2, bi"1100"2, bi"1111"2
+                        ]
+                        @test b.norms == Float64[16, 4, 8, 4, 4, 16]
+                    else
+                        @test b.states == [
+                            bi"0"2, bi"10"2, bi"11"2, bi"110"2, bi"1101"2, bi"1111"2
+                        ]
+                        @test b.norms == Float64[16, 4, 4, 8, 4, 16]
+                    end
+                    test_unsorted_basis(
+                        dofo, N, sg;
+                        sorted_states=b.states, sorted_norms=b.norms
+                    )
+                end
+
+                @testset "r = 1" begin
+                    sg = sym(SpatialRotational(1, perm_R2), dofo)
+                    b = basis(dofo, N, sg; is_sorted=true)
+                    @test length(b.states) == 3
+                    @test b.norms == Float64[4, 4, 4]
+                    if VERSION.major == 1 && VERSION.minor < 13
+                        @test b.states == [bi"1000"2, bi"1011"2, bi"1100"2]
+                    else
+                        @test b.states == [bi"10"2, bi"11"2, bi"1101"2]
+                    end
+                    test_unsorted_basis(
+                        dofo, N, sg;
+                        sorted_states=b.states, sorted_norms=b.norms
+                    )
+                end
+
+                @testset "r = 2" begin
+                    sg = sym(SpatialRotational(2, perm_R2), dofo)
+                    b = basis(dofo, N, sg; is_sorted=true)
+                    @test length(b.states) == 4
+                    if VERSION.major == 1 && VERSION.minor < 13
+                        @test b.states == [bi"1000"2, bi"1001"2, bi"1011"2, bi"1100"2]
+                        @test b.norms == Float64[4, 8, 4, 4]
+                    else
+                        @test b.states == [bi"10"2, bi"11"2, bi"110"2, bi"1101"2]
+                        @test b.norms == Float64[4, 4, 8, 4]
+                    end
+                    test_unsorted_basis(
+                        dofo, N, sg;
+                        sorted_states=b.states, sorted_norms=b.norms
+                    )
+                end
+
+                @testset "r = 3" begin
+                    sg = sym(SpatialRotational(3, perm_R2), dofo)
+                    b = basis(dofo, N, sg; is_sorted=true)
+                    @test length(b.states) == 3
+                    @test b.norms == Float64[4, 4, 4]
+                    if VERSION.major == 1 && VERSION.minor < 13
+                        @test b.states == [bi"1000"2, bi"1011"2, bi"1100"2]
+                    else
+                        @test b.states == [bi"10"2, bi"11"2, bi"1101"2]
+                    end
+                    test_unsorted_basis(
+                        dofo, N, sg;
+                        sorted_states=b.states, sorted_norms=b.norms
+                    )
+                end
+            end
+
+            @testset "Sz = 0 and SpatialRotational" begin
+                sgSz = sym(TotalMagnetization(0 // 1, N), dofo)
+
+                @testset "r = 0" begin
+                    csg = sgSz ∘ sym(SpatialRotational(0, perm_R2), dofo)
+                    b = basis(dofo, N, csg; is_sorted=true)
+                    @test is_commutative(b, csg)
+                    @test length(b.states) == 2
+                    if VERSION.major == 1 && VERSION.minor < 13
+                        @test b.states == [bi"1001"2, bi"1100"2]
+                        @test b.norms == Float64[8, 4]
+                    else
+                        @test b.states == [bi"11"2, bi"110"2]
+                        @test b.norms == Float64[4, 8]
+                    end
+                    test_unsorted_basis(
+                        dofo, N, csg;
+                        sorted_states=b.states, sorted_norms=b.norms
+                    )
+                end
+
+                @testset "r = 1" begin
+                    csg = sgSz ∘ sym(SpatialRotational(1, perm_R2), dofo)
+                    b = basis(dofo, N, csg; is_sorted=true)
+                    @test is_commutative(b, csg)
+                    @test length(b.states) == 1
+                    @test b.norms == Float64[4]
+                    if VERSION.major == 1 && VERSION.minor < 13
+                        @test b.states == [bi"1100"2]
+                    else
+                        @test b.states == [bi"11"2]
+                    end
+                    test_unsorted_basis(
+                        dofo, N, csg;
+                        sorted_states=b.states, sorted_norms=b.norms
+                    )
+                end
+
+                @testset "r = 2" begin
+                    csg = sgSz ∘ sym(SpatialRotational(2, perm_R2), dofo)
+                    b = basis(dofo, N, csg; is_sorted=true)
+                    @test is_commutative(b, csg)
+                    @test length(b.states) == 2
+                    if VERSION.major == 1 && VERSION.minor < 13
+                        @test b.states == [bi"1001"2, bi"1100"2]
+                        @test b.norms == Float64[8, 4]
+                    else
+                        @test b.states == [bi"11"2, bi"110"2]
+                        @test b.norms == Float64[4, 8]
+                    end
+                    test_unsorted_basis(
+                        dofo, N, csg;
+                        sorted_states=b.states, sorted_norms=b.norms
+                    )
+                end
+
+                @testset "r = 3" begin
+                    csg = sgSz ∘ sym(SpatialRotational(3, perm_R2), dofo)
+                    b = basis(dofo, N, csg; is_sorted=true)
+                    @test is_commutative(b, csg)
+                    @test length(b.states) == 1
+                    @test b.norms == Float64[4]
+                    if VERSION.major == 1 && VERSION.minor < 13
+                        @test b.states == [bi"1100"2]
+                    else
+                        @test b.states == [bi"11"2]
+                    end
+                    test_unsorted_basis(
+                        dofo, N, csg;
+                        sorted_states=b.states, sorted_norms=b.norms
+                    )
+                end
+            end
+
+            @testset "Sz = 1 and SpatialRotational" begin
+                sgSz = sym(TotalMagnetization(1 // 1, N), dofo)
+                # All 4 (3-up, 1-down) states form a single orbit of size 4
+                for r in 0:3
+                    @testset "r = $r" begin
+                        csg = sgSz ∘ sym(SpatialRotational(r, perm_R2), dofo)
+                        b = basis(dofo, N, csg; is_sorted=true)
+                        @test is_commutative(b, csg)
+                        @test length(b.states) == 1
+                        @test b.norms == Float64[4]
+                        if VERSION.major == 1 && VERSION.minor < 13
+                            @test b.states == [bi"1011"2]
+                        else
+                            @test b.states == [bi"1101"2]
+                        end
+                        test_unsorted_basis(
+                            dofo, N, csg;
+                            sorted_states=b.states, sorted_norms=b.norms
+                        )
+                    end
+                end
+            end
+        end
+
+        @testset "2x2 spin-1 with SpatialRotational symmetry" begin
+            N = 4
+            dofo = dof_object(Spin(1 // 1))
+
+            @testset "Sz = 0 and SpatialRotational" begin
+                sgSz = sym(TotalMagnetization(0 // 1, N), dofo)
+
+                @testset "r = 0" begin
+                    csg = sgSz ∘ sym(SpatialRotational(0, perm_R2), dofo)
+                    b = basis(dofo, N, csg; is_sorted=true)
+                    @test is_commutative(b, csg)
+                    @test length(b.states) == 6
+                    if VERSION.major == 1 && VERSION.minor < 13
+                        @test b.states == [
+                            bi"22"3, bi"112"3, bi"121"3, bi"1111"3, bi"1120"3, bi"2002"3
+                        ]
+                        @test b.norms == Float64[4, 4, 4, 16, 4, 8]
+                    else
+                        @test b.states == [
+                            bi"112"3, bi"121"3, bi"202"3, bi"1012"3, bi"1111"3, bi"2002"3
+                        ]
+                        @test b.norms == Float64[4, 4, 4, 4, 16, 8]
+                    end
+                    test_unsorted_basis(
+                        dofo, N, csg;
+                        sorted_states=b.states, sorted_norms=b.norms
+                    )
+
+                end
+
+                @testset "r = 1" begin
+                    csg = sgSz ∘ sym(SpatialRotational(1, perm_R2), dofo)
+                    b = basis(dofo, N, csg; is_sorted=true)
+                    @test is_commutative(b, csg)
+                    @test length(b.states) == 4
+                    @test b.norms == Float64[4, 4, 4, 4]
+                    if VERSION.major == 1 && VERSION.minor < 13
+                        @test b.states == [bi"22"3, bi"112"3, bi"121"3, bi"1120"3]
+                    else
+                        @test b.states == [bi"112"3, bi"121"3, bi"202"3, bi"1012"3]
+                    end
+                    test_unsorted_basis(
+                        dofo, N, csg;
+                        sorted_states=b.states, sorted_norms=b.norms
+                    )
+                end
+
+                @testset "r = 2" begin
+                    csg = sgSz ∘ sym(SpatialRotational(2, perm_R2), dofo)
+                    b = basis(dofo, N, csg; is_sorted=true)
+                    @test is_commutative(b, csg)
+                    @test length(b.states) == 5
+                    @test b.norms == Float64[4, 4, 4, 4, 8]
+                    if VERSION.major == 1 && VERSION.minor < 13
+                        @test b.states == [
+                            bi"22"3, bi"112"3, bi"121"3, bi"1120"3, bi"2002"3
+                        ]
+                    else
+                        @test b.states == [
+                            bi"112"3, bi"121"3, bi"202"3, bi"1012"3, bi"2002"3
+                        ]
+                    end
+                    test_unsorted_basis(
+                        dofo, N, csg;
+                        sorted_states=b.states, sorted_norms=b.norms
+                    )
+                end
+
+                @testset "r = 3" begin
+                    csg = sgSz ∘ sym(SpatialRotational(3, perm_R2), dofo)
+                    b = basis(dofo, N, csg; is_sorted=true)
+                    @test is_commutative(b, csg)
+                    @test length(b.states) == 4
+                    @test b.norms == Float64[4, 4, 4, 4]
+                    if VERSION.major == 1 && VERSION.minor < 13
+                        @test b.states == [bi"22"3, bi"112"3, bi"121"3, bi"1120"3]
+                    else
+                        @test b.states == [bi"112"3, bi"121"3, bi"202"3, bi"1012"3]
+                    end
+                    test_unsorted_basis(
+                        dofo, N, csg;
+                        sorted_states=b.states, sorted_norms=b.norms
+                    )
+                end
+            end
+
+            @testset "Sz = 2 and SpatialRotational" begin
+                sgSz = sym(TotalMagnetization(2 // 1, N), dofo)
+
+                @testset "r = 0" begin
+                    csg = sgSz ∘ sym(SpatialRotational(0, perm_R2), dofo)
+                    b = basis(dofo, N, csg; is_sorted=true)
+                    @test is_commutative(b, csg)
+                    @test length(b.states) == 3
+                    if VERSION.major == 1 && VERSION.minor < 13
+                        @test b.states == [bi"222"3, bi"2112"3, bi"2121"3]
+                        @test b.norms == Float64[4, 8, 4]
+                    else
+                        @test b.states == [bi"1221"3, bi"2022"3, bi"2121"3]
+                        @test b.norms == Float64[8, 4, 4]
+                    end
+                    test_unsorted_basis(
+                        dofo, N, csg;
+                        sorted_states=b.states, sorted_norms=b.norms
+                    )
+                end
+
+                @testset "r = 1" begin
+                    csg = sgSz ∘ sym(SpatialRotational(1, perm_R2), dofo)
+                    b = basis(dofo, N, csg; is_sorted=true)
+                    @test is_commutative(b, csg)
+                    @test length(b.states) == 2
+                    @test b.norms == Float64[4, 4]
+                    if VERSION.major == 1 && VERSION.minor < 13
+                        @test b.states == [bi"222"3, bi"2121"3]
+                    else
+                        @test b.states == [bi"2022"3, bi"2121"3]
+                    end
+                    test_unsorted_basis(
+                        dofo, N, csg;
+                        sorted_states=b.states, sorted_norms=b.norms
+                    )
+                end
+
+                @testset "r = 2" begin
+                    csg = sgSz ∘ sym(SpatialRotational(2, perm_R2), dofo)
+                    b = basis(dofo, N, csg; is_sorted=true)
+                    @test is_commutative(b, csg)
+                    @test length(b.states) == 3
+                    if VERSION.major == 1 && VERSION.minor < 13
+                        @test b.states == [bi"222"3, bi"2112"3, bi"2121"3]
+                        @test b.norms == Float64[4, 8, 4]
+                    else
+                        @test b.states == [bi"1221"3, bi"2022"3, bi"2121"3]
+                        @test b.norms == Float64[8, 4, 4]
+                    end
+                    test_unsorted_basis(
+                        dofo, N, csg;
+                        sorted_states=b.states, sorted_norms=b.norms
+                    )
+                end
+
+                @testset "r = 3" begin
+                    csg = sgSz ∘ sym(SpatialRotational(3, perm_R2), dofo)
+                    b = basis(dofo, N, csg; is_sorted=true)
+                    @test is_commutative(b, csg)
+                    @test length(b.states) == 2
+                    @test b.norms == Float64[4, 4]
+                    if VERSION.major == 1 && VERSION.minor < 13
+                        @test b.states == [bi"222"3, bi"2121"3]
+                    else
+                        @test b.states == [bi"2022"3, bi"2121"3]
+                    end
+                    test_unsorted_basis(
+                        dofo, N, csg;
+                        sorted_states=b.states, sorted_norms=b.norms
+                    )
+                end
+            end
+        end
+
+        @testset "3x3 spin-1/2 with SpatialRotational symmetry" begin
+            N = 9
+            dofo = dof_object(Spin(1 // 2))
+            # Sz = 7//2: 8 up-spins, 1 down-spin out of 9 sites
+            sgSz = sym(TotalMagnetization(7 // 2, N), dofo)
+
+            @testset "r = 0" begin
+                csg = sgSz ∘ sym(SpatialRotational(0, perm_R3), dofo)
+                b = basis(dofo, N, csg; is_sorted=true)
+                @test is_commutative(b, csg)
+                @test length(b.states) == 3
+                if VERSION.major == 1 && VERSION.minor < 13
+                    @test b.states == [bi"110111111"2, bi"111101111"2, bi"111111101"2]
+                    @test b.norms == Float64[4, 16, 4]
+                else
+                    @test b.states == [bi"11111111"2, bi"101111111"2, bi"111101111"2]
+                    @test b.norms == Float64[4, 4, 16]
+                end
+                test_unsorted_basis(
+                    dofo, N, csg;
+                    sorted_states=b.states, sorted_norms=b.norms
+                )
+            end
+
+            @testset "r = $r" for r in 1:3
+                csg = sgSz ∘ sym(SpatialRotational(r, perm_R3), dofo)
+                b = basis(dofo, N, csg; is_sorted=true)
+                @test is_commutative(b, csg)
+                @test length(b.states) == 2
+                @test b.norms == Float64[4, 4]
+                if VERSION.major == 1 && VERSION.minor < 13
+                    @test b.states == [bi"110111111"2, bi"111111101"2]
+                else
+                    @test b.states == [bi"11111111"2, bi"101111111"2]
+                end
+                test_unsorted_basis(
+                    dofo, N, csg;
+                    sorted_states=b.states, sorted_norms=b.norms
+                )
+            end
+        end
+
+        @testset "3x3 spin-1 with SpatialRotational symmetry" begin
+            N = 9
+            dofo = dof_object(Spin(1 // 1))
+
+            @testset "Sz = 9 (all-up)" begin
+                # All sites at maximum spin: unique state, version-independent
+                sgSz = sym(TotalMagnetization(9 // 1, N), dofo)
+
+                @testset "r = 0" begin
+                    csg = sgSz ∘ sym(SpatialRotational(0, perm_R3), dofo)
+                    b = basis(dofo, N, csg; is_sorted=true)
+                    @test is_commutative(b, csg)
+                    @test length(b.states) == 1
+                    @test b.states == [bi"222222222"3]
+                    @test b.norms == Float64[16]
+                end
+
+                @testset "r = $r (empty sector)" for r in 1:3
+                    csg = sgSz ∘ sym(SpatialRotational(r, perm_R3), dofo)
+                    b = basis(dofo, N, csg; is_sorted=true)
+                    @test is_commutative(b, csg)
+                    @test length(b.states) == 0
+                end
+            end
+
+            @testset "Sz = 8 (8 up-spins, 1 zero-spin)" begin
+                sgSz = sym(TotalMagnetization(8 // 1, N), dofo)
+
+                @testset "r = 0" begin
+                    csg = sgSz ∘ sym(SpatialRotational(0, perm_R3), dofo)
+                    b = basis(dofo, N, csg; is_sorted=true)
+                    @test is_commutative(b, csg)
+                    @test length(b.states) == 3
+                    if VERSION.major == 1 && VERSION.minor < 13
+                        @test b.states == [bi"222122222"3, bi"222212222"3, bi"222222221"3]
+                        @test b.norms == Float64[4, 16, 4]
+                    else
+                        @test b.states == [bi"221222222"3, bi"222212222"3, bi"222222212"3]
+                        @test b.norms == Float64[4, 16, 4]
+                    end
+                    test_unsorted_basis(
+                        dofo, N, csg;
+                        sorted_states=b.states, sorted_norms=b.norms
+                    )
+                end
+
+                @testset "r = $r" for r in 1:3
+                    csg = sgSz ∘ sym(SpatialRotational(r, perm_R3), dofo)
+                    b = basis(dofo, N, csg; is_sorted=true)
+                    @test is_commutative(b, csg)
+                    @test length(b.states) == 2
+                    @test b.norms == Float64[4, 4]
+                    if VERSION.major == 1 && VERSION.minor < 13
+                        @test b.states == [bi"222122222"3, bi"222222221"3]
+                    else
+                        @test b.states == [bi"221222222"3, bi"222222212"3]
+                    end
+                    test_unsorted_basis(
+                        dofo, N, csg;
+                        sorted_states=b.states, sorted_norms=b.norms
+                    )
+                end
+            end
+        end
+    end
 end

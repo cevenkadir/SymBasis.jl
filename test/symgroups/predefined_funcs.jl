@@ -331,4 +331,69 @@
             @test refl_symᵢ.factors ≈ [qᵢ^0, qᵢ^1]
         end
     end
+
+    @testset "SpatialRotational constructor" begin
+        r1 = SpatialRotational(1, [2, 4, 1, 3])
+        @test r1.r == 1
+        @test r1.perm == [2, 4, 1, 3]
+
+        r2 = SpatialRotational(0, [3, 6, 9, 2, 5, 8, 1, 4, 7])
+        @test r2.r == 0
+        @test r2.perm == [3, 6, 9, 2, 5, 8, 1, 4, 7]
+
+        # Identity permutation not allowed
+        @test_throws AssertionError SpatialRotational(1, 1:4 |> collect)
+        # Duplicate elements not allowed
+        @test_throws AssertionError SpatialRotational(1, 1:9 |> collect)
+    end
+
+    @testset "sym of SpatialRotational" begin
+        @testset "without BitPermutation" begin
+            dofo1 = DoFObject(:Emoji, (:A, :B, :C))
+            perm1 = [3, 6, 9, 2, 5, 8, 1, 4, 7] # 90 degrees rotation for 3x3 square lattice
+            R1 = 4
+            for r in 0:(R1-1)
+                rot_sym1 = sym(SpatialRotational(r, perm1), dofo1)
+                @test rot_sym1.dofo == dofo1
+                @test rot_sym1.cycles == [
+                    (; perm=1:length(perm1) |> collect),
+                    (; perm=perm1),
+                    (; perm=perm1[perm1]),
+                    (; perm=perm1[perm1[perm1]])
+                ]
+                @test rot_sym1.check == check_perm
+                @test rot_sym1.apply == apply_perm
+                @test rot_sym1.factors ≈ [
+                    cis(-2π * i * r / R1)
+                    for i in 0:(R1-1)
+                ]
+            end
+        end
+
+        @testset "with BitPermutation" begin
+            dofo2 = dof_object(Spin(1 // 2))
+            perm2 = [2, 4, 1, 3]  # order 4
+            R2 = 4
+            cycles2 = [
+                (; perm=BitPermutation{UInt}(perm_k(perm2, 0))),
+                (; perm=BitPermutation{UInt}(perm_k(perm2, 1))),
+                (; perm=BitPermutation{UInt}(perm_k(perm2, 2))),
+                (; perm=BitPermutation{UInt}(perm_k(perm2, 3))),
+            ]
+            for r in 0:(R2-1)
+                rot_sym2 = sym(SpatialRotational(r, perm2), dofo2)
+                @test rot_sym2.dofo == dofo2
+                @test all(
+                    rot_sym2.cycles[i].perm.vector == cycles2[i].perm.vector
+                    for i in 1:length(rot_sym2.cycles)
+                )
+                @test rot_sym2.check == check_perm
+                @test rot_sym2.apply == apply_perm
+                @test rot_sym2.factors ≈ [
+                    cis(-2π * i * r / R2)
+                    for i in 0:(R2-1)
+                ]
+            end
+        end
+    end
 end

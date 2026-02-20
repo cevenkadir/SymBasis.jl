@@ -38,11 +38,11 @@ sg = sym(Translational(k, perm), dofo)
 #### Spatial-reflection symmetry
 Spatial-reflection symmetry is a symmetry where the system is invariant under spatial reflection. In a system with $N$ sites, the reflection operator $R$ acts on a state $\vert a \rangle$ as follows:
 ```math
-\vert a(p) \rangle = \frac{1}{\sqrt{N_a}} \sum_{r=0}^{1} p^r \hat{R}^r \vert a \rangle
+\vert a(p) \rangle = \frac{1}{\sqrt{N_a}} \sum_{r=0}^{1} p^r \hat{P}^r \vert a \rangle
 ```
-where $N_a$ is the normalization factor, $p$ is the parity quantum number, and $\hat{R}^r$ is the reflection operator applied $r$ times. The reflection operator $\hat{R}$ acts on the state $\vert a(p) \rangle$ as follows:
+where $N_a$ is the normalization factor, $p$ is the parity quantum number, and $\hat{P}^r$ is the reflection operator applied $r$ times. The reflection operator $\hat{P}$ acts on the state $\vert a(p) \rangle$ as follows:
 ```math
-\hat{R} \vert a(p) \rangle =  p \vert a(p) \rangle
+\hat{P} \vert a(p) \rangle =  p \vert a(p) \rangle
 ```
 You can define a spatial reflection symmetry group for a system with a certain number of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function and the [`SpatialReflection`](@ref SymBasis.SymGroups.SpatialReflection) type as follows:
 ```@example
@@ -78,6 +78,31 @@ N = 5 # number of sites
 Sz = 0 # total magnetization quantum number
 
 sg = sym(TotalMagnetization(Sz, N), dofo)
+```
+
+##### Spin-inversion symmetry
+Spin-inversion symmetry is a symmetry where the system is invariant under the spin-inversion operator. The spin-inversion operator $\hat{P}_z$ flips all spin quantum numbers on every site:
+```math
+\hat{P}_z \vert \sigma_1, \sigma_2, \ldots, \sigma_N \rangle = \vert -\sigma_1, -\sigma_2, \ldots, -\sigma_N \rangle
+```
+In a system with $N$ sites, the representative state $\vert a(z) \rangle$ is constructed as follows:
+```math
+\vert a(z) \rangle = \frac{1}{\sqrt{N_a}} \sum_{r=0}^{1} z^r \hat{P}_z^r \vert a \rangle
+```
+where $N_a$ is the normalization factor and $z$ is the parity quantum number. The spin-inversion operator $\hat{P}_z$ acts on $\vert a(z) \rangle$ as follows:
+```math
+\hat{P}_z \vert a(z) \rangle = z \vert a(z) \rangle
+```
+where $z$ is the parity quantum number. You can define a spin-inversion symmetry group for a system with a certain number of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function and the [`SpinInversion`](@ref SymBasis.SymGroups.SpinInversion) type as follows:
+```@example
+using SymBasis.DoFObjects
+using SymBasis.SymGroups
+
+dofo = dof_object(Spin(1 // 2)) # define, for example, a spin-1/2
+N = 4 # number of sites
+z = -1 # parity number
+
+sg = sym(SpinInversion(z, N), dofo)
 ```
 
 ## Custom symmetry groups

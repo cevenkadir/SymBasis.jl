@@ -16,6 +16,7 @@ The [SymBasis.jl](https://github.com/cevenkadir/SymBasis.jl) is a Julia package 
 ## Predefined symmetries
 SymBasis.jl provides predefined symmetry groups for commonly used symmetries, including:
 - Total magnetization (for quantum mechanical spins)
+- Spin inversion (for quantum mechanical spins)
 - Spatial reflection symmetry
 - Translational symmetry
 

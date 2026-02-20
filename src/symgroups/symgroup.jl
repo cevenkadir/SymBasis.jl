@@ -1,5 +1,4 @@
 using SymBasis.DoFObjects: DoFObject
-using SymBasis.Miscs: SmallHashSet
 
 """
     SymGroup{B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
@@ -352,38 +351,4 @@ function Base.:(∘)(
         map(x -> *(x...), Base.product(csg1.factors, csg2.factors)),
         csg1.N
     )
-end
-
-"""
-    _make_hashset(sg::SymBasis.SymGroups.SymGroup)
-
-Create a [`SymBasis.Miscs.SmallHashSet`](@ref) instance suitable for storing symmetry sector
-parameters based on the provided symmetry group `sg`.
-
-# Arguments
-- `sg::`[`SymBasis.SymGroups.SymGroup`](@ref): The symmetry group for which to create the
-    hash set.
-
-# Returns
-- [`SymBasis.Miscs.SmallHashSet`](@ref): A new [`SymBasis.Miscs.SmallHashSet`](@ref)
-    instance.
-"""
-function _make_hashset(sg::SymGroup)
-    Ncycles = length(sg.cycles)
-    return SmallHashSet{Ncycles,UInt}()
-end
-
-"""
-    _make_hashset(csg::SymBasis.SymGroups.CombSymGroup)
-
-Create a [`SymBasis.Miscs.SmallHashSet`](@ref) instance suitable for storing symmetry sector
-parameters based on the provided combined symmetry group `csg`.
-
-# Arguments
-- `csg::`[`SymBasis.SymGroups.CombSymGroup`](@ref): The combined symmetry group for which to
-    create the hash set.
-"""
-function _make_hashset(csg::CombSymGroup)
-    Ncycles = length(csg.cycles)
-    return SmallHashSet{Ncycles,UInt}()
 end

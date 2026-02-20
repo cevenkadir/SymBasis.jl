@@ -142,11 +142,14 @@ function _check_Nₛ(
     state::BaseInt{T,Ti,B},
     p::NamedTuple{names}
 ) where {T,Ti,B,names}
-    sites = 1:p.N |> collect
-
-    return all((j, p[Symbol("N$j")]) for j in 0:(B-1)) do (digit, Nᵢ)
-        Nᵢ == count(state, sites, digit)
+    counts = zeros(Int, B)
+    v = state.value
+    BB = T(B)
+    for _ in 1:p.N
+        counts[(v%BB)+1] += 1
+        v ÷= BB
     end
+    return all(j -> counts[j+1] == p[Symbol("N$j")], 0:(B-1))
 end
 
 """
@@ -169,10 +172,7 @@ function _check_Nₛ(
     state::BaseInt{T,Ti,2},
     p::@NamedTuple{N0::TN, N1::TN, N::TN}
 ) where {T,Ti,TN<:Integer}
-    _N1 = count_ones(state.value)
-    _N0 = p.N - _N1
-
-    return (p.N0 == _N0) && (p.N1 == _N1)
+    return count_ones(state.value) == p.N1
 end
 
 """

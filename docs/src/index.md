@@ -20,7 +20,7 @@ SymBasis.jl provides predefined symmetry groups for commonly used symmetries, in
 - Spatial reflection symmetry
 - Translational symmetry
 
-In the upcoming versions, we plan to add more predefined symmetries such as spin inversion, particle number conservation (for fermions and bosons), etc.
+In the upcoming versions, we plan to add more predefined symmetries such as particle number conservation (for fermions and bosons), etc.
 
 ## Quick installation
 **Requirements**: Julia 1.11 or later.

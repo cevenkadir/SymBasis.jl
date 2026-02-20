@@ -332,28 +332,28 @@
         end
     end
 
-    @testset "SpatialRotational constructor" begin
-        r1 = SpatialRotational(1, [2, 4, 1, 3])
+    @testset "Rotational constructor" begin
+        r1 = Rotational(1, [2, 4, 1, 3])
         @test r1.r == 1
         @test r1.perm == [2, 4, 1, 3]
 
-        r2 = SpatialRotational(0, [3, 6, 9, 2, 5, 8, 1, 4, 7])
+        r2 = Rotational(0, [3, 6, 9, 2, 5, 8, 1, 4, 7])
         @test r2.r == 0
         @test r2.perm == [3, 6, 9, 2, 5, 8, 1, 4, 7]
 
         # Identity permutation not allowed
-        @test_throws AssertionError SpatialRotational(1, 1:4 |> collect)
+        @test_throws AssertionError Rotational(1, 1:4 |> collect)
         # Duplicate elements not allowed
-        @test_throws AssertionError SpatialRotational(1, 1:9 |> collect)
+        @test_throws AssertionError Rotational(1, 1:9 |> collect)
     end
 
-    @testset "sym of SpatialRotational" begin
+    @testset "sym of Rotational" begin
         @testset "without BitPermutation" begin
             dofo1 = DoFObject(:Emoji, (:A, :B, :C))
             perm1 = [3, 6, 9, 2, 5, 8, 1, 4, 7] # 90 degrees rotation for 3x3 square lattice
             R1 = 4
             for r in 0:(R1-1)
-                rot_sym1 = sym(SpatialRotational(r, perm1), dofo1)
+                rot_sym1 = sym(Rotational(r, perm1), dofo1)
                 @test rot_sym1.dofo == dofo1
                 @test rot_sym1.cycles == [
                     (; perm=1:length(perm1) |> collect),
@@ -381,7 +381,7 @@
                 (; perm=BitPermutation{UInt}(perm_k(perm2, 3))),
             ]
             for r in 0:(R2-1)
-                rot_sym2 = sym(SpatialRotational(r, perm2), dofo2)
+                rot_sym2 = sym(Rotational(r, perm2), dofo2)
                 @test rot_sym2.dofo == dofo2
                 @test all(
                     rot_sym2.cycles[i].perm.vector == cycles2[i].perm.vector

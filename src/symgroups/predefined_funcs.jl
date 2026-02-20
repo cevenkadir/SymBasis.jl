@@ -618,11 +618,11 @@ function sym(
 end
 
 """
-    SpatialRotational{T_r<:Integer,Ti} <: SymBasis.SymGroups.AbstractSymSpec
+    Rotational{T_r<:Integer,Ti} <: SymBasis.SymGroups.AbstractSymSpec
 
-A concrete subtype of [`SymBasis.SymGroups.AbstractSymSpec`](@ref) representing a spatial
-rotational symmetry specification. The type parameter `T_r` represents the spatial rotation
-number, while `Ti` represents the type of the permutation indices.
+A concrete subtype of [`SymBasis.SymGroups.AbstractSymSpec`](@ref) representing the
+specification of rotational symmetry of space. The type parameter `T_r` represents the
+spatial rotation number, while `Ti` represents the type of the permutation indices.
 
 # Fields
 - `r::T_r`: The spatial rotation number.
@@ -633,14 +633,14 @@ number, while `Ti` represents the type of the permutation indices.
 - `perm::AbstractVector{Ti}`: The permutation vector defining the rotation.
 
 # Returns
-- `SpatialRotational{T_r,Ti}`: An instance of `SpatialRotational` representing the specified
-spatial rotational symmetry.
+- `Rotational{T_r,Ti}`: An instance of `Rotational` representing the specified rotational
+    symmetry of space.
 """
-struct SpatialRotational{T_r<:Integer,Ti} <: AbstractSymSpec
+struct Rotational{T_r<:Integer,Ti} <: AbstractSymSpec
     r::T_r
     perm::AbstractVector{Ti}
 
-    function SpatialRotational(r::T_r, perm::AbstractVector{Ti}) where {T_r,Ti}
+    function Rotational(r::T_r, perm::AbstractVector{Ti}) where {T_r,Ti}
         N = length(perm)
         @assert N == length(unique(perm))
 
@@ -653,26 +653,25 @@ end
 
 """
     sym(
-        ss::SymBasis.SymGroups.SpatialRotational{T_r,Ti},
+        ss::SymBasis.SymGroups.Rotational{T_r,Ti},
         dofo::SymBasis.DoFObjects.DoFObject{B,T_s,T,Ti}
     ) where {B,T_s,T,Ti,T_r}
 
-Create a spatial rotational symmetry group for the given DoF-object `dofo`, and spatial
-rotational symmetry specification `ss`. The function generates the rotation symmetry group
+Create  a group of rotational symmetry of space for the given DoF-object `dofo`, and
+rotational symmetry specification `ss`. The function generates the rotational symmetry group
 by applying the permutation defined in `ss` repeatedly until it returns to the identity, and
-constructs the spatial rotational symmetry group using the `check_perm` and `apply_perm`
-functions.
+constructs the rotational symmetry group using the `check_perm` and `apply_perm` functions.
 
 # Arguments
-- `ss::`[`SymBasis.SymGroups.SpatialRotational`](@ref)`{T_r,Ti}`: The spatial rotational
-    symmetry specification.
+- `ss::`[`SymBasis.SymGroups.Rotational`](@ref)`{T_r,Ti}`: The specification of rotational
+    symmetry of space.
 - `dofo::`[`SymBasis.DoFObjects.DoFObject`](@ref)`{B,T_s,T,Ti}`: The DoF-object.
 
 # Returns
-- [`SymBasis.SymGroups.SymGroup`](@ref): The spatial rotational symmetry group.
+- [`SymBasis.SymGroups.SymGroup`](@ref): The group of rotational symmetry of space.
 """
 function sym(
-    ss::SpatialRotational{T_r,Ti},
+    ss::Rotational{T_r,Ti},
     dofo::DoFObject{B,T_s,T,Ti}
 ) where {B,T_s,T,Ti,T_r}
     N = length(ss.perm)

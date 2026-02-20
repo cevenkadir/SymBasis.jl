@@ -561,7 +561,7 @@ end
         end
     end
 
-    @testset "basis with SpatialRotational symmetry" begin
+    @testset "basis with Rotational symmetry" begin
         # 2x2 square lattice, sites labeled row-major:  [1 2; 3 4]
         # 90-degree CW rotation: new site i receives old site perm_R2[i]
         #   [1 2]  ->  [3 1]
@@ -575,13 +575,13 @@ end
         #   [7 8 9]       [9 6 3]
         perm_R3 = [7, 4, 1, 8, 5, 2, 9, 6, 3]
 
-        @testset "2x2 spin-1/2 with SpatialRotational symmetry" begin
+        @testset "2x2 spin-1/2 with Rotational symmetry" begin
             N = 4
             dofo = dof_object(Spin(1 // 2))
 
-            @testset "SpatialRotational only" begin
+            @testset "Rotational only" begin
                 @testset "r = 0" begin
-                    sg = sym(SpatialRotational(0, perm_R2), dofo)
+                    sg = sym(Rotational(0, perm_R2), dofo)
                     test_basis_result(dofo, N, sg;
                         expected_states=vsel(
                             [bi"0"2, bi"1000"2, bi"1001"2, bi"1011"2, bi"1100"2, bi"1111"2],
@@ -594,7 +594,7 @@ end
                 end
 
                 @testset "r = 1" begin
-                    sg = sym(SpatialRotational(1, perm_R2), dofo)
+                    sg = sym(Rotational(1, perm_R2), dofo)
                     test_basis_result(dofo, N, sg;
                         expected_states=vsel(
                             [bi"1000"2, bi"1011"2, bi"1100"2],
@@ -605,7 +605,7 @@ end
                 end
 
                 @testset "r = 2" begin
-                    sg = sym(SpatialRotational(2, perm_R2), dofo)
+                    sg = sym(Rotational(2, perm_R2), dofo)
                     test_basis_result(dofo, N, sg;
                         expected_states=vsel(
                             [bi"1000"2, bi"1001"2, bi"1011"2, bi"1100"2],
@@ -616,7 +616,7 @@ end
                 end
 
                 @testset "r = 3" begin
-                    sg = sym(SpatialRotational(3, perm_R2), dofo)
+                    sg = sym(Rotational(3, perm_R2), dofo)
                     test_basis_result(dofo, N, sg;
                         expected_states=vsel(
                             [bi"1000"2, bi"1011"2, bi"1100"2],
@@ -627,11 +627,11 @@ end
                 end
             end
 
-            @testset "Sz = 0 and SpatialRotational" begin
+            @testset "Sz = 0 and Rotational" begin
                 sgSz = sym(TotalMagnetization(0 // 1, N), dofo)
 
                 @testset "r = 0" begin
-                    csg = sgSz ∘ sym(SpatialRotational(0, perm_R2), dofo)
+                    csg = sgSz ∘ sym(Rotational(0, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
                         expected_states=vsel([bi"1001"2, bi"1100"2], [bi"11"2, bi"110"2]),
                         expected_norms=vsel(Float64[8, 4], Float64[4, 8]),
@@ -640,7 +640,7 @@ end
                 end
 
                 @testset "r = 1" begin
-                    csg = sgSz ∘ sym(SpatialRotational(1, perm_R2), dofo)
+                    csg = sgSz ∘ sym(Rotational(1, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
                         expected_states=vsel([bi"1100"2], [bi"11"2]),
                         expected_norms=Float64[4],
@@ -649,7 +649,7 @@ end
                 end
 
                 @testset "r = 2" begin
-                    csg = sgSz ∘ sym(SpatialRotational(2, perm_R2), dofo)
+                    csg = sgSz ∘ sym(Rotational(2, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
                         expected_states=vsel([bi"1001"2, bi"1100"2], [bi"11"2, bi"110"2]),
                         expected_norms=vsel(Float64[8, 4], Float64[4, 8]),
@@ -658,7 +658,7 @@ end
                 end
 
                 @testset "r = 3" begin
-                    csg = sgSz ∘ sym(SpatialRotational(3, perm_R2), dofo)
+                    csg = sgSz ∘ sym(Rotational(3, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
                         expected_states=vsel([bi"1100"2], [bi"11"2]),
                         expected_norms=Float64[4],
@@ -667,12 +667,12 @@ end
                 end
             end
 
-            @testset "Sz = 1 and SpatialRotational" begin
+            @testset "Sz = 1 and Rotational" begin
                 sgSz = sym(TotalMagnetization(1 // 1, N), dofo)
                 # All 4 (3-up, 1-down) states form a single orbit of size 4
                 for r in 0:3
                     @testset "r = $r" begin
-                        csg = sgSz ∘ sym(SpatialRotational(r, perm_R2), dofo)
+                        csg = sgSz ∘ sym(Rotational(r, perm_R2), dofo)
                         test_basis_result(dofo, N, csg;
                             expected_states=vsel([bi"1011"2], [bi"1101"2]),
                             expected_norms=Float64[4],
@@ -683,15 +683,15 @@ end
             end
         end
 
-        @testset "2x2 spin-1 with SpatialRotational symmetry" begin
+        @testset "2x2 spin-1 with Rotational symmetry" begin
             N = 4
             dofo = dof_object(Spin(1 // 1))
 
-            @testset "Sz = 0 and SpatialRotational" begin
+            @testset "Sz = 0 and Rotational" begin
                 sgSz = sym(TotalMagnetization(0 // 1, N), dofo)
 
                 @testset "r = 0" begin
-                    csg = sgSz ∘ sym(SpatialRotational(0, perm_R2), dofo)
+                    csg = sgSz ∘ sym(Rotational(0, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
                         expected_states=vsel(
                             [bi"22"3, bi"112"3, bi"121"3, bi"1111"3, bi"1120"3, bi"2002"3],
@@ -705,7 +705,7 @@ end
                 end
 
                 @testset "r = 1" begin
-                    csg = sgSz ∘ sym(SpatialRotational(1, perm_R2), dofo)
+                    csg = sgSz ∘ sym(Rotational(1, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
                         expected_states=vsel(
                             [bi"22"3, bi"112"3, bi"121"3, bi"1120"3],
@@ -717,7 +717,7 @@ end
                 end
 
                 @testset "r = 2" begin
-                    csg = sgSz ∘ sym(SpatialRotational(2, perm_R2), dofo)
+                    csg = sgSz ∘ sym(Rotational(2, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
                         expected_states=vsel(
                             [bi"22"3, bi"112"3, bi"121"3, bi"1120"3, bi"2002"3],
@@ -729,7 +729,7 @@ end
                 end
 
                 @testset "r = 3" begin
-                    csg = sgSz ∘ sym(SpatialRotational(3, perm_R2), dofo)
+                    csg = sgSz ∘ sym(Rotational(3, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
                         expected_states=vsel(
                             [bi"22"3, bi"112"3, bi"121"3, bi"1120"3],
@@ -741,11 +741,11 @@ end
                 end
             end
 
-            @testset "Sz = 2 and SpatialRotational" begin
+            @testset "Sz = 2 and Rotational" begin
                 sgSz = sym(TotalMagnetization(2 // 1, N), dofo)
 
                 @testset "r = 0" begin
-                    csg = sgSz ∘ sym(SpatialRotational(0, perm_R2), dofo)
+                    csg = sgSz ∘ sym(Rotational(0, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
                         expected_states=vsel(
                             [bi"222"3, bi"2112"3, bi"2121"3],
@@ -757,7 +757,7 @@ end
                 end
 
                 @testset "r = 1" begin
-                    csg = sgSz ∘ sym(SpatialRotational(1, perm_R2), dofo)
+                    csg = sgSz ∘ sym(Rotational(1, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
                         expected_states=vsel([bi"222"3, bi"2121"3], [bi"2022"3, bi"2121"3]),
                         expected_norms=Float64[4, 4],
@@ -766,7 +766,7 @@ end
                 end
 
                 @testset "r = 2" begin
-                    csg = sgSz ∘ sym(SpatialRotational(2, perm_R2), dofo)
+                    csg = sgSz ∘ sym(Rotational(2, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
                         expected_states=vsel(
                             [bi"222"3, bi"2112"3, bi"2121"3],
@@ -778,7 +778,7 @@ end
                 end
 
                 @testset "r = 3" begin
-                    csg = sgSz ∘ sym(SpatialRotational(3, perm_R2), dofo)
+                    csg = sgSz ∘ sym(Rotational(3, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
                         expected_states=vsel([bi"222"3, bi"2121"3], [bi"2022"3, bi"2121"3]),
                         expected_norms=Float64[4, 4],
@@ -788,14 +788,14 @@ end
             end
         end
 
-        @testset "3x3 spin-1/2 with SpatialRotational symmetry" begin
+        @testset "3x3 spin-1/2 with Rotational symmetry" begin
             N = 9
             dofo = dof_object(Spin(1 // 2))
             # Sz = 7//2: 8 up-spins, 1 down-spin out of 9 sites
             sgSz = sym(TotalMagnetization(7 // 2, N), dofo)
 
             @testset "r = 0" begin
-                csg = sgSz ∘ sym(SpatialRotational(0, perm_R3), dofo)
+                csg = sgSz ∘ sym(Rotational(0, perm_R3), dofo)
                 test_basis_result(dofo, N, csg;
                     expected_states=vsel(
                         [bi"110111111"2, bi"111101111"2, bi"111111101"2],
@@ -807,7 +807,7 @@ end
             end
 
             @testset "r = $r" for r in 1:3
-                csg = sgSz ∘ sym(SpatialRotational(r, perm_R3), dofo)
+                csg = sgSz ∘ sym(Rotational(r, perm_R3), dofo)
                 test_basis_result(dofo, N, csg;
                     expected_states=vsel(
                         [bi"110111111"2, bi"111111101"2],
@@ -819,7 +819,7 @@ end
             end
         end
 
-        @testset "3x3 spin-1 with SpatialRotational symmetry" begin
+        @testset "3x3 spin-1 with Rotational symmetry" begin
             N = 9
             dofo = dof_object(Spin(1 // 1))
 
@@ -828,7 +828,7 @@ end
                 sgSz = sym(TotalMagnetization(9 // 1, N), dofo)
 
                 @testset "r = 0" begin
-                    csg = sgSz ∘ sym(SpatialRotational(0, perm_R3), dofo)
+                    csg = sgSz ∘ sym(Rotational(0, perm_R3), dofo)
                     b = basis(dofo, N, csg; is_sorted=true)
                     @test is_commutative(b, csg)
                     @test length(b.states) == 1
@@ -837,7 +837,7 @@ end
                 end
 
                 @testset "r = $r (empty sector)" for r in 1:3
-                    csg = sgSz ∘ sym(SpatialRotational(r, perm_R3), dofo)
+                    csg = sgSz ∘ sym(Rotational(r, perm_R3), dofo)
                     b = basis(dofo, N, csg; is_sorted=true)
                     @test is_commutative(b, csg)
                     @test length(b.states) == 0
@@ -848,7 +848,7 @@ end
                 sgSz = sym(TotalMagnetization(8 // 1, N), dofo)
 
                 @testset "r = 0" begin
-                    csg = sgSz ∘ sym(SpatialRotational(0, perm_R3), dofo)
+                    csg = sgSz ∘ sym(Rotational(0, perm_R3), dofo)
                     test_basis_result(dofo, N, csg;
                         expected_states=vsel(
                             [bi"222122222"3, bi"222212222"3, bi"222222221"3],
@@ -860,7 +860,7 @@ end
                 end
 
                 @testset "r = $r" for r in 1:3
-                    csg = sgSz ∘ sym(SpatialRotational(r, perm_R3), dofo)
+                    csg = sgSz ∘ sym(Rotational(r, perm_R3), dofo)
                     test_basis_result(dofo, N, csg;
                         expected_states=vsel(
                             [bi"222122222"3, bi"222222221"3],

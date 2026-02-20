@@ -14,6 +14,7 @@ makedocs(;
         prettyurls=get(ENV, "CI", nothing) == "true",
         repolink=REPOLINK,
         canonical=CANONICAL,
+        assets=["assets/favicon.ico"],
         analytics="G-X8Z32YNZ42"
     ),
     pages=[

@@ -134,66 +134,6 @@
         end
     end
 
-    @testset "_make_hashset for SymGroup" begin
-        dofo = dof_object(Spin(1 // 2))
-        N = 3
-        sg1 = sym(TotalMagnetization(1 // 2, N), dofo)
-
-        hashset_sg1 = _make_hashset(sg1)
-
-        @test SmallHashSet{length(sg1.cycles),UInt}() == hashset_sg1
-    end
-
-    @testset "_make_hashset for CombSymGroup" begin
-        dofo = dof_object(Spin(1 // 2))
-        N = 3
-        sg1 = sym(TotalMagnetization(1 // 2, N), dofo)
-        sg2 = sym(Translational(1, mod1.((1:N) .+ 1, N)), dofo)
-        csg = sg1 ∘ sg2
-
-        hashset_csg = _make_hashset(csg)
-
-        @test SmallHashSet{length(csg.cycles),UInt}() == hashset_csg
-    end
-
-    # @testset "_cycles_preview" begin
-    #     # Test empty cycles
-    #     @test SymBasis.SymGroups._cycles_preview([]) == "∅"
-
-    #     # Test with few items (less than maxitems)
-    #     cycles = [(; a=1, b=2), (; a=3, b=4), (; a=5, b=6)]
-    #     preview = SymBasis.SymGroups._cycles_preview(cycles)
-    #     @test contains(preview, "a = 1")
-    #     @test contains(preview, "a = 3")
-    #     @test contains(preview, "a = 5")
-    #     @test !contains(preview, "…")
-
-    #     # Test with many items (more than maxitems)
-    #     cycles_many = [(; x=i) for i in 1:10]
-    #     preview_many = SymBasis.SymGroups._cycles_preview(cycles_many; maxitems=4)
-    #     @test contains(preview_many, "x = 1")
-    #     @test contains(preview_many, "x = 4")
-    #     @test !contains(preview_many, "x = 5")
-    #     @test contains(preview_many, "…")
-    # end
-
-    # @testset "_print_kv" begin
-    #     # Test basic key-value printing
-    #     io = IOBuffer()
-    #     SymBasis.SymGroups._print_kv(io, "Key1:", "Value1")
-    #     str = String(take!(io))
-    #     @test contains(str, "Key1:")
-    #     @test contains(str, "Value1")
-
-    #     # Test with custom indent
-    #     io2 = IOBuffer()
-    #     SymBasis.SymGroups._print_kv(io2, "Key2:", "Value2"; indent=4)
-    #     str2 = String(take!(io2))
-    #     @test startswith(str2, "    ")
-    #     @test contains(str2, "Key2:")
-    #     @test contains(str2, "Value2")
-    # end
-
     @testset "Base.summary for SymGroup" begin
         dofo = dof_object(Spin(1 // 2))
         N = 3

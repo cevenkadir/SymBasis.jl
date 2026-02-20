@@ -17,8 +17,6 @@ using SymBasis.Bases
     @info "Testing DoFObject's predefined functions..."
     include("dofobjects/predefined_funcs.jl")
 
-    @info "Testing SmallHashSet..."
-    include("miscs/small_hash_set.jl")
     @info "Testing auxiliary functions of Miscs..."
     include("miscs/auxiliary.jl")
 

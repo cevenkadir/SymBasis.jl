@@ -1,6 +1,5 @@
 
 using SymBasis.DigitBase: BaseInt, BaseIntRange, base_number_to_string
-using SymBasis.SymGroups: _make_hashset
 using SymBasis.SymGroups: SymGroup, CombSymGroup
 using SymBasis.DoFObjects: DoFObject
 
@@ -191,12 +190,14 @@ function basis(
             local_norms = norm_type[]
             local_states = BaseInt{T,Ti,B}[]
             local_F = F₀
-            local_Dₛₛ = _make_hashset(sg)
+            # Pre-allocated hash buffer replaces SmallHashSet to avoid NTuple allocations
+            local_hashbuf = Vector{UInt}(undef, n_cycles)
+            local_count = 0
 
             for state₀ in chunk
                 local_F = F₀
                 h_state₀ = hash(state₀)
-                empty!(local_Dₛₛ)
+                local_count = 0
 
                 @inbounds for idx in 1:n_cycles
                     cycleᵢ = sg.cycles[idx]
@@ -206,10 +207,22 @@ function basis(
 
                     if is_valid_state
                         h_temp_state = hash(temp_state₀)
-                        push!(local_Dₛₛ, h_temp_state)
+
+                        # Inline push_unique! without NTuple allocation
+                        is_new = true
+                        @inbounds for k in 1:local_count
+                            if local_hashbuf[k] == h_temp_state
+                                is_new = false
+                                break
+                            end
+                        end
+                        if is_new
+                            local_count += 1
+                            @inbounds local_hashbuf[local_count] = h_temp_state
+                        end
 
                         if h_temp_state < h_state₀
-                            local_F *= zero(norm_type)
+                            local_F = F₀
                             break
                         elseif h_temp_state == h_state₀
                             local_F += sg.factors[idx]
@@ -217,7 +230,7 @@ function basis(
                     end
                 end
 
-                norm₀ = length(local_Dₛₛ) * abs2(local_F)
+                norm₀ = local_count * abs2(local_F)
                 if norm₀ > eps_norm_type
                     push!(local_norms, norm₀)
                     push!(local_states, state₀)
@@ -293,12 +306,14 @@ function basis(
             local_norms = norm_type[]
             local_states = BaseInt{T,Ti,B}[]
             local_F = F₀
-            local_Dₛₛ = _make_hashset(csg)
+            # Pre-allocated hash buffer replaces SmallHashSet to avoid NTuple allocations
+            local_hashbuf = Vector{UInt}(undef, n_cycles)
+            local_count = 0
 
             for state₀ in chunk
                 local_F = F₀
                 h_state₀ = hash(state₀)
-                empty!(local_Dₛₛ)
+                local_count = 0
 
                 @inbounds for idx in 1:n_cycles
                     is_valid_state = c
@@ -318,10 +333,21 @@ function basis(
 
                         h_temp_state = hash(temp_state)
 
-                        push!(local_Dₛₛ, h_temp_state)
+                        # Inline push_unique! without NTuple allocation
+                        is_new = true
+                        @inbounds for k in 1:local_count
+                            if local_hashbuf[k] == h_temp_state
+                                is_new = false
+                                break
+                            end
+                        end
+                        if is_new
+                            local_count += 1
+                            @inbounds local_hashbuf[local_count] = h_temp_state
+                        end
 
                         if h_temp_state < h_state₀
-                            local_F *= zero(norm_type)
+                            local_F = F₀
                             break
                         elseif h_temp_state == h_state₀
                             local_F += csg.factors[idx]
@@ -329,7 +355,7 @@ function basis(
                     end
                 end
 
-                norm₀ = length(local_Dₛₛ) * abs2(local_F)
+                norm₀ = local_count * abs2(local_F)
                 if norm₀ > eps_norm_type
                     push!(local_norms, norm₀)
                     push!(local_states, state₀)

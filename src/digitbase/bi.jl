@@ -167,6 +167,49 @@ function flip(b::BaseInt{T,Ti,B}, pos::AbstractVector{Ti}) where {T,Ti,B}
 end
 
 """
+    flip(b::SymBasis.DigitBase.BaseInt{T,Ti,2}, pos::Ti) where {T,Ti}
+
+Flip the bit at position `pos` in the base-2 representation of the integer `b`. This is an
+optimized specialization for base-2, using bitwise XOR.
+
+# Arguments
+- `b::`[`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,2}`: The base-2 integer.
+- `pos::Ti`: The position of the bit to flip (1-based indexing).
+
+# Returns
+- [`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,2}`: A new [`SymBasis.DigitBase.BaseInt`](@ref)
+    instance with the specified bit flipped.
+"""
+function flip(b::BaseInt{T,Ti,2}, pos::Ti) where {T,Ti}
+    pos > 0 || throw(ArgumentError("position must be positive, got $pos"))
+    mask = one(T) << (pos - 1)
+    return BaseInt(b.value ⊻ mask; base=2, Ti=Ti)
+end
+
+"""
+    flip(b::SymBasis.DigitBase.BaseInt{T,Ti,2}, pos::AbstractVector{Ti}) where {T,Ti}
+
+Flip the bits at the specified positions in the base-2 representation of the integer `b`.
+This is an optimized specialization for base-2, using bitwise XOR.
+
+# Arguments
+- `b::`[`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,2}`: The base-2 integer.
+- `pos::AbstractVector{Ti}`: The positions of the bits to flip (1-based indexing).
+
+# Returns
+- [`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,2}`: A new [`SymBasis.DigitBase.BaseInt`](@ref)
+    instance with the specified bits flipped.
+"""
+function flip(b::BaseInt{T,Ti,2}, pos::AbstractVector{Ti}) where {T,Ti}
+    isempty(pos) && return b
+    @inbounds for p in pos
+        p > 0 || throw(ArgumentError("position must be positive, got $p"))
+    end
+    mask = reduce((m, p) -> m | (one(T) << (p - 1)), pos; init=zero(T))
+    return BaseInt(b.value ⊻ mask; base=2, Ti=Ti)
+end
+
+"""
     inc(b::SymBasis.DigitBase.BaseInt{T,Ti,B}, pos::Ti) where {T,Ti,B}
 
 Increment the digit at position `pos` in the base-`B` representation of the integer `b`.

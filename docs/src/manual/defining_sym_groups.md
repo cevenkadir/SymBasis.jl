@@ -57,6 +57,27 @@ p = -1 # parity number
 sg = sym(SpatialReflection(p, perm), dofo)
 ```
 
+#### Rotational symmetry of space
+Rotational symmetry is a symmetry where the system is invariant under discrete rotations in space. For a system where the rotation operator $\hat{R}$ has period $T_R$ (i.e. $\hat{R}^{T_R} = \hat{I}$), the representative state $\vert a(r) \rangle$ with rotation quantum number $r$ is constructed as follows:
+```math
+\vert a(r) \rangle = \frac{1}{\sqrt{N_a}} \sum_{l=0}^{T_R-1} e^{-i 2\pi r l / T_R} \hat{R}^l \vert a \rangle
+```
+where $N_a$ is the normalization factor, $r \in \{0, 1, \ldots, T_R - 1\}$ is the rotation quantum number, and $l$ is the summation index. The rotation operator $\hat{R}$ acts on the representative state $\vert a(r) \rangle$ as an eigenstate:
+```math
+\hat{R} \vert a(r) \rangle = e^{i 2\pi r / T_R} \vert a(r) \rangle
+```
+You can define a rotational symmetry group using the [`sym`](@ref SymBasis.SymGroups.sym) function and the [`Rotational`](@ref SymBasis.SymGroups.Rotational) type. The permutation supplied to `Rotational` should encode the action of $\hat{R}$ on site indices:
+```@example
+using SymBasis.DoFObjects
+using SymBasis.SymGroups
+
+dofo = DoFObject(:Pet, (:🐶, :🐱, :🦜)) # define, for example, a pet object
+N = 4 # number of sites (2×2 square lattice)
+perm = [2, 4, 1, 3] # permutation encoding a 90° rotation of the 2×2 lattice (T_R = 4)
+r = 0 # rotation quantum number (r = 0, 1, 2, or 3)
+sg = sym(Rotational(r, perm), dofo)
+```
+
 ### DoF-object-dependent symmetry groups
 Some symmetries depend on the DoF-object, such as total magnetization symmetry.
 

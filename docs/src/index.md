@@ -21,7 +21,7 @@ SymBasis.jl provides predefined symmetry groups for commonly used symmetries, in
 - Translational symmetry
 - Rotational symmetry of space
 
-In the upcoming versions, we plan to add more predefined symmetries such as particle number conservation (for fermions and bosons), etc.
+In the upcoming versions, we plan to add more predefined symmetries such as multipole conservation for spins and particle number conservation for fermions and bosons, etc.
 
 ## Quick installation
 **Requirements**: Julia 1.11 or later.
@@ -83,6 +83,6 @@ This package was developed for academic purposes. If you find SymBasis.jl useful
   author={Kadir Çeven},
   year={2026},
   url={https://github.com/cevenkadir/SymBasis.jl}
-  version={v0.1.2}
+  version={v0.1.3}
 }
 ```

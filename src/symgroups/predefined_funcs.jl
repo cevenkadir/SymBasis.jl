@@ -143,11 +143,9 @@ function _check_Nₛ(
     p::NamedTuple{names}
 ) where {T,Ti,B,names}
     counts = zeros(Int, B)
-    v = state.value
-    BB = T(B)
-    for _ in 1:p.N
-        counts[(v%BB)+1] += 1
-        v ÷= BB
+    for pos in 1:p.N
+        digit = read(state, Ti(pos))
+        counts[digit+1] += 1
     end
     return all(j -> counts[j+1] == p[Symbol("N$j")], 0:(B-1))
 end

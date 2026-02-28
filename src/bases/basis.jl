@@ -48,7 +48,7 @@ function Base.isequal(b1::Basis{T,T_n}, b2::Basis{T,T_n}) where {T,T_n}
     return b1.states == b2.states && b1.norms == b2.norms
 end
 
-function Base.:(=)(b1::Basis{T,T_n}, b2::Basis{T,T_n}) where {T,T_n}
+function Base.:(==)(b1::Basis{T,T_n}, b2::Basis{T,T_n}) where {T,T_n}
     return b1.states == b2.states && b1.norms == b2.norms
 end
 

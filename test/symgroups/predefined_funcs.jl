@@ -44,6 +44,70 @@
         @test apply_Nₛ((; N0=1, N1=1, N2=1, N3=1, N4=0, N=4), state2) == bi"1302"5
     end
 
+    @testset "check_multipole" begin
+        # Binary (B=2), rank-1, D=1, uniform rational weights
+        # bi"10011"2: digits (low→high) 1,1,0,0,1 → m = 1/2,1/2,-1/2,-1/2,1/2 → Σm = 1/2
+        state1 = bi"10011"2
+        p1 = (; qₛ=[1 // 2], weights=ones(Rational{Int}, 5, 1), N=5, rtol=0.0, atol=0.0)
+        @test check_multipole(p1, state1, true) == true
+        @test check_multipole(p1, state1, false) == false
+        # Non-matching target
+        p1_bad = (; qₛ=[3 // 2], weights=ones(Rational{Int}, 5, 1), N=5, rtol=0.0, atol=0.0)
+        @test check_multipole(p1_bad, state1, true) == false
+
+        # Base-6 (B=6), rank-1, D=1, uniform weights
+        # bi"5410"6: digits 0,1,4,5 → m = -5/2,-3/2,3/2,5/2 → Σm = 0
+        state2 = bi"5410"6
+        p2 = (; qₛ=[0 // 1], weights=ones(Rational{Int}, 4, 1), N=4, rtol=0.0, atol=0.0)
+        @test check_multipole(p2, state2, true) == true
+        p2_bad = (; qₛ=[1 // 1], weights=ones(Rational{Int}, 4, 1), N=4, rtol=0.0, atol=0.0)
+        @test check_multipole(p2_bad, state2, true) == false
+
+        # Binary, rank-1, D=2: alternating site weights [1,0],[0,1],[1,0],[0,1],[1,0]
+        # state1 digits 1,1,0,0,1 → sum[1] = 1/2+(-1/2)+1/2 = 1/2, sum[2] = 1/2+(-1/2) = 0
+        weights3 = Rational{Int}[1 0; 0 1; 1 0; 0 1; 1 0]
+        p3 = (; qₛ=[1 // 2, 0 // 1], weights=weights3, N=5, rtol=0.0, atol=0.0)
+        @test check_multipole(p3, state1, true) == true
+        p3_bad = (; qₛ=[1 // 2, 1 // 2], weights=weights3, N=5, rtol=0.0, atol=0.0)
+        @test check_multipole(p3_bad, state1, true) == false
+
+        # Float weights with tolerance: same as p1 but Float64, Σm ≈ 0.5
+        p4 = (; qₛ=[0.5], weights=ones(Float64, 5, 1), N=5, rtol=1e-10, atol=1e-10)
+        @test check_multipole(p4, state1, true) == true
+        p4_close = (;
+            qₛ=[0.5 + 1e-15],
+            weights=ones(Float64, 5, 1),
+            N=5,
+            rtol=1e-10,
+            atol=1e-10
+        )
+        @test check_multipole(p4_close, state1, true) == true
+        p4_far = (;
+            qₛ=[0.5 + 1e-5],
+            weights=ones(Float64, 5, 1),
+            N=5,
+            rtol=1e-10,
+            atol=1e-10
+        )
+        @test check_multipole(p4_far, state1, true) == false
+    end
+
+    @testset "apply_multipole" begin
+        # apply_multipole always returns the state unchanged
+        state1 = bi"10011"2
+        p1 = (; qₛ=[1 // 2], weights=ones(Rational{Int}, 5, 1), N=5, rtol=0.0, atol=0.0)
+        @test apply_multipole(p1, state1) == state1
+
+        # Works regardless of qₛ mismatch: still returns the state
+        p1_bad = (; qₛ=[3 // 2], weights=ones(Rational{Int}, 5, 1), N=5, rtol=0.0, atol=0.0)
+        @test apply_multipole(p1_bad, state1) == state1
+
+        # Base-6 state
+        state2 = bi"5410"6
+        p2 = (; qₛ=[0 // 1], weights=ones(Rational{Int}, 4, 1), N=4, rtol=0.0, atol=0.0)
+        @test apply_multipole(p2, state2) == state2
+    end
+
     @testset "check_flip" begin
         # Binary state: bi"11010"2 has N0=2, N1=3
         state1 = bi"11010"2

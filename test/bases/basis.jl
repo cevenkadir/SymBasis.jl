@@ -121,6 +121,57 @@ end
         @test occursin("first 2 states/norms:", single_str)
     end
 
+    @testset "isequal, == and hash for Basis" begin
+        N = 2
+        dofo = dof_object(Spin(1 // 2))
+
+        b1 = basis(dofo, N; is_sorted=true)
+        b2 = basis(dofo, N; is_sorted=true)
+
+        # Basis with different norms
+        b_diff_norms = Basis(b1.states, 2 .* b1.norms)
+
+        # Basis with different states (sorted in descending order)
+        b_diff_states = Basis(reverse(b1.states), b1.norms)
+
+        # isequal: equal bases
+        @test isequal(b1, b2)
+
+        # isequal: different norms
+        @test !isequal(b1, b_diff_norms)
+
+        # isequal: different states
+        @test !isequal(b1, b_diff_states)
+
+        # ==: equal bases
+        @test b1 == b2
+
+        # ==: different norms
+        @test !(b1 == b_diff_norms)
+
+        # ==: different states
+        @test !(b1 == b_diff_states)
+
+        # hash: equal bases produce equal hashes
+        @test hash(b1) == hash(b2)
+
+        # hash: different norms produce different hashes
+        @test hash(b1) != hash(b_diff_norms)
+
+        # hash: different states produce different hashes
+        @test hash(b1) != hash(b_diff_states)
+
+        # hash with salt: consistent with isequal
+        h = UInt(42)
+        @test hash(b1, h) == hash(b2, h)
+        @test hash(b1, h) != hash(b_diff_norms, h)
+        @test hash(b1, h) != hash(b_diff_states, h)
+
+        # isequal and == agree with each other
+        @test isequal(b1, b2) == (b1 == b2)
+        @test isequal(b1, b_diff_norms) == (b1 == b_diff_norms)
+    end
+
     @testset "basis without any symmetry" begin
         N1 = 2
         dofo1 = dof_object(Spin(1 // 2))

@@ -52,7 +52,7 @@ function Base.:(==)(b1::Basis{T,T_n}, b2::Basis{T,T_n}) where {T,T_n}
     return b1.states == b2.states && b1.norms == b2.norms
 end
 
-function Base.hash(b::Basis{T,T_n}, h::UInt) where {T,T_n}
+function Base.hash(b::Basis, h::UInt)
     return hash(b.states, hash(b.norms, hash(:BaseNumber, h)))
 end
 

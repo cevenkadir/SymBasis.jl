@@ -924,4 +924,244 @@ end
             end
         end
     end
+
+    @testset "basis with SpinMultipole symmetry" begin
+        @testset "SpinMultipole only (rank=1, dipole)" begin
+            @testset "spin-1/2" begin
+                N = 3
+                dofo = dof_object(Spin(1 // 2))
+                w = Rational{Int}[1, 2, 4]
+                ss_pos = SpinMultipole(1 // 2, w, N)
+                test_basis_result(dofo, N, sym(ss_pos, dofo);
+                    expected_states=[bi"100"2],
+                    expected_norms=Float64[1]
+                )
+
+                ss_neg = SpinMultipole(-1 // 2, w, N)
+                test_basis_result(dofo, N, sym(ss_neg, dofo);
+                    expected_states=[bi"011"2],
+                    expected_norms=Float64[1]
+                )
+            end
+
+            @testset "spin-1" begin
+                N = 3
+                dofo = dof_object(Spin(1 // 1))
+                w = Rational{Int}[1, 2, 3]
+                ss_neg = SpinMultipole(-6 // 1, w, N)
+                test_basis_result(dofo, N, sym(ss_neg, dofo);
+                    expected_states=[bi"000"3],
+                    expected_norms=Float64[1]
+                )
+                ss_pos = SpinMultipole(6 // 1, w, N)
+                test_basis_result(dofo, N, sym(ss_pos, dofo);
+                    expected_states=[bi"222"3],
+                    expected_norms=Float64[1]
+                )
+            end
+        end
+
+        @testset "SpinMultipole only (rank=2, quadrupole)" begin
+            @testset "spin-1/2" begin
+                N = 3
+                dofo = dof_object(Spin(1 // 2))
+                w = Rational{Int}[1, 2, 3]
+                ss_q3 = SpinMultipole(3 // 1, w, N; rank=2)
+                test_basis_result(dofo, N, sym(ss_q3, dofo);
+                    expected_states=[bi"101"2],
+                    expected_norms=Float64[1]
+                )
+
+                ss_qm3 = SpinMultipole(-3 // 1, w, N; rank=2)
+                test_basis_result(dofo, N, sym(ss_qm3, dofo);
+                    expected_states=[bi"010"2],
+                    expected_norms=Float64[1]
+                )
+            end
+
+            @testset "spin-1" begin
+                N = 2
+                dofo = dof_object(Spin(1 // 1))
+                w = Rational{Int}[1, 2]
+                ss_qm3 = SpinMultipole(-3 // 1, w, N; rank=2)
+                test_basis_result(dofo, N, sym(ss_qm3, dofo);
+                    expected_states=[bi"02"3],
+                    expected_norms=Float64[1]
+                )
+                ss_q3 = SpinMultipole(3 // 1, w, N; rank=2)
+                test_basis_result(dofo, N, sym(ss_q3, dofo);
+                    expected_states=[bi"20"3],
+                    expected_norms=Float64[1]
+                )
+            end
+        end
+
+        @testset "TotalMagnetization + SpinMultipole rank=1 (origin independence)" begin
+            @testset "spin-1/2" begin
+                N = 4
+                dofo = dof_object(Spin(1 // 2))
+                sg_sz = sym(TotalMagnetization(0 // 1, N), dofo)
+
+                for w in (Rational{Int}[1, 2, 3, 4], Rational{Int}[2, 3, 4, 5])
+                    @testset "w=$w, dipole=0" begin
+                        ss_dip0 = SpinMultipole(0 // 1, w, N)
+                        test_basis_result(dofo, N, sg_sz ∘ sym(ss_dip0, dofo);
+                            expected_states=[bi"0110"2, bi"1001"2],
+                            expected_norms=Float64[1, 1]
+                        )
+                    end
+                end
+
+                for w in (Rational{Int}[1, 2, 3, 4], Rational{Int}[2, 3, 4, 5])
+                    @testset "w=$w, dipole=1" begin
+                        ss_dip1 = SpinMultipole(1 // 1, w, N)
+                        test_basis_result(dofo, N, sg_sz ∘ sym(ss_dip1, dofo);
+                            expected_states=[bi"1010"2],
+                            expected_norms=Float64[1]
+                        )
+                    end
+                end
+            end
+
+            @testset "spin-1" begin
+                N = 3
+                dofo = dof_object(Spin(1 // 1))
+                sg_sz = sym(TotalMagnetization(0 // 1, N), dofo)
+
+                for w in (Rational{Int}[1, 2, 3], Rational{Int}[2, 3, 4])
+                    @testset "w=$w, dipole=1" begin
+                        ss_dip1 = SpinMultipole(1 // 1, w, N)
+                        test_basis_result(dofo, N, sg_sz ∘ sym(ss_dip1, dofo);
+                            expected_states=[bi"120"3, bi"201"3],
+                            expected_norms=Float64[1, 1]
+                        )
+                    end
+                end
+
+                for w in (Rational{Int}[1, 2, 3], Rational{Int}[2, 3, 4])
+                    @testset "w=$w, dipole=2" begin
+                        ss_dip2 = SpinMultipole(2 // 1, w, N)
+                        test_basis_result(dofo, N, sg_sz ∘ sym(ss_dip2, dofo);
+                            expected_states=[bi"210"3],
+                            expected_norms=Float64[1]
+                        )
+                    end
+                end
+            end
+        end
+
+        @testset """TotalMagnetization + SpinMultipole rank=1 + SpinMultipole rank=2 (origin
+        independence)""" begin
+            @testset "spin-1/2" begin
+                N = 4
+                dofo = dof_object(Spin(1 // 2))
+                sg_sz = sym(TotalMagnetization(0 // 1, N), dofo)
+
+                for w in (Rational{Int}[1, 2, 3, 4], Rational{Int}[2, 3, 4, 5])
+                    @testset "w=$w, dipole=0, quad=-2" begin
+                        ss_dip = SpinMultipole(0 // 1, w, N)
+                        ss_quad = SpinMultipole(-2 // 1, w, N; rank=2)
+                        csg = sg_sz ∘ sym(ss_dip, dofo) ∘ sym(ss_quad, dofo)
+                        test_basis_result(dofo, N, csg;
+                            expected_states=[bi"0110"2],
+                            expected_norms=Float64[1]
+                        )
+                    end
+
+                    @testset "w=$w, dipole=0, quad=+2" begin
+                        ss_dip = SpinMultipole(0 // 1, w, N)
+                        ss_quad = SpinMultipole(2 // 1, w, N; rank=2)
+                        csg = sg_sz ∘ sym(ss_dip, dofo) ∘ sym(ss_quad, dofo)
+                        test_basis_result(dofo, N, csg;
+                            expected_states=[bi"1001"2],
+                            expected_norms=Float64[1]
+                        )
+                    end
+                end
+            end
+
+            @testset "spin-1" begin
+                N = 4
+                dofo = dof_object(Spin(1 // 1))
+                sg_sz = sym(TotalMagnetization(0 // 1, N), dofo)
+
+                for w in (Rational{Int}[1, 2, 3, 4], Rational{Int}[2, 3, 4, 5])
+                    @testset "w=$w, dipole=0, quad=-4" begin
+                        ss_dip = SpinMultipole(0 // 1, w, N)
+                        ss_quad = SpinMultipole(-4 // 1, w, N; rank=2)
+                        csg = sg_sz ∘ sym(ss_dip, dofo) ∘ sym(ss_quad, dofo)
+                        test_basis_result(dofo, N, csg;
+                            expected_states=[bi"0220"3],
+                            expected_norms=Float64[1]
+                        )
+                    end
+
+                    @testset "w=$w, dipole=0, quad=+4" begin
+                        ss_dip = SpinMultipole(0 // 1, w, N)
+                        ss_quad = SpinMultipole(4 // 1, w, N; rank=2)
+                        csg = sg_sz ∘ sym(ss_dip, dofo) ∘ sym(ss_quad, dofo)
+                        test_basis_result(dofo, N, csg;
+                            expected_states=[bi"2002"3],
+                            expected_norms=Float64[1]
+                        )
+                    end
+                end
+            end
+        end
+
+        @testset "TotalMagnetization + SpinMultipole rank=2 (origin dependence)" begin
+            @testset "spin-1/2" begin
+                N = 4
+                dofo = dof_object(Spin(1 // 2))
+                sg_sz = sym(TotalMagnetization(0 // 1, N), dofo)
+
+                w1 = Rational{Int}[1, 2, 3, 4]
+                ss_q1 = SpinMultipole(-10 // 1, w1, N; rank=2)
+                test_basis_result(dofo, N, sg_sz ∘ sym(ss_q1, dofo);
+                    expected_states=[bi"0011"2],
+                    expected_norms=Float64[1]
+                )
+                ss_q2 = SpinMultipole(5 // 1, w1, N; rank=2)
+                test_basis_result(dofo, N, sg_sz ∘ sym(ss_q2, dofo);
+                    expected_states=[bi"1010"2],
+                    expected_norms=Float64[1]
+                )
+
+                w2 = Rational{Int}[2, 3, 4, 5]
+                ss_q3 = SpinMultipole(-14 // 1, w2, N; rank=2)
+                test_basis_result(dofo, N, sg_sz ∘ sym(ss_q3, dofo);
+                    expected_states=[bi"0011"2],
+                    expected_norms=Float64[1]
+                )
+
+                ss_q4 = SpinMultipole(-10 // 1, w2, N; rank=2)
+                b_empty = basis(dofo, N, sg_sz ∘ sym(ss_q4, dofo); is_sorted=true)
+                @test isempty(b_empty.states)
+            end
+
+            @testset "spin-1" begin
+                N = 4
+                dofo = dof_object(Spin(1 // 1))
+                sg_sz = sym(TotalMagnetization(0 // 1, N), dofo)
+
+                w1 = Rational{Int}[1, 2, 3, 4]
+                ss_qm10 = SpinMultipole(-10 // 1, w1, N; rank=2)
+                test_basis_result(dofo, N, sg_sz ∘ sym(ss_qm10, dofo);
+                    expected_states=[bi"0202"3],
+                    expected_norms=Float64[1]
+                )
+
+                w2 = Rational{Int}[2, 3, 4, 5]
+                ss_qm14 = SpinMultipole(-14 // 1, w2, N; rank=2)
+                test_basis_result(dofo, N, sg_sz ∘ sym(ss_qm14, dofo);
+                    expected_states=[bi"0202"3],
+                    expected_norms=Float64[1]
+                )
+
+                ss_qm10_w2 = SpinMultipole(-10 // 1, w2, N; rank=2)
+                b_empty = basis(dofo, N, sg_sz ∘ sym(ss_qm10_w2, dofo); is_sorted=true)
+                @test isempty(b_empty.states)
+            end
+        end
+    end
 end

@@ -83,6 +83,29 @@ function _configs_to_namedtuples(
 end
 
 """
+    all_permutations(t::NTuple{N,T}) where {N,T}
+
+Generate all permutations of the elements in the input tuple `t`.
+
+# Arguments
+- `t::NTuple{N,T}`: An N-tuple containing elements of type `T`.
+
+# Returns
+- `Vector{NTuple{N,T}}`: A vector containing all permutations of the input tuple `t`.
+"""
+function all_permutations(t::NTuple{N,T}) where {N,T}
+    N == 1 && return [t]
+    result = NTuple{N,T}[]
+    for i in 1:N
+        rest = ntuple(j -> t[j < i ? j : j + 1], N - 1)
+        for p in all_permutations(rest)
+            push!(result, (t[i], p...))
+        end
+    end
+    return result
+end
+
+"""
     perm_k(perm::AbstractVector{T_lsi}, k) where {T_lsi<:Integer}
 
 Apply the permutation `perm` repeatedly `k` times.

@@ -1,4 +1,4 @@
-using SymBasis.Miscs: combos_spin_sum, perm_k, perm_wrapper
+using SymBasis.Miscs: combos_spin_sum, perm_k, perm_wrapper, all_permutations
 using BitPermutations: bitpermute, PermutationBackend, BitPermutation
 using SymBasis.DoFObjects: DoFObject
 using SymBasis.DigitBase: BaseInt, permute, count, flip
@@ -200,6 +200,116 @@ function apply_Nₛ(
     return state
 end
 
+function _validate_qₛ(qₛ::AbstractArray)
+    D = size(qₛ, 1)
+    all(==(D), size(qₛ)) || throw(ArgumentError(
+        "qₛ must have all dimensions equal to D = $D, got size = $(size(qₛ))"
+    ))
+    for idx in CartesianIndices(qₛ)
+        t = Tuple(idx)
+        for perm in all_permutations(t)
+            qₛ[idx] == qₛ[CartesianIndex(perm)] || throw(ArgumentError(
+                "qₛ tensor is not symmetric: index $t ≠ index $perm"
+            ))
+        end
+    end
+end
+
+function _build_eff_weights(weights::AbstractMatrix{Tw}, RANK::Integer) where {Tw}
+    N, D = size(weights)
+    eff = Matrix{Tw}(undef, N, D^RANK)
+    for i in 1:N
+        row = weights[i, :]
+        w = row
+        for _ in 2:RANK
+            w = kron(w, row)
+        end
+        eff[i, :] = w
+    end
+    return eff
+end
+
+function _check_multipole(
+    state::BaseInt{T,Ti,B},
+    p::@NamedTuple{qₛ::T_qₛ, weights::T_weights, N::T_N, rtol::T_rtol, atol::T_atol}
+) where {
+    T,
+    Ti,
+    B,
+    T_qₛ,
+    Tw<:Real,
+    T_weights<:AbstractMatrix{Tw},
+    T_N<:Integer,
+    T_rtol<:Real,
+    T_atol<:Real
+}
+    ET = Tw <: Rational ? Tw : float(promote_type(Tw, Float64))
+
+    D_eff = size(p.weights, 2)
+    multipole_sumₛ = zeros(ET, D_eff)
+    for id_site in 1:p.N
+        digit = read(state, Ti(id_site))
+        m_i = (2 * Int(digit) - (B - 1)) // 2
+        multipole_sumₛ .+= @view(p.weights[id_site, :]) .* m_i
+    end
+
+    RANK = ndims(p.qₛ)
+    target_vec = vec(permutedims(ET.(p.qₛ), ntuple(i -> RANK + 1 - i, RANK)))
+
+    return isapprox(multipole_sumₛ, target_vec; rtol=p.rtol, atol=p.atol)
+end
+
+"""
+    check_multipole(
+        p::NamedTuple,
+        state::SymBasis.DigitBase.BaseInt{T,Ti,B},
+        prev_bool::Bool
+    ) where {T,Ti,B}
+
+Check if the given state satisfies the multipole symmetry defined by `p`. The function
+computes the multipole sum for the state using the weights and compares it to the target qₛ
+values. The result is combined with `prev_bool`.
+
+# Arguments
+- `p::NamedTuple`: A named tuple containing the multipole symmetry parameters.
+- `state::`[`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: The state to be checked.
+- `prev_bool::Bool`: The previous boolean value to be combined with the check result.
+
+# Returns
+- `Bool`: The combined result of the previous boolean and the multipole symmetry check.
+"""
+function check_multipole(
+    p::NamedTuple,
+    state::BaseInt{T,Ti,B},
+    prev_bool::Bool
+) where {T,Ti,B}
+    return prev_bool * _check_multipole(state, p)
+end
+
+"""
+    apply_multipole(
+        p::NamedTuple,
+        state::SymBasis.DigitBase.BaseInt{T,Ti,B}
+    ) where {T,Ti,B}
+
+Apply the multipole symmetry operation defined by `p` to the given state. Since this is a
+symmetry where the state remains unchanged, the function simply returns the input state.
+
+# Arguments
+- `p::NamedTuple`: A named tuple containing the multipole symmetry parameters.
+- `state::`[`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: The state to which the multipole
+    symmetry operation will be applied.
+
+# Returns
+- [`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: The unchanged state.
+"""
+function apply_multipole(
+    p::NamedTuple,
+    state::BaseInt{T,Ti,B}
+) where {T,Ti,B}
+    return state
+end
+
 """
     check_flip(
         p::NamedTuple{names,<:Tuple{Bool,<:AbstractVector{Ti},Vararg{Integer}}},
@@ -365,6 +475,135 @@ function sym(
     )
 
     return Sz_sym
+end
+
+"""
+    SpinMultipole{RANK,T_q<:Real,T_w<:Real,T_N<:Integer,T_tol<:Real} <: SymBasis.SymGroups.AbstractSymSpec
+
+A concrete subtype of [`SymBasis.SymGroups.AbstractSymSpec`](@ref) representing a spin
+multipole symmetry specification.
+
+# Fields
+- `qₛ::AbstractArray{T_q,RANK}`: The target multipole values for the symmetry specification.
+- `weights::AbstractMatrix{T_w}`: The weights used to compute the multipole sum from the
+    spin projections.
+- `N::T_N`: The total number of DoF-objects in the system.
+- `rtol::T_tol`: The relative tolerance for comparing the computed multipole sum to the
+    target values.
+- `atol::T_tol`: The absolute tolerance for comparing the computed multipole sum to the
+    target values.
+
+# Constructor Arguments
+- `qₛ::AbstractArray{T_q,RANK}`: The target multipole values for the symmetry specification.
+- `weights::AbstractMatrix{T_w}`: The weights used to compute the multipole sum from the
+    spin projections.
+- `N::T_N`: The total number of DoF-objects in the system.
+
+# Constructor Keyword Arguments
+- `rtol::T_tol=0.0`: The relative tolerance for comparing the computed multipole sum to the
+    target values.
+- `atol::T_tol=0.0`: The absolute tolerance for comparing the computed multipole sum to the
+    target values.
+
+# Returns
+- `SpinMultipole{RANK,T_q,T_w,T_N,T_tol}`: An instance of `SpinMultipole` representing the
+    specified spin multipole symmetry.
+"""
+struct SpinMultipole{RANK,T_q<:Real,T_w<:Real,T_N<:Integer,T_tol<:Real} <: AbstractSymSpec
+    qₛ::AbstractArray{T_q,RANK}
+    weights::AbstractMatrix{T_w}
+    N::T_N
+    rtol::T_tol
+    atol::T_tol
+
+    function SpinMultipole(
+        qₛ::AbstractArray{T_q,RANK}, weights::AbstractMatrix{T_w}, N::T_N;
+        rtol::T_tol=0.0, atol::T_tol=0.0
+    ) where {RANK,T_q,T_w,T_N,T_tol}
+        @assert RANK >= 1
+        _validate_qₛ(qₛ)
+        @assert size(weights) == (N, size(qₛ, 1))
+
+        return new{RANK,T_q,T_w,T_N,T_tol}(
+            qₛ, _build_eff_weights(weights, RANK), N, rtol, atol
+        )
+    end
+end
+
+"""
+    SpinMultipole(
+        q::T_q, weights::AbstractVector{T_w}, N;
+        rank::Integer=1, kwargs...
+    ) where {T_q<:Real,T_w<:Real}
+
+Convenience constructor for [`SymBasis.SymGroups.SpinMultipole`](@ref) that accepts a single
+target multipole value `q` and a vector of weights, and constructs the full `qₛ` array by
+filling it with `q` values. The `rank` keyword argument specifies the rank of the multipole,
+which determines the number of dimensions in the `qₛ` array. The remaining keyword arguments
+are passed to the main constructor.
+
+# Arguments
+- `q::T_q`: The target multipole value for the symmetry specification.
+- `weights::AbstractVector{T_w}`: The weights used to compute the multipole sum from the
+    spin projections.
+- `N`: The total number of DoF-objects in the system.
+
+# Keyword Arguments
+- `rank::Integer=1`: The rank of the multipole, which determines the number of dimensions in
+    the `qₛ` array. Default is `1`.
+- `kwargs...`: Additional keyword arguments to be passed to the main constructor.
+
+# Returns
+- [`SymBasis.SymGroups.SpinMultipole`](@ref): An instance of `SpinMultipole` representing
+    the specified spin multipole symmetry.
+"""
+function SpinMultipole(
+    q::T_q, weights::AbstractVector{T_w}, N;
+    rank::Integer=1, kwargs...,
+) where {T_q<:Real,T_w<:Real}
+    return SpinMultipole(
+        fill(q, ntuple(_ -> 1, rank)), reshape(weights, N, 1), N;
+        kwargs...
+    )
+end
+
+"""
+    sym(
+        ss::SymBasis.SymGroups.SpinMultipole{RANK,T_q,T_w,T_N},
+        dofo::SymBasis.DoFObjects.DoFObject{B,T_s,T,Ti}
+    ) where {B,T_s,T,Ti,RANK,T_q,T_w,T_N}
+
+Create a spin multipole symmetry group for the given DoF-object `dofo`, and spin multipole
+symmetry specification `ss`. The function computes the multipole sum for each state using
+the weights and checks if it matches the target qₛ values within the specified tolerances.
+The symmetry group is constructed using the [`SymBasis.SymGroups.check_multipole`](@ref) and
+[`SymBasis.SymGroups.apply_multipole`](@ref) functions.
+
+# Arguments
+- `ss::`[`SymBasis.SymGroups.SpinMultipole`](@ref)`{RANK,T_q,T_w,T_N}`: The spin multipole
+    symmetry specification.
+- `dofo::`[`SymBasis.DoFObjects.DoFObject`](@ref)`{B,T_s,T,Ti}`: The DoF-object.
+
+# Returns
+- [`SymBasis.SymGroups.SymGroup`](@ref): The spin multipole symmetry group.
+"""
+function sym(
+    ss::SpinMultipole{RANK,T_q,T_w,T_N},
+    dofo::DoFObject{B,T_s,T,Ti}
+) where {B,T_s,T,Ti,RANK,T_q,T_w,T_N}
+    @assert dofo.type == :Spin
+    s = T_s((length(dofo) - 1) // 2)
+
+    multipole_sym = SymGroup(
+        dofo,
+        [(; qₛ=ss.qₛ, weights=ss.weights, N=ss.N, rtol=ss.rtol, atol=ss.atol)],
+        check_multipole,
+        apply_multipole,
+        ones(1),
+        ss.N
+    )
+
+    return multipole_sym
 end
 
 """

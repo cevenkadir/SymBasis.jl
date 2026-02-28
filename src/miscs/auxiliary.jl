@@ -35,13 +35,7 @@ function combos_spin_sum(
     targetR = target isa Int ? target // 1 : target
     targetI = Int(numerator(targetR * denominator(s)))  # scale by denom(s)
 
-    names = NTuple{n_ldof,Symbol}(Symbol("N$j") for j in 0:(n_ldof-1))
-    NT = NamedTuple{names,NTuple{n_ldof,T_n}}
-
-    names_last = (names..., Symbol("N"))
-    NT_last = NamedTuple{names_last,NTuple{n_ldof + 1,T_n}}
-
-    res = Vector{NT_last}()
+    configs = Vector{Vector{Rational{Int}}}()
     counts = zeros(T_n, length(S))
 
     function rec(i::Int, remaining::Int, sumval::Int)
@@ -49,8 +43,8 @@ function combos_spin_sum(
             c = remaining
             if sumval + S[i] * c == targetI
                 counts[i] = c
-                d = NT(ntuple(j -> counts[j], n_ldof))
-                push!(res, merge(d, (; N=n)))
+                # Build a representative config: each projection repeated counts[j] times.
+                push!(configs, vcat([fill(ldof[j], counts[j]) for j in 1:n_ldof]...))
             end
             return
         end
@@ -62,6 +56,29 @@ function combos_spin_sum(
     end
 
     rec(1, n, 0)
+    return _configs_to_namedtuples(s, n, configs)
+end
+
+function _configs_to_namedtuples(
+    s::T_s,
+    n::T_n,
+    configs::Vector{Vector{Rational{Int}}}
+) where {T_s<:Rational,T_n<:Int}
+    n_ldof = numerator(2s + 1)
+    ldof = ((0:(n_ldof-1)) .- s) |> collect
+
+    names = NTuple{n_ldof,Symbol}(Symbol("N$j") for j in 0:(n_ldof-1))
+    NT = NamedTuple{names,NTuple{n_ldof,T_n}}
+    names_last = (names..., Symbol("N"))
+    NT_last = NamedTuple{names_last,NTuple{n_ldof + 1,T_n}}
+
+    seen = Set{NT_last}()
+    res = Vector{NT_last}()
+    for config in configs
+        counts = NT(ntuple(j -> T_n(count(==(ldof[j]), config)), n_ldof))
+        nt = merge(counts, (; N=n))
+        nt ∉ seen && (push!(seen, nt); push!(res, nt))
+    end
     return res
 end
 

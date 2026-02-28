@@ -242,6 +242,105 @@
         end
     end
 
+    @testset "SpinMultipole constructor" begin
+        # RANK=1, D=1: _build_eff_weights is identity, so stored weights == input
+        w1 = ones(Rational{Int}, 4)
+        ss1 = SpinMultipole(1 // 2, w1, 4)
+        @test ss1.qₛ == [1 // 2]
+        @test ss1.weights == ones(Rational{Int}, 4, 1)
+        @test ss1.N == 4
+        @test ss1.rtol == 0.0
+        @test ss1.atol == 0.0
+
+        # RANK=1, D=2: effective weights still identical to input
+        w2 = Rational{Int}[1 0; 0 1; 1 0; 0 1]
+        ss2 = SpinMultipole([1 // 2, 0 // 1], w2, 4)
+        @test ss2.qₛ == [1 // 2, 0 // 1]
+        @test ss2.weights == w2
+        @test ss2.N == 4
+
+        # RANK=2, D=1: effective weights are element-wise squares of input column
+        w3 = Rational{Int}[1, 2, 1, 2]
+        ss3 = SpinMultipole(1 // 4, w3, 4; rank=2)
+        @test ss3.qₛ == reshape([1 // 4], 1, 1)
+        @test ss3.weights == Rational{Int}[1//1; 4//1; 1//1; 4//1;;]
+
+        # RANK=2, D=2: effective weights are kron([w1,w2],[w1,w2]) per row
+        w4 = Rational{Int}[1 2; 3 1]
+        qₛ4 = Rational{Int}[1 0; 0 1]  # symmetric 2×2
+        ss4 = SpinMultipole(qₛ4, w4, 2)
+        @test ss4.qₛ == qₛ4
+        @test ss4.weights == Rational{Int}[1 2 2 4; 9 3 3 1]
+
+        # Custom tolerances
+        ss5 = SpinMultipole(0.5, ones(4), 4; rtol=1e-6, atol=1e-8)
+        @test ss5.rtol == 1e-6
+        @test ss5.atol == 1e-8
+
+        # Convenience constructor: scalar + vector, rank=1 (default)
+        ss6 = SpinMultipole(1 // 2, ones(Rational{Int}, 4), 4)
+        @test ss6.qₛ == [1 // 2]
+        @test ss6.weights == ones(Rational{Int}, 4, 1)
+        @test ss6.N == 4
+
+        # Convenience constructor with rank=2, D=1: kron([1],[1])=[1] → eff weights=ones
+        ss7 = SpinMultipole(1 // 4, ones(Rational{Int}, 4), 4; rank=2)
+        @test ss7.qₛ == reshape([1 // 4], 1, 1)
+        @test ss7.weights == ones(Rational{Int}, 4, 1)
+
+        # AssertionError: 0-dimensional qₛ (RANK=0)
+        @test_throws AssertionError SpinMultipole(fill(1 // 2), ones(Rational{Int}, 4, 1), 4)
+        # ArgumentError: non-square qₛ (size (2,3) → D=2 but second dim is 3)
+        @test_throws ArgumentError SpinMultipole(
+            Rational{Int}[1 0 0; 0 1 0], ones(Rational{Int}, 4, 2), 4
+        )
+        # ArgumentError: asymmetric qₛ (qₛ[1,2] ≠ qₛ[2,1])
+        @test_throws ArgumentError SpinMultipole(
+            Rational{Int}[1 2; 3 1], ones(Rational{Int}, 4, 2), 4
+        )
+        # AssertionError: weights rows ≠ N
+        @test_throws AssertionError SpinMultipole([1 // 2], ones(Rational{Int}, 3, 1), 4)
+    end
+
+    @testset "sym of SpinMultipole" begin
+        # Spin-1/2, N=4, RANK=1, D=1, uniform rational weights
+        dofo1 = dof_object(Spin(1 // 2))
+        w1 = ones(Rational{Int}, 4)
+        ss1 = SpinMultipole(1 // 2, w1, 4)
+        ms1 = sym(ss1, dofo1)
+        @test ms1.dofo == dofo1
+        @test ms1.cycles == [(; qₛ=ss1.qₛ, weights=ss1.weights, N=4, rtol=0.0, atol=0.0)]
+        @test ms1.check == check_multipole
+        @test ms1.apply == apply_multipole
+        @test ms1.factors == ones(1)
+
+        # Spin-1, N=3, RANK=1, D=1, non-uniform weights, custom tolerances
+        dofo2 = dof_object(Spin(1 // 1))
+        w2 = Rational{Int}[1, 2, 1]
+        ss2 = SpinMultipole(0 // 1, w2, 3; rtol=1e-8, atol=1e-8)
+        ms2 = sym(ss2, dofo2)
+        @test ms2.dofo == dofo2
+        @test ms2.cycles == [(; qₛ=ss2.qₛ, weights=ss2.weights, N=3, rtol=1e-8, atol=1e-8)]
+        @test ms2.check == check_multipole
+        @test ms2.apply == apply_multipole
+        @test ms2.factors == ones(1)
+
+        # Spin-1/2, RANK=2, D=1: quadrupole-like symmetry
+        dofo3 = dof_object(Spin(1 // 2))
+        w3 = Rational{Int}[1, 1, 1]
+        ss3 = SpinMultipole(3 // 4, w3, 3; rank=2)
+        ms3 = sym(ss3, dofo3)
+        @test ms3.dofo == dofo3
+        @test ms3.cycles == [(; qₛ=ss3.qₛ, weights=ss3.weights, N=3, rtol=0.0, atol=0.0)]
+        @test ms3.check == check_multipole
+        @test ms3.apply == apply_multipole
+        @test ms3.factors == ones(1)
+
+        # Non-Spin DoFObject should throw
+        dofo4 = DoFObject(:Emoji, (:🥳, :🙈))
+        @test_throws AssertionError sym(ss1, dofo4)
+    end
+
     @testset "SpinInversion constructor" begin
         p1 = SpinInversion(1, 4)
         @test p1.z == 1

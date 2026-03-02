@@ -66,9 +66,10 @@ number in the specified base `B`.
     [`SymBasis.DigitBase.BaseInt`](@ref) instance representing the number.
 """
 macro bi_str(str::String, base::Integer)
-    @assert all(x -> 0 <= x < base, parse(Int, c) for c in str) """entered numbers do not
+    digit_values = [parse(Int, string(c)) for c in str]
+    @assert all(x -> 0 <= x < base, digit_values) """entered numbers do not
     follow given base"""
-    return BaseInt(evalpoly(base, digits(parse(Int, str))) |> UInt, base=base)
+    return BaseInt(evalpoly(base, reverse(digit_values)) |> UInt, base=base)
 end
 
 

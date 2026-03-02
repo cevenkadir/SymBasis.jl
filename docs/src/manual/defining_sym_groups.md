@@ -162,34 +162,27 @@ function check_cat_dog(
     state::BaseInt{T,Ti,B},
     prev_bool::Bool
 ) where {
-    T<:Integer,
-    Ti<:Integer,
+    T,
+    Ti,
     B,
     Tp<:NamedTuple{(:prevent, :N),<:Tuple{NTuple{2,T},<:Integer}}
 }
-    return prev_bool && !any(
-        map(2:(p.N-1)) do i
-            d_prev, d_curr, d_next = read(state, i - 1), read(state, i), read(state, i + 1)
-
-            (d_curr == p.prevent[1] && d_next == p.prevent[2]) ||
-                (d_curr == p.prevent[2] && d_next == p.prevent[1]) ||
-                (d_curr == p.prevent[1] && d_prev == p.prevent[2]) ||
-                (d_curr == p.prevent[2] && d_prev == p.prevent[1])
+    prev_bool || return false
+    p1, p2 = p.prevent
+    d_prev = read(state, 1)
+    for i in 2:p.N
+        d_curr = read(state, i)
+        if (d_prev == p1 && d_curr == p2) || (d_prev == p2 && d_curr == p1)
+            return false
         end
-    )
+        d_prev = d_curr
+    end
+    return true
 end
 ```
 Then, we can define the apply function for the custom symmetry. This function will apply the symmetry operation to a given state. In this case, since the symmetry operation does not change the state, we can simply return the input state:
 ```@example custom_symmetry
-function apply_cat_dog(
-    p::Tp,
-    state::BaseInt{T,Ti,B}
-) where {
-    T<:Integer,
-    Ti<:Integer,
-    B,
-    Tp<:NamedTuple{(:prevent, :N),<:Tuple{NTuple{2,T},<:Integer}}
-}
+function apply_cat_dog(p, state::BaseInt{T,Ti,B}) where {T,Ti,B}
     return state
 end
 ```

@@ -15,7 +15,8 @@ makedocs(;
         repolink=REPOLINK,
         canonical=CANONICAL,
         assets=["assets/favicon.ico"],
-        analytics="G-X8Z32YNZ42"
+        analytics="G-X8Z32YNZ42",
+        mathengine=Documenter.KaTeX()
     ),
     pages=[
         "Home" => "index.md",
@@ -29,6 +30,7 @@ makedocs(;
         ],
         "Examples" => [
             "Quantum mechanical spins" => "examples/spins.md",
+            "Quantum many-body scars in the PXP chain" => "examples/pxp.md"
         ],
         "API Reference" => [
             "DigitBase" => "api/digitbase.md",

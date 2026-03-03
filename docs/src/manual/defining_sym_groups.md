@@ -15,11 +15,11 @@ Some symmetries are independent of the DoF-object, such as translational and ref
 #### Translational symmetry
 Translational symmetry is a symmetry where the system is invariant under translations. In a system with $N$ sites, the translation operator $T$ acts on a state $\vert a \rangle$ as follows:
 ```math
-\vert a(k) \rangle = \frac{1}{\sqrt{N_a}} \sum_{r=0}^{N-1} e^{-i k r} \hat{T}^r \vert a \rangle
+\vert a(k) \rangle = \frac{1}{\sqrt{N_a}} \sum_{r=0}^{N-1} e^{-i k r} \hat{T}^r \vert a \rangle\,,
 ```
 where $N_a$ is the normalization factor, $k$ is the momentum quantum number, and $\hat{T}^r$ is the translation operator applied $r$ times. The translation operator $\hat{T}$ acts on the state $\vert a(k) \rangle$ as follows:
 ```math
-\hat{T} \vert a(k) \rangle =  e^{i k} \vert a(k) \rangle
+\hat{T} \vert a(k) \rangle =  e^{i k} \vert a(k) \rangle\,.
 ```
 You can define a translation symmetry group for a system with a certain number of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function and the [`Translational`](@ref SymBasis.SymGroups.Translational) type as follows:
 ```@example
@@ -38,11 +38,11 @@ sg = sym(Translational(k, perm), dofo)
 #### Spatial-reflection symmetry
 Spatial-reflection symmetry is a symmetry where the system is invariant under spatial reflection. In a system with $N$ sites, the reflection operator $R$ acts on a state $\vert a \rangle$ as follows:
 ```math
-\vert a(p) \rangle = \frac{1}{\sqrt{N_a}} \sum_{r=0}^{1} p^r \hat{P}^r \vert a \rangle
+\vert a(p) \rangle = \frac{1}{\sqrt{N_a}} \sum_{r=0}^{1} p^r \hat{P}^r \vert a \rangle\,,
 ```
 where $N_a$ is the normalization factor, $p$ is the parity quantum number, and $\hat{P}^r$ is the reflection operator applied $r$ times. The reflection operator $\hat{P}$ acts on the state $\vert a(p) \rangle$ as follows:
 ```math
-\hat{P} \vert a(p) \rangle =  p \vert a(p) \rangle
+\hat{P} \vert a(p) \rangle =  p \vert a(p) \rangle\,.
 ```
 You can define a spatial reflection symmetry group for a system with a certain number of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function and the [`SpatialReflection`](@ref SymBasis.SymGroups.SpatialReflection) type as follows:
 ```@example
@@ -60,11 +60,11 @@ sg = sym(SpatialReflection(p, perm), dofo)
 #### Rotational symmetry of space
 Rotational symmetry is a symmetry where the system is invariant under discrete rotations in space. For a system where the rotation operator $\hat{R}$ has period $T_R$ (i.e. $\hat{R}^{T_R} = \hat{I}$), the representative state $\vert a(r) \rangle$ with rotation quantum number $r$ is constructed as follows:
 ```math
-\vert a(r) \rangle = \frac{1}{\sqrt{N_a}} \sum_{l=0}^{T_R-1} e^{-i 2\pi r l / T_R} \hat{R}^l \vert a \rangle
+\vert a(r) \rangle = \frac{1}{\sqrt{N_a}} \sum_{l=0}^{T_R-1} e^{-i 2\pi r l / T_R} \hat{R}^l \vert a \rangle\,,
 ```
 where $N_a$ is the normalization factor, $r \in \{0, 1, \ldots, T_R - 1\}$ is the rotation quantum number, and $l$ is the summation index. The rotation operator $\hat{R}$ acts on the representative state $\vert a(r) \rangle$ as an eigenstate:
 ```math
-\hat{R} \vert a(r) \rangle = e^{i 2\pi r / T_R} \vert a(r) \rangle
+\hat{R} \vert a(r) \rangle = e^{i 2\pi r / T_R} \vert a(r) \rangle\,.
 ```
 You can define a rotational symmetry group using the [`sym`](@ref SymBasis.SymGroups.sym) function and the [`Rotational`](@ref SymBasis.SymGroups.Rotational) type. The permutation supplied to `Rotational` should encode the action of $\hat{R}$ on site indices:
 ```@example
@@ -86,7 +86,7 @@ Some symmetries depend on the DoF-object, such as total magnetization symmetry.
 ##### Total magnetization symmetry
 Total magnetization symmetry is a symmetry where the system is invariant under the total magnetization operator. In a system with $N$ sites, the total magnetization operator $\hat{S}^z$ acts on a state $\vert a(S^z) \rangle$ as follows:
 ```math
-\hat{S}^z \vert a(S^z) \rangle = \sum_{i=1}^{N} S_i^z \vert a(S^z) \rangle = S^z \vert a(S^z) \rangle
+\hat{S}^z \vert a(S^z) \rangle = \sum_{i=1}^{N} S_i^z \vert a(S^z) \rangle = S^z \vert a(S^z) \rangle\,,
 ```
 where $S_i^z$ is the magnetization of the $i$-th site, and $S^z$ is the total magnetization quantum number.
 You can define a total magnetization symmetry group for a system with a certain number of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function and the [`TotalMagnetization`](@ref SymBasis.SymGroups.TotalMagnetization) type as follows:
@@ -150,15 +150,15 @@ sg = sym(SpinMultipole(Q, w, N; rank=2), dofo)
 ##### Spin-inversion symmetry
 Spin-inversion symmetry is a symmetry where the system is invariant under the spin-inversion operator. The spin-inversion operator $\hat{P}_z$ flips all spin quantum numbers on every site:
 ```math
-\hat{P}_z \vert \sigma_1, \sigma_2, \ldots, \sigma_N \rangle = \vert -\sigma_1, -\sigma_2, \ldots, -\sigma_N \rangle
+\hat{P}_z \vert \sigma_1, \sigma_2, \ldots, \sigma_N \rangle = \vert -\sigma_1, -\sigma_2, \ldots, -\sigma_N \rangle\,.
 ```
 In a system with $N$ sites, the representative state $\vert a(z) \rangle$ is constructed as follows:
 ```math
-\vert a(z) \rangle = \frac{1}{\sqrt{N_a}} \sum_{r=0}^{1} z^r \hat{P}_z^r \vert a \rangle
+\vert a(z) \rangle = \frac{1}{\sqrt{N_a}} \sum_{r=0}^{1} z^r \hat{P}_z^r \vert a \rangle\,,
 ```
 where $N_a$ is the normalization factor and $z$ is the parity quantum number. The spin-inversion operator $\hat{P}_z$ acts on $\vert a(z) \rangle$ as follows:
 ```math
-\hat{P}_z \vert a(z) \rangle = z \vert a(z) \rangle
+\hat{P}_z \vert a(z) \rangle = z \vert a(z) \rangle\,,
 ```
 where $z$ is the parity quantum number. You can define a spin-inversion symmetry group for a system with a certain number of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function and the [`SpinInversion`](@ref SymBasis.SymGroups.SpinInversion) type as follows:
 ```@example

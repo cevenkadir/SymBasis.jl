@@ -4,7 +4,7 @@ The PXP model describes a chain of Rydberg atoms subject to a nearest-neighbor b
 ```math
 H = \sum_{i} P_{i-1} X_i P_{i+1}\,,
 ```
-where $P_i = \ket{g}\!\!\bra{g}_i$ is the projector onto the ground state and $X_i = \ket{g}\!\!\bra{g}_i + \ket{r}\!\!\bra{r}_i$.
+where $P_i = \ket{g}\!\!\bra{g}_i$ is the projector onto the ground state and $X_i = \ket{g}\!\!\bra{r}_i + \ket{r}\!\!\bra{g}_i$.
 
 This model is known to exhibit quantum many-body scars[^Turner_2018]: special high-energy eigenstates that have anomalously large overlap with the $\mathbb{Z}_2$ period-2 density-wave initial
 state $\ket{r g r g \cdots}$, leading to persistent oscillations when the system is initialized in that state.

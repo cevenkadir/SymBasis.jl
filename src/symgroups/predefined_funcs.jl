@@ -3,6 +3,14 @@ using BitPermutations: bitpermute, PermutationBackend, BitPermutation
 using SymBasis.DoFObjects: DoFObject
 using SymBasis.DigitBase: BaseInt, permute, count, flip
 
+# default tolerance arguments
+rtoldefault(::Type{T}) where {T<:AbstractFloat} = sqrt(eps(T))
+rtoldefault(::Type{<:Real}) = 0
+function rtoldefault(x::Union{T,Type{T}}, y::Union{S,Type{S}}, atol::Real) where {T<:Number,S<:Number}
+    rtol = max(rtoldefault(real(T)), rtoldefault(real(S)))
+    return atol > 0 ? zero(rtol) : rtol
+end
+
 # START -- check and apply functions for predefined symmetries
 """
     check_perm(
@@ -213,6 +221,9 @@ function _validate_qₛ(qₛ::AbstractArray)
     end
 end
 
+_multipole_eltype(::Type{Tw}) where {Tw<:Rational} = Tw
+_multipole_eltype(::Type{Tw}) where {Tw<:Real} = float(promote_type(Tw, Float64))
+
 function _build_eff_weights(weights::AbstractMatrix{Tw}, RANK::Integer) where {Tw}
     N, D = size(weights)
     eff = Matrix{Tw}(undef, N, D^RANK)
@@ -229,7 +240,7 @@ end
 
 function _check_multipole(
     state::BaseInt{T,Ti,B},
-    p::@NamedTuple{qₛ::T_qₛ, weights::T_weights, N::T_N, rtol::T_rtol, atol::T_atol}
+    p::@NamedTuple{qₛ::T_qₛ, weights::T_weights, N::T_N, atol::T_atol, rtol::T_rtol}
 ) where {
     T,
     Ti,
@@ -238,23 +249,37 @@ function _check_multipole(
     Tw<:Real,
     T_weights<:AbstractMatrix{Tw},
     T_N<:Integer,
-    T_rtol<:Real,
-    T_atol<:Real
+    T_atol<:Real,
+    T_rtol<:Real
 }
-    ET = Tw <: Rational ? Tw : float(promote_type(Tw, Float64))
+    ET = _multipole_eltype(Tw)
 
     D_eff = size(p.weights, 2)
     multipole_sumₛ = zeros(ET, D_eff)
     for id_site in 1:p.N
         digit = read(state, Ti(id_site))
-        m_i = (2 * Int(digit) - (B - 1)) // 2
-        multipole_sumₛ .+= @view(p.weights[id_site, :]) .* m_i
+        m_i = ET((2 * Int(digit) - (B - 1)) // 2)
+        for j in 1:D_eff
+            multipole_sumₛ[j] += p.weights[id_site, j] * m_i
+        end
     end
 
+    # Compute isapprox(multipole_sumₛ, target_vec) without materializing target_vec.
     RANK = ndims(p.qₛ)
-    target_vec = vec(permutedims(ET.(p.qₛ), ntuple(i -> RANK + 1 - i, RANK)))
-
-    return isapprox(multipole_sumₛ, target_vec; rtol=p.rtol, atol=p.atol)
+    rev_perm = ntuple(k -> RANK + 1 - k, RANK)
+    norm_diff_sq = zero(ET)
+    norm_a_sq = zero(ET)
+    norm_b_sq = zero(ET)
+    for (j, idx) in enumerate(CartesianIndices(p.qₛ))
+        ridx = CartesianIndex(ntuple(k -> Tuple(idx)[rev_perm[k]], RANK))
+        a_j = multipole_sumₛ[j]
+        b_j = ET(p.qₛ[ridx])
+        norm_diff_sq += (a_j - b_j)^2
+        norm_a_sq += a_j^2
+        norm_b_sq += b_j^2
+    end
+    tol = max(p.atol, p.rtol * max(sqrt(norm_a_sq), sqrt(norm_b_sq)))
+    return sqrt(norm_diff_sq) <= tol
 end
 
 """
@@ -486,9 +511,9 @@ multipole symmetry specification.
 - `weights::AbstractMatrix{T_w}`: The weights used to compute the multipole sum from the
     spin projections.
 - `N::T_N`: The total number of DoF-objects in the system.
-- `rtol::T_tol`: The relative tolerance for comparing the computed multipole sum to the
-    target values.
 - `atol::T_tol`: The absolute tolerance for comparing the computed multipole sum to the
+    target values.
+- `rtol::T_tol`: The relative tolerance for comparing the computed multipole sum to the
     target values.
 
 # Constructor Arguments
@@ -498,32 +523,34 @@ multipole symmetry specification.
 - `N::T_N`: The total number of DoF-objects in the system.
 
 # Constructor Keyword Arguments
-- `rtol::T_tol=0.0`: The relative tolerance for comparing the computed multipole sum to the
-    target values.
 - `atol::T_tol=0.0`: The absolute tolerance for comparing the computed multipole sum to the
     target values.
+- `rtol::T_tol=rtoldefault(T_q, T_w, atol)`: The relative tolerance for comparing the
+    computed multipole sum to the target values. By default, it is determined based on the
+    types of `T_q` and `T_w`, and the value of `atol`.
 
 # Returns
 - `SpinMultipole{RANK,T_q,T_w,T_N,T_tol}`: An instance of `SpinMultipole` representing the
     specified spin multipole symmetry.
 """
-struct SpinMultipole{RANK,T_q<:Real,T_w<:Real,T_N<:Integer,T_tol<:Real} <: AbstractSymSpec
+struct SpinMultipole{RANK,T_q<:Real,T_w<:Real,T_N<:Integer,T_atol<:Real,T_rtol<:Real} <: AbstractSymSpec
     qₛ::AbstractArray{T_q,RANK}
     weights::AbstractMatrix{T_w}
     N::T_N
-    rtol::T_tol
-    atol::T_tol
+    atol::T_atol
+    rtol::T_rtol
 
     function SpinMultipole(
         qₛ::AbstractArray{T_q,RANK}, weights::AbstractMatrix{T_w}, N::T_N;
-        rtol::T_tol=0.0, atol::T_tol=0.0
-    ) where {RANK,T_q,T_w,T_N,T_tol}
+        atol::T_atol=0.0, rtol::T_rtol=rtoldefault(T_q, _multipole_eltype(T_w), atol)
+    ) where {RANK,T_q,T_w,T_N,T_atol,T_rtol}
+
         @assert RANK >= 1
         _validate_qₛ(qₛ)
         @assert size(weights) == (N, size(qₛ, 1))
 
-        return new{RANK,T_q,T_w,T_N,T_tol}(
-            qₛ, _build_eff_weights(weights, RANK), N, rtol, atol
+        return new{RANK,T_q,T_w,T_N,T_atol,T_rtol}(
+            qₛ, _build_eff_weights(weights, RANK), N, atol, rtol
         )
     end
 end
@@ -586,15 +613,14 @@ The symmetry group is constructed using the [`SymBasis.SymGroups.check_multipole
 - [`SymBasis.SymGroups.SymGroup`](@ref): The spin multipole symmetry group.
 """
 function sym(
-    ss::SpinMultipole{RANK,T_q,T_w,T_N},
+    ss::SpinMultipole{RANK,T_q,T_w,T_N,T_atol,T_rtol},
     dofo::DoFObject{B,T_s,T,Ti}
-) where {B,T_s,T,Ti,RANK,T_q,T_w,T_N}
+) where {B,T_s,T,Ti,RANK,T_q,T_w,T_N,T_atol,T_rtol}
     @assert dofo.type == :Spin
-    s = T_s((length(dofo) - 1) // 2)
 
     multipole_sym = SymGroup(
         dofo,
-        [(; qₛ=ss.qₛ, weights=ss.weights, N=ss.N, rtol=ss.rtol, atol=ss.atol)],
+        [(; qₛ=ss.qₛ, weights=ss.weights, N=ss.N, atol=ss.atol, rtol=ss.rtol)],
         check_multipole,
         apply_multipole,
         ones(1),

@@ -101,6 +101,52 @@ Sz = 0 # total magnetization quantum number
 sg = sym(TotalMagnetization(Sz, N), dofo)
 ```
 
+##### Spin-multipole symmetry
+Spin-multipole symmetry is a symmetry where the system is invariant under the conserved spin-multipole operator $\hat{Q}_{\alpha_1, \cdots, \alpha_M}$, where $\alpha_j$ is the $j$-th spatial dimension index and $M$ is the rank of the multipole operator ($M=1$ gives dipole, $M=2$ gives quadrupole, and so on). The operator gives rise to an $\mathbb{R}^{D \times D \times \cdots \times D}$ array of quantum numbers of rank $M$. In a system with $N$ sites, $\hat{Q}_{\alpha_1, \cdots, \alpha_M}$ acts on a state $\vert a(Q_{\alpha_1, \cdots, \alpha_M}) \rangle$ as follows:
+```math
+\hat{Q}_{\alpha_1, \cdots, \alpha_M} \vert a(Q_{\alpha_1, \cdots, \alpha_M}) \rangle = \left[ \sum_{i=1}^N \left(\prod_{j=1}^M w_{i, \alpha_j} \right) S_i^z \right] \vert a(Q_{\alpha_1, \cdots, \alpha_M}) \rangle = Q_{\alpha_1, \cdots, \alpha_M} \vert a(Q_{\alpha_1, \cdots, \alpha_M}) \rangle\,,
+```
+where $w_{i, \alpha_j}$ is the weight of site $i$ at its $j$-th spatial dimension. For example, the dipole moment operator $\hat{Q}_\alpha$ for dipole conservation is:
+```math
+\hat{Q}_\alpha = \sum_{i=1}^N w_{i, \alpha} S_i^z\,.
+```
+You can define a multipole symmetry group for a system with a certain number of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function and the [`SpinMultipole`](@ref SymBasis.SymGroups.SpinMultipole) type as follows:
+```@example
+using SymBasis.DoFObjects
+using SymBasis.SymGroups
+
+dofo = dof_object(Spin(1 // 2)) # define, for example, a spin-1/2
+N = 4 # number of sites
+
+# weights of the sites in a N×D array, where D is the spatial dimension
+# and w[i, α] is the weight of site i at its α-th spatial dimension
+w = [1:N zeros(N)]
+
+# multipole quantum numbers (Q[α_1, α_2]) for a rank-2 multipole symmetry
+# (i.e. quadrupole conservation) where α_j is the spatial dimension index
+Q = [1 0; 0 0]
+
+sg = sym(SpinMultipole(Q, w, N), dofo)
+```
+For a 1D system, you can define the weights as a vector `w = collect(1:N)` and the multipole quantum number as a single real number `Q`:
+```@example
+using SymBasis.DoFObjects
+using SymBasis.SymGroups
+
+dofo = dof_object(Spin(1 // 2)) # define, for example, a spin-1/2
+N = 4 # number of sites
+
+# weights of the sites in a N vector
+w = 1:N |> collect
+
+# multipole quantum number
+Q = 1
+
+# Note that for 1D systems, you need to specify the rank of the multipole symmetry
+# as a keyword argument when constructing the symmetry group
+sg = sym(SpinMultipole(Q, w, N; rank=2), dofo)
+```
+
 ##### Spin-inversion symmetry
 Spin-inversion symmetry is a symmetry where the system is invariant under the spin-inversion operator. The spin-inversion operator $\hat{P}_z$ flips all spin quantum numbers on every site:
 ```math

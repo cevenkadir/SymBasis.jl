@@ -15,4 +15,38 @@
         @test dofo3.ldof == (-3 // 2, -1 // 2, 1 // 2, 3 // 2)
         @test typeof(dofo3) == DoFObject{4,Rational{Int64},Int16,Int16}
     end
+
+    @testset "Boson construction (UInt auto-sizing)" begin
+        # max_occupancy=3 ≤ 255 → UInt8
+        b1 = Boson(3)
+        @test typeof(b1) == Boson{UInt8,UInt64,Int64}
+        @test b1.max_occupancy === UInt8(3)
+
+        # max_occupancy=256 > 255 → UInt16
+        b2 = Boson(256)
+        @test typeof(b2) == Boson{UInt16,UInt64,Int64}
+        @test b2.max_occupancy === UInt16(256)
+
+        # custom T and Ti
+        b3 = Boson(3; T=UInt32, Ti=Int32)
+        @test typeof(b3) == Boson{UInt8,UInt32,Int32}
+        @test b3.max_occupancy === UInt8(3)
+    end
+
+    @testset "dof_object of :Boson for DoFObject" begin
+        dofo1 = dof_object(Boson(3))
+        @test dofo1.type == :Boson
+        @test dofo1.ldof == (0, 1, 2, 3)
+        @test typeof(dofo1) == DoFObject{4,Int64,UInt64,Int64}
+
+        dofo2 = dof_object(Boson(256))
+        @test dofo2.type == :Boson
+        @test dofo2.ldof == Tuple(0:256)
+        @test typeof(dofo2) == DoFObject{257,Int64,UInt64,Int64}
+
+        dofo3 = dof_object(Boson(3; T=UInt32, Ti=Int32))
+        @test dofo3.type == :Boson
+        @test dofo3.ldof == (0, 1, 2, 3)
+        @test typeof(dofo3) == DoFObject{4,Int64,UInt32,Int32}
+    end
 end

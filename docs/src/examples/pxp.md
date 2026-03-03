@@ -18,9 +18,11 @@ using SymBasis.DigitBase
 using SymBasis.DoFObjects
 using SymBasis.SymGroups
 
-N = 22
+N = 22 # number of sites in the chain
+# define the Rydberg DoF-object with two states: ground (g) and Rydberg (r)
 dofo = DoFObject(:Rydberg, (:g, :r))
 
+# define the check function for the blockade constraint
 function check_blockade(
     p::Tp,
     state::BaseInt{T,Ti,B},
@@ -41,13 +43,17 @@ function check_blockade(
     return true
 end
 
+# define the apply function for the blockade constraint (identity in this case)
 function apply_blockade(p, state::BaseInt{T,Ti,B}) where {T,Ti,B}
     return state
 end
 
+# define the cycle for the blockade constraint
 cycles = [(; prevent=(UInt(1), UInt(1)), N=N)]
+# define the factor for the blockade constraint (no symmetry transformation, so factor is 1)
 factors = [1,]
 
+# construct the Rydberg blockade symmetry group
 rydberg_blockade_sg = SymGroup(
     dofo,
     cycles,
@@ -65,9 +71,12 @@ The `check_blockade` function iterates over all sites and rejects any state wher
 We next define translational and spatial reflection symmetry groups and combine them with the blockade constraint:
 
 ```@example pxp
+# define the translational symmetry group at momentum k=0
 T_sg = sym(Translational(0, mod1.((1:N) .+ 1, N)), dofo)
+# define the spatial reflection symmetry group with parity p=+1
 P_sg = sym(SpatialReflection(+1, 1:N |> reverse |> collect), dofo)
 
+# merge the symmetry groups
 csg = rydberg_blockade_sg ∘ T_sg ∘ P_sg
 ```
 
@@ -78,6 +87,7 @@ Here `T_sg` is the translational symmetry group at momentum $k = 0$ and `P_sg` i
 ```@example pxp
 using SymBasis.Bases
 
+# construct the symmetry-resolved basis for the PXP model
 ba = basis(dofo, N, csg)
 ```
 
@@ -90,6 +100,7 @@ The Hamiltonian matrix is assembled in the symmetry-resolved basis. For each rep
 ```@example pxp
 using SparseArrays
 
+# initialize vectors to store the row indices, column indices, and values of the nonzero matrix elements
 I_vec = Int64[]
 J_vec = Int64[]
 V_vec = Float64[]
@@ -104,6 +115,7 @@ for sₙ in ba.states
         xᵢ₊₁ = mod1(xᵢ + 1, N)
         xᵢ₊₂ = mod1(xᵢ + 2, N)
 
+        # only flip site i+1 if sites i and i+2 are both in the ground state (digit `0`)
         if DigitBase.read(sₙ, xᵢ) == DigitBase.read(sₙ, xᵢ₊₂) == 0
 
             temp_s = flip(sₙ, xᵢ₊₁)
@@ -127,6 +139,7 @@ for sₙ in ba.states
     end
 end
 
+# construct the sparse Hamiltonian matrix
 h = sparse(I_vec, J_vec, V_vec, hilbert_dim, hilbert_dim)
 ```
 
@@ -137,18 +150,23 @@ We diagonalize the Hamiltonian and compute the overlap of each eigenstate with t
 ```@example pxp
 using LinearAlgebra
 
+# diagonalize the Hamiltonian
 egn = h |> collect |> eigen
 
+# construct the integer representation of the Z_2 state
 Z_2_state = bi"0"2
 for i in 2:2:N
     global Z_2_state = flip(Z_2_state, i)
 end
-
+# find the representative of the Z_2 state in the symmetry-resolved basis
 rep_Z_2_state, _ = representative(Z_2_state, csg)
+# determine the index of the representative state in the basis
 m_Z_2_state = b[rep_Z_2_state]
+# construct the vector representation of the Z_2 state in the symmetry-resolved basis
 Z_2_vec = zeros(hilbert_dim)
 Z_2_vec[m_Z_2_state] = 1.0
 
+# compute the overlap of each eigenstate with the Z_2 state
 overlap = abs2.([Z_2_vec ⋅ egn.vectors[:, i] for i in 1:hilbert_dim]) .|> log10
 ```
 

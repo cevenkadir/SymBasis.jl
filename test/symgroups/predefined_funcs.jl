@@ -48,46 +48,46 @@
         # Binary (B=2), rank-1, D=1, uniform rational weights
         # bi"10011"2: digits (low→high) 1,1,0,0,1 → m = 1/2,1/2,-1/2,-1/2,1/2 → Σm = 1/2
         state1 = bi"10011"2
-        p1 = (; qₛ=[1 // 2], weights=ones(Rational{Int}, 5, 1), N=5, rtol=0.0, atol=0.0)
+        p1 = (; qₛ=[1 // 2], weights=ones(Rational{Int}, 5, 1), N=5, atol=0.0, rtol=0.0)
         @test check_multipole(p1, state1, true) == true
         @test check_multipole(p1, state1, false) == false
         # Non-matching target
-        p1_bad = (; qₛ=[3 // 2], weights=ones(Rational{Int}, 5, 1), N=5, rtol=0.0, atol=0.0)
+        p1_bad = (; qₛ=[3 // 2], weights=ones(Rational{Int}, 5, 1), N=5, atol=0.0, rtol=0.0)
         @test check_multipole(p1_bad, state1, true) == false
 
         # Base-6 (B=6), rank-1, D=1, uniform weights
         # bi"5410"6: digits 0,1,4,5 → m = -5/2,-3/2,3/2,5/2 → Σm = 0
         state2 = bi"5410"6
-        p2 = (; qₛ=[0 // 1], weights=ones(Rational{Int}, 4, 1), N=4, rtol=0.0, atol=0.0)
+        p2 = (; qₛ=[0 // 1], weights=ones(Rational{Int}, 4, 1), N=4, atol=0.0, rtol=0.0)
         @test check_multipole(p2, state2, true) == true
-        p2_bad = (; qₛ=[1 // 1], weights=ones(Rational{Int}, 4, 1), N=4, rtol=0.0, atol=0.0)
+        p2_bad = (; qₛ=[1 // 1], weights=ones(Rational{Int}, 4, 1), N=4, atol=0.0, rtol=0.0)
         @test check_multipole(p2_bad, state2, true) == false
 
         # Binary, rank-1, D=2: alternating site weights [1,0],[0,1],[1,0],[0,1],[1,0]
         # state1 digits 1,1,0,0,1 → sum[1] = 1/2+(-1/2)+1/2 = 1/2, sum[2] = 1/2+(-1/2) = 0
         weights3 = Rational{Int}[1 0; 0 1; 1 0; 0 1; 1 0]
-        p3 = (; qₛ=[1 // 2, 0 // 1], weights=weights3, N=5, rtol=0.0, atol=0.0)
+        p3 = (; qₛ=[1 // 2, 0 // 1], weights=weights3, N=5, atol=0.0, rtol=0.0)
         @test check_multipole(p3, state1, true) == true
-        p3_bad = (; qₛ=[1 // 2, 1 // 2], weights=weights3, N=5, rtol=0.0, atol=0.0)
+        p3_bad = (; qₛ=[1 // 2, 1 // 2], weights=weights3, N=5, atol=0.0, rtol=0.0)
         @test check_multipole(p3_bad, state1, true) == false
 
         # Float weights with tolerance: same as p1 but Float64, Σm ≈ 0.5
-        p4 = (; qₛ=[0.5], weights=ones(Float64, 5, 1), N=5, rtol=1e-10, atol=1e-10)
+        p4 = (; qₛ=[0.5], weights=ones(Float64, 5, 1), N=5, atol=1e-10, rtol=1e-10)
         @test check_multipole(p4, state1, true) == true
         p4_close = (;
             qₛ=[0.5 + 1e-15],
             weights=ones(Float64, 5, 1),
             N=5,
-            rtol=1e-10,
-            atol=1e-10
+            atol=1e-10,
+            rtol=1e-10
         )
         @test check_multipole(p4_close, state1, true) == true
         p4_far = (;
             qₛ=[0.5 + 1e-5],
             weights=ones(Float64, 5, 1),
             N=5,
-            rtol=1e-10,
-            atol=1e-10
+            atol=1e-10,
+            rtol=1e-10
         )
         @test check_multipole(p4_far, state1, true) == false
     end
@@ -95,16 +95,16 @@
     @testset "apply_multipole" begin
         # apply_multipole always returns the state unchanged
         state1 = bi"10011"2
-        p1 = (; qₛ=[1 // 2], weights=ones(Rational{Int}, 5, 1), N=5, rtol=0.0, atol=0.0)
+        p1 = (; qₛ=[1 // 2], weights=ones(Rational{Int}, 5, 1), N=5, atol=0.0, rtol=0.0)
         @test apply_multipole(p1, state1) == state1
 
         # Works regardless of qₛ mismatch: still returns the state
-        p1_bad = (; qₛ=[3 // 2], weights=ones(Rational{Int}, 5, 1), N=5, rtol=0.0, atol=0.0)
+        p1_bad = (; qₛ=[3 // 2], weights=ones(Rational{Int}, 5, 1), N=5, atol=0.0, rtol=0.0)
         @test apply_multipole(p1_bad, state1) == state1
 
         # Base-6 state
         state2 = bi"5410"6
-        p2 = (; qₛ=[0 // 1], weights=ones(Rational{Int}, 4, 1), N=4, rtol=0.0, atol=0.0)
+        p2 = (; qₛ=[0 // 1], weights=ones(Rational{Int}, 4, 1), N=4, atol=0.0, rtol=0.0)
         @test apply_multipole(p2, state2) == state2
     end
 
@@ -309,7 +309,7 @@
         ss1 = SpinMultipole(1 // 2, w1, 4)
         ms1 = sym(ss1, dofo1)
         @test ms1.dofo == dofo1
-        @test ms1.cycles == [(; qₛ=ss1.qₛ, weights=ss1.weights, N=4, rtol=0.0, atol=0.0)]
+        @test ms1.cycles == [(; qₛ=ss1.qₛ, weights=ss1.weights, N=4, atol=0.0, rtol=0.0)]
         @test ms1.check == check_multipole
         @test ms1.apply == apply_multipole
         @test ms1.factors == ones(1)
@@ -317,10 +317,10 @@
         # Spin-1, N=3, RANK=1, D=1, non-uniform weights, custom tolerances
         dofo2 = dof_object(Spin(1 // 1))
         w2 = Rational{Int}[1, 2, 1]
-        ss2 = SpinMultipole(0 // 1, w2, 3; rtol=1e-8, atol=1e-8)
+        ss2 = SpinMultipole(0 // 1, w2, 3; atol=1e-8, rtol=1e-8)
         ms2 = sym(ss2, dofo2)
         @test ms2.dofo == dofo2
-        @test ms2.cycles == [(; qₛ=ss2.qₛ, weights=ss2.weights, N=3, rtol=1e-8, atol=1e-8)]
+        @test ms2.cycles == [(; qₛ=ss2.qₛ, weights=ss2.weights, N=3, atol=1e-8, rtol=1e-8)]
         @test ms2.check == check_multipole
         @test ms2.apply == apply_multipole
         @test ms2.factors == ones(1)
@@ -331,7 +331,7 @@
         ss3 = SpinMultipole(3 // 4, w3, 3; rank=2)
         ms3 = sym(ss3, dofo3)
         @test ms3.dofo == dofo3
-        @test ms3.cycles == [(; qₛ=ss3.qₛ, weights=ss3.weights, N=3, rtol=0.0, atol=0.0)]
+        @test ms3.cycles == [(; qₛ=ss3.qₛ, weights=ss3.weights, N=3, atol=0.0, rtol=0.0)]
         @test ms3.check == check_multipole
         @test ms3.apply == apply_multipole
         @test ms3.factors == ones(1)

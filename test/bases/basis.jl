@@ -198,6 +198,137 @@ end
         )
     end
 
+    @testset "basis without any symmetry (Boson)" begin
+        # Boson(1) with 2 sites: base-2, 4 total states
+        N1 = 2
+        dofo1 = dof_object(Boson(1))
+        test_basis_result(dofo1, N1;
+            expected_states=[bi"00"2, bi"01"2, bi"10"2, bi"11"2],
+            expected_norms=ones(Float64, 2^N1)
+        )
+
+        # Boson(2) with 2 sites: base-3, 9 total states
+        N2 = 2
+        dofo2 = dof_object(Boson(2))
+        test_basis_result(dofo2, N2;
+            expected_states=[
+                bi"00"3, bi"01"3, bi"02"3, bi"10"3, bi"11"3, bi"12"3, bi"20"3, bi"21"3, bi"22"3
+            ],
+            expected_norms=ones(Float64, 3^N2)
+        )
+
+        # Boson(1) with 3 sites: base-2, 8 total states
+        N3 = 3
+        dofo3 = dof_object(Boson(1))
+        test_basis_result(dofo3, N3;
+            expected_states=[
+                bi"000"2, bi"001"2, bi"010"2, bi"011"2, bi"100"2, bi"101"2, bi"110"2, bi"111"2
+            ],
+            expected_norms=ones(Float64, 2^N3)
+        )
+    end
+
+    @testset "basis with ParticleNumberConservation" begin
+        # Boson(1) with 2 sites, 1 particle: only states with sum=1
+        # bi"01"2 and bi"10"2
+        @testset "Boson(1), N=2, n_particles=1" begin
+            dofo = dof_object(Boson(1))
+            sg = sym(ParticleNumberConservation(1, 2), dofo)
+            test_basis_result(dofo, 2, sg;
+                expected_states=[bi"01"2, bi"10"2],
+                expected_norms=ones(Float64, 2)
+            )
+        end
+
+        # Boson(2) with 2 sites, 2 particles: states with sum=2
+        # bi"02"3, bi"11"3, bi"20"3
+        @testset "Boson(2), N=2, n_particles=2" begin
+            dofo = dof_object(Boson(2))
+            sg = sym(ParticleNumberConservation(2, 2), dofo)
+            test_basis_result(dofo, 2, sg;
+                expected_states=[bi"02"3, bi"11"3, bi"20"3],
+                expected_norms=ones(Float64, 3)
+            )
+        end
+
+        # Boson(1) with 3 sites, 0 particles: only state with sum=0
+        # bi"000"2
+        @testset "Boson(1), N=3, n_particles=0" begin
+            dofo = dof_object(Boson(1))
+            sg = sym(ParticleNumberConservation(0, 3), dofo)
+            test_basis_result(dofo, 3, sg;
+                expected_states=[bi"000"2],
+                expected_norms=[1.0]
+            )
+        end
+
+        # Boson(1) with 3 sites, 1 particle: states with sum=1
+        # bi"001"2, bi"010"2, bi"100"2
+        @testset "Boson(1), N=3, n_particles=1" begin
+            dofo = dof_object(Boson(1))
+            sg = sym(ParticleNumberConservation(1, 3), dofo)
+            test_basis_result(dofo, 3, sg;
+                expected_states=[bi"001"2, bi"010"2, bi"100"2],
+                expected_norms=ones(Float64, 3)
+            )
+        end
+
+        # Boson(2) with 3 sites, 1 particle: states with sum=1
+        # bi"001"3, bi"010"3, bi"100"3
+        @testset "Boson(2), N=3, n_particles=1" begin
+            dofo = dof_object(Boson(2))
+            sg = sym(ParticleNumberConservation(1, 3), dofo)
+            test_basis_result(dofo, 3, sg;
+                expected_states=[bi"001"3, bi"010"3, bi"100"3],
+                expected_norms=ones(Float64, 3)
+            )
+        end
+
+        # Boson(2) with 3 sites, 2 particles: states with sum=2
+        # bi"002"3, bi"011"3, bi"020"3, bi"101"3, bi"110"3, bi"200"3
+        @testset "Boson(2), N=3, n_particles=2" begin
+            dofo = dof_object(Boson(2))
+            sg = sym(ParticleNumberConservation(2, 3), dofo)
+            test_basis_result(dofo, 3, sg;
+                expected_states=[bi"002"3, bi"011"3, bi"020"3, bi"101"3, bi"110"3, bi"200"3],
+                expected_norms=ones(Float64, 6)
+            )
+        end
+
+        # Boson(1) with 4 sites, 2 particles: C(4,2)=6 states
+        # bi"0011"2, bi"0101"2, bi"0110"2, bi"1001"2, bi"1010"2, bi"1100"2
+        @testset "Boson(1), N=4, n_particles=2" begin
+            dofo = dof_object(Boson(1))
+            sg = sym(ParticleNumberConservation(2, 4), dofo)
+            test_basis_result(dofo, 4, sg;
+                expected_states=[bi"0011"2, bi"0101"2, bi"0110"2, bi"1001"2, bi"1010"2, bi"1100"2],
+                expected_norms=ones(Float64, 6)
+            )
+        end
+
+        # Boson(3) with 2 sites, 3 particles: states with sum=3
+        # bi"03"4, bi"12"4, bi"21"4, bi"30"4
+        @testset "Boson(3), N=2, n_particles=3" begin
+            dofo = dof_object(Boson(3))
+            sg = sym(ParticleNumberConservation(3, 2), dofo)
+            test_basis_result(dofo, 2, sg;
+                expected_states=[bi"03"4, bi"12"4, bi"21"4, bi"30"4],
+                expected_norms=ones(Float64, 4)
+            )
+        end
+
+        # Boson(2) with 2 sites, 0 particles: only state with sum=0
+        # bi"00"3
+        @testset "Boson(2), N=2, n_particles=0" begin
+            dofo = dof_object(Boson(2))
+            sg = sym(ParticleNumberConservation(0, 2), dofo)
+            test_basis_result(dofo, 2, sg;
+                expected_states=[bi"00"3],
+                expected_norms=[1.0]
+            )
+        end
+    end
+
     @testset "basis with one symmetry" begin
         @testset "spin-1/2 with Sz symmetry" begin
             N = 3

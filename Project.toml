@@ -1,6 +1,6 @@
 name = "SymBasis"
 uuid = "0806812d-f945-4f84-939d-820504b53c51"
-version = "0.1.4"
+version = "0.1.5"
 authors = ["cevenkadir <9449257+cevenkadir@users.noreply.github.com>"]
 
 [deps]

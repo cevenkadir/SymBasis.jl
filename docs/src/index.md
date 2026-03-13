@@ -85,6 +85,6 @@ This package was developed for academic purposes. If you find SymBasis.jl useful
   author={Kadir Çeven},
   year={2026},
   url={https://github.com/cevenkadir/SymBasis.jl}
-  version={v0.1.4}
+  version={v0.1.5}
 }
 ```

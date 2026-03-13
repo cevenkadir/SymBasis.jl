@@ -77,4 +77,48 @@
         res2 = perm_wrapper(perm, 10)
         @test res2 == perm
     end
+
+    @testset "rtoldefault" begin
+        # Test AbstractFloat types
+        @test rtoldefault(Float64) == sqrt(eps(Float64))
+        @test rtoldefault(Float32) == sqrt(eps(Float32))
+        @test rtoldefault(typeof(1.0)) == sqrt(eps(Float64))
+        @test rtoldefault(typeof(1.0f0)) == sqrt(eps(Float32))
+
+        # Test non-AbstractFloat Real types
+        @test rtoldefault(Int) == 0
+        @test rtoldefault(Int32) == 0
+        @test rtoldefault(Rational) == 0
+        @test rtoldefault(Rational{Int}) == 0
+        @test rtoldefault(typeof(1 // 2)) == 0
+
+        # Test three-argument version with atol=0.0
+        @test rtoldefault(Float64, Float64, 0.0) == sqrt(eps(Float64))
+        @test rtoldefault(Float32, Float32, 0.0) == sqrt(eps(Float32))
+        @test rtoldefault(Int, Int, 0.0) == 0
+        @test rtoldefault(Rational, Rational, 0.0) == 0
+
+        # Test three-argument version with atol > 0.0
+        @test rtoldefault(Float64, Float64, 1e-10) == 0.0
+        @test rtoldefault(Float32, Float32, 1e-10) == 0.0
+        @test rtoldefault(Int, Int, 1e-10) == 0.0
+
+        # Test mixed types with atol=0.0
+        @test rtoldefault(Float64, Int, 0.0) == sqrt(eps(Float64))
+        @test rtoldefault(Int, Float64, 0.0) == sqrt(eps(Float64))
+        @test rtoldefault(Float32, Rational, 0.0) == sqrt(eps(Float32))
+        @test rtoldefault(Rational, Float32, 0.0) == sqrt(eps(Float32))
+
+        # Test mixed types with atol > 0.0
+        @test rtoldefault(Float64, Int, 1e-10) == 0.0
+        @test rtoldefault(Int, Float64, 1e-10) == 0.0
+        @test rtoldefault(Float32, Rational, 0.5) == 0.0
+
+        # Test with actual values instead of types
+        @test rtoldefault(1.0, 2.0, 0.0) == sqrt(eps(Float64))
+        @test rtoldefault(1, 2, 0.0) == 0
+        @test rtoldefault(1.0, 2, 0.0) == sqrt(eps(Float64))
+        @test rtoldefault(1, 2.0, 0.0) == sqrt(eps(Float64))
+        @test rtoldefault(1.0, 2.0, 1e-8) == 0.0
+    end
 end

@@ -1,6 +1,69 @@
 using BitPermutations: BitPermutation
 
 """
+    combos_dof_sum(
+        ldof::AbstractVector,
+        target,
+        n::T_n
+    ) where {T_n<:Int}
+
+Generate all combinations of local degree-of-freedom (DoF) values for `n` sites that sum
+to the specified `target` value. This is the generic form that works for any discrete DoF,
+including both spin systems (rational-valued local DoF) and bosonic systems (integer-valued
+occupation numbers).
+
+# Arguments
+- `ldof::AbstractVector`: A vector of the possible local DoF values (e.g., `[-1//2, 1//2]`
+    for spin-1/2, or `[0, 1, 2, 3]` for bosons with max occupancy 3).
+- `target`: The target sum of the local DoF values across all `n` sites. Must be
+    comparable to elements of `ldof` under arithmetic (e.g., `Int` or `Rational`).
+- `n::T_n`: The number of sites.
+
+# Returns
+- `Vector`: A vector of named tuples, each representing a valid combination of DoF
+    occupation counts that sum to the target. Each named tuple contains a count `Nj` for
+    each local DoF value (indexed `j = 0, 1, …`) and the total number of sites `N`.
+"""
+function combos_dof_sum(
+    ldof::AbstractVector,
+    target,
+    n::T_n
+) where {T_n<:Int}
+    n_ldof = length(ldof)
+
+    # Represent everything as Rational for uniform arithmetic.
+    ldofR = Rational{Int}.(ldof)
+    targetR = Rational{Int}(target)
+
+    # Find a common denominator and scale to integers for the recursion.
+    denom = lcm(denominator.(ldofR)..., denominator(targetR))
+    S = Int.(ldofR .* denom)
+    targetI = Int(targetR * denom)
+
+    configs = Vector{Vector{eltype(ldofR)}}()
+    counts = zeros(T_n, n_ldof)
+
+    function rec(i::Int, remaining::Int, sumval::Int)
+        if i == n_ldof
+            c = remaining
+            if sumval + S[i] * c == targetI
+                counts[i] = c
+                push!(configs, vcat([fill(ldofR[j], counts[j]) for j in 1:n_ldof]...))
+            end
+            return
+        end
+
+        for c in 0:remaining
+            counts[i] = c
+            rec(i + 1, remaining - c, sumval + S[i] * c)
+        end
+    end
+
+    rec(1, n, 0)
+    return _configs_to_namedtuples(ldofR, n, configs)
+end
+
+"""
     combos_spin_sum(
         s::T_s,
         target::Union{T_s,Int},
@@ -56,16 +119,46 @@ function combos_spin_sum(
     end
 
     rec(1, n, 0)
-    return _configs_to_namedtuples(s, n, configs)
+    return _configs_to_namedtuples(ldof, n, configs)
 end
 
+"""
+    combos_boson_sum(
+        max_occupancy::Integer,
+        target::Integer,
+        n::T_n
+    ) where {T_n<:Int}
+
+Generate all combinations of boson occupation numbers for `n` sites with a maximum
+occupancy of `max_occupancy` that sum to the specified `target` total particle number.
+
+# Arguments
+- `max_occupancy::Integer`: The maximum number of bosons allowed on a single site
+    (e.g., `3` for occupation numbers `0, 1, 2, 3`).
+- `target::Integer`: The target total particle number (sum of all site occupancies).
+- `n::T_n`: The number of sites.
+
+# Returns
+- `Vector`: A vector of named tuples, each representing a valid combination of site
+    occupation counts that sum to the target. Each named tuple contains a count `Nj` for
+    each occupation level `j = 0, 1, …, max_occupancy` and the total number of sites `N`.
+"""
+function combos_boson_sum(
+    max_occupancy::Integer,
+    target::Integer,
+    n::T_n
+) where {T_n<:Int}
+    ldof = collect(0:max_occupancy)
+    return combos_dof_sum(ldof, target, n)
+end
+
+# Generic helper: builds named-tuple results from a raw list of per-site configs.
 function _configs_to_namedtuples(
-    s::T_s,
+    ldof::AbstractVector,
     n::T_n,
-    configs::Vector{Vector{Rational{Int}}}
-) where {T_s<:Rational,T_n<:Int}
-    n_ldof = numerator(2s + 1)
-    ldof = ((0:(n_ldof-1)) .- s) |> collect
+    configs::Vector{<:AbstractVector}
+) where {T_n<:Int}
+    n_ldof = length(ldof)
 
     names = NTuple{n_ldof,Symbol}(Symbol("N$j") for j in 0:(n_ldof-1))
     NT = NamedTuple{names,NTuple{n_ldof,T_n}}

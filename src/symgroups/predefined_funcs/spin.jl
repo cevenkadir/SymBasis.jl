@@ -145,6 +145,10 @@ A concrete subtype of [`SymBasis.SymGroups.AbstractSymSpec`](@ref) representing 
 magnetization symmetry specification. The type parameter `T_s` represents the target total
 magnetization value, while `T_N` represents the total number of DoF-objects in the system.
 
+# Fields
+- `mag::T_s`: The target total magnetization value for the symmetry specification.
+- `N::T_N`: The total number of DoF-objects in the system.
+
 # Constructor Arguments
 - `mag::T_s`: The target total magnetization value for the symmetry specification.
 - `N::T_N`: The total number of DoF-objects in the system.

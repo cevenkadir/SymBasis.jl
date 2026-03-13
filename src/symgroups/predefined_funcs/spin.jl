@@ -1,12 +1,5 @@
 using SymBasis.Miscs: combos_spin_sum, all_permutations
-
-# default tolerance arguments
-rtoldefault(::Type{T}) where {T<:AbstractFloat} = sqrt(eps(T))
-rtoldefault(::Type{<:Real}) = 0
-function rtoldefault(x::Union{T,Type{T}}, y::Union{S,Type{S}}, atol::Real) where {T<:Number,S<:Number}
-    rtol = max(rtoldefault(real(T)), rtoldefault(real(S)))
-    return atol > 0 ? zero(rtol) : rtol
-end
+using SymBasis.Miscs: rtoldefault
 
 function _validate_qₛ(qₛ::AbstractArray)
     D = size(qₛ, 1)

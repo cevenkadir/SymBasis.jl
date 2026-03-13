@@ -241,3 +241,46 @@ function perm_wrapper(perm::AbstractVector{T_lsi}, base::Integer) where {T_lsi<:
         return perm
     end
 end
+
+
+"""
+    rtoldefault(x::Union{T,Type{T}}, y::Union{S,Type{S}}, atol::Real) where {T<:Number,S<:Number}
+
+Compute a default relative tolerance based on the types of `x` and `y` and the provided absolute tolerance.
+
+# Arguments
+- `x::Union{T,Type{T}}`: A value or type of the first operand.
+- `y::Union{S,Type{S}}`: A value or type of the second operand.
+- `atol::Real`: The absolute tolerance threshold.
+
+# Returns
+- `Real`: The default relative tolerance. If `atol > 0`, returns zero (absolute tolerance takes precedence).
+    Otherwise, returns the maximum of the default relative tolerances for the real parts of types `T` and `S`.
+"""
+function rtoldefault(x::Union{T,Type{T}}, y::Union{S,Type{S}}, atol::Real) where {T<:Number,S<:Number}
+    rtol = max(rtoldefault(real(T)), rtoldefault(real(S)))
+    return atol > 0 ? zero(rtol) : rtol
+end
+
+"""
+    rtoldefault(::Type{T}) where {T<:AbstractFloat}
+
+Compute the default relative tolerance for a floating-point type as the square root of machine epsilon.
+
+# Arguments
+- `T::Type{<:AbstractFloat}`: A floating-point type.
+
+# Returns
+- `AbstractFloat`: The square root of the machine epsilon for type `T`.
+"""
+rtoldefault(::Type{T}) where {T<:AbstractFloat} = sqrt(eps(T))
+
+"""
+    rtoldefault(::Type{<:Real})
+
+Compute the default relative tolerance for a non-floating-point real type.
+
+# Returns
+- `Int`: Returns zero, as non-floating-point real types have exact arithmetic.
+"""
+rtoldefault(::Type{<:Real}) = 0

@@ -30,7 +30,8 @@ makedocs(;
         ],
         "Examples" => [
             "Quantum mechanical spins" => "examples/spins.md",
-            "Quantum many-body scars in the PXP chain" => "examples/pxp.md"
+            "Quantum many-body scars in the PXP chain" => "examples/pxp.md",
+            "Phase diagram of the Bose-Hubbard chain" => "examples/1d_bhm_phase_diagram.md",
         ],
         "API Reference" => [
             "DigitBase" => "api/digitbase.md",

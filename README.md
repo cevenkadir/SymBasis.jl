@@ -25,6 +25,7 @@ SymBasis.jl provides predefined symmetry groups for commonly used symmetries, in
 - Total magnetization (for quantum mechanical spins)
 - Spin inversion (for quantum mechanical spins)
 - Spin-multipole conservation (for quantum mechanical spins)
+- Particle number conservation (for bosons)
 - Spatial reflection symmetry
 - Translational symmetry
 - Rotational symmetry of space

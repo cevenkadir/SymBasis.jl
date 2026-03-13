@@ -172,6 +172,30 @@ z = -1 # parity number
 sg = sym(SpinInversion(z, N), dofo)
 ```
 
+#### Bosons
+##### Particle number conservation
+
+Particle number conservation is a symmetry where the system is invariant under the total boson number operator $\hat{N}_b$. In a system with $N$ sites, $\hat{N}_b$ acts on a state $\vert a(N_b) \rangle$ as follows:
+```math
+\hat{N}_b \ket{a(N_b)} = \sum_{i=1}^N \hat{n}_i \ket{a(N_b)} = N_b \ket{a(N_b)}\,,
+```
+where $\hat{n}_i = \hat{b}_i^\dagger \hat{b}_i$ is the local occupation number operator at site $i$, and $N_b$ is the total particle number quantum number.
+You can define a particle number conservation symmetry group for a system with a certain number of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function and the [`ParticleNumberConservation`](@ref SymBasis.SymGroups.ParticleNumberConservation) type as follows:
+```@example
+using SymBasis.DoFObjects
+using SymBasis.SymGroups
+
+n_max = 2 # maximum occupation number for each site
+
+# define, for example, a bosonic DoF-object with maximum occupation number n_max
+dofo = dof_object(Boson(n_max))
+
+N = 5 # number of sites
+N_b = 3 # total particle number quantum number
+
+sg = sym(ParticleNumberConservation(N_b, N), dofo)
+```
+
 ## Custom symmetry groups
 In addition to the predefined symmetry groups, you can also define your own custom symmetry groups by specifying the appropriate parameters when constructing the symmetry group via the [`SymGroup`](@ref SymBasis.SymGroups.SymGroup) constructor from the [`SymBasis.SymGroups`](@ref symgroups-api) submodule.
 

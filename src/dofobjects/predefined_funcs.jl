@@ -110,7 +110,7 @@ for storage based on the provided values.
 """
 function Boson(max_occupancy::Signed; kwargs...)
     m = max_occupancy
-    Tb = m ≤ typemax(UInt8)  ? UInt8  :
+    Tb = m ≤ typemax(UInt8) ? UInt8 :
          m ≤ typemax(UInt16) ? UInt16 :
          m ≤ typemax(UInt32) ? UInt32 :
          m ≤ typemax(UInt64) ? UInt64 : UInt128

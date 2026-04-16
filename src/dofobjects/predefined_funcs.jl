@@ -138,6 +138,48 @@ function dof_object(type::Boson{Tb,T,Ti}) where {Tb,T,Ti}
     return DoFObject(:Boson, ldof; T=T, Ti=Ti)
 end
 
+"""
+    SpinlessFermion{T,Ti} <: SymBasis.DoFObjects.AbstractDoFSpec{T,Ti}
+
+A concrete type representing a spinless fermionic degree of freedom specification. This type
+defines a binary occupancy for each particle, where each site can be either occupied (1) or
+unoccupied (0).
+
+# Constructor Keyword Arguments
+- `T::Type=UInt`: The underlying integer type for storage (default is `UInt`).
+- `Ti::Type=Int`: The integer type used for indexing (default is `Int`).
+
+# Returns
+- `SpinlessFermion{T,Ti}`: A new `SpinlessFermion` instance representing the specified
+    spinless fermionic degree of freedom.
+"""
+struct SpinlessFermion{T,Ti} <: AbstractDoFSpec{T,Ti}
+    function SpinlessFermion(; T::Type=UInt, Ti::Type=Int)
+        return new{T,Ti}()
+    end
+end
+
+"""
+    dof_object(::SpinlessFermion{T,Ti}) where {T,Ti}
+
+Constructs a `DoFObject` based on the provided [`SymBasis.DoFObjects.SpinlessFermion`](@ref)
+specification. The local degrees of freedom are binary, representing the occupation number of
+each site, which can be either `0` (unoccupied) or `1` (occupied).
+
+# Arguments
+- `::SpinlessFermion{T,Ti}`: A [`SymBasis.DoFObjects.SpinlessFermion`](@ref) specification
+    that defines the types for storage and indexing.
+
+# Returns
+- [`SymBasis.DoFObjects.DoFObject`](@ref): A DoF-object representing the degrees of freedom
+    for the specified spinless fermionic system.
+"""
+function dof_object(::SpinlessFermion{T,Ti}) where {T,Ti}
+    ldof = 0:1 |> Tuple
+
+    return DoFObject(:SpinlessFermion, ldof; T=T, Ti=Ti)
+end
+
 @deprecate dof_object(
     sym::Symbol, args...;
     kwargs...

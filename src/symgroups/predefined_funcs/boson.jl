@@ -64,7 +64,7 @@ function sym(
         dofo,
         all_boson_sumₛ,
         check_Nₛ,
-        apply_Nₛ,
+        apply_Nₛ_generic,
         ones(length(all_boson_sumₛ)),
         ss.N
     )

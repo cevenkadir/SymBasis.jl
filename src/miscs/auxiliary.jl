@@ -1,4 +1,4 @@
-using BitPermutations: BitPermutation
+using BitPermutations: BitPermutation, PermutationBackend
 
 """
     combos_dof_sum(
@@ -284,3 +284,19 @@ Compute the default relative tolerance for a non-floating-point real type.
 - `Int`: Returns zero, as non-floating-point real types have exact arithmetic.
 """
 rtoldefault(::Type{<:Real}) = 0
+
+"""
+    invperm(perm::BitPermutation{T,<:PermutationBackend{T}}) where {T}
+
+Compute the inverse of a bit permutation.
+
+# Arguments
+- `perm::BitPermutation{T,<:PermutationBackend{T}}`: The bit permutation for which to
+    compute the inverse.
+
+# Returns
+- `Vector{T}`: The inverse of the input bit permutation, returned as a standard vector.
+"""
+function invperm(perm::BitPermutation{T,<:PermutationBackend{T}}) where {T}
+    return Base.invperm(Vector(perm))
+end

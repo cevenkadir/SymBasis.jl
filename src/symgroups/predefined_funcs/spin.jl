@@ -128,6 +128,27 @@ function apply_multipole(
 ) where {T,Ti,B}
     return state
 end
+
+"""
+    apply_multipole_generic(p, state)
+
+A generic wrapper for the `apply_multipole` function that returns a tuple of the new state
+and the symmetry factor. This is used in the construction of the symmetry group to provide a
+consistent interface for the apply function, which is expected to return both the new state
+and the symmetry factor.
+
+# Arguments
+- `p`: The parameters for the multipole symmetry, typically a named tuple containing the
+    necessary information to apply the symmetry operation.
+- `state`: The state to which the multipole symmetry operation will be applied.
+
+# Returns
+- A tuple containing the new state (which is the same as the input state for this symmetry)
+    and the symmetry factor (which is `1` for this symmetry).
+"""
+function apply_multipole_generic(p, state)
+    return apply_multipole(p, state), 1
+end
 # END -- check and apply functions for predefined symmetries
 
 # START -- predefined symmetry group wrappers for end users
@@ -223,7 +244,7 @@ function sym(
         dofo,
         all_spin_sumₛ,
         check_Nₛ,
-        apply_Nₛ,
+        apply_Nₛ_generic,
         ones(length(all_spin_sumₛ)),
         ss.N
     )
@@ -353,7 +374,7 @@ function sym(
         dofo,
         [(; qₛ=ss.qₛ, weights=ss.weights, N=ss.N, atol=ss.atol, rtol=ss.rtol)],
         check_multipole,
-        apply_multipole,
+        apply_multipole_generic,
         ones(1),
         ss.N
     )
@@ -431,7 +452,7 @@ function sym(
             for sumⱼ in all_spin_sumₛ
         ],
         check_flip,
-        apply_flip,
+        apply_flip_generic,
         [ss.z^r for r in rₛ for sumⱼ in all_spin_sumₛ],
         ss.N
     )

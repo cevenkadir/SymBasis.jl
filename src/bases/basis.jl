@@ -179,7 +179,7 @@ function _basis_impl(
                 local_count = 0
 
                 @inbounds for idx in 1:n_cycles
-                    is_valid_state, temp_state = get_temp_state(idx, state₀)
+                    is_valid_state, temp_state, temp_phase = get_temp_state(idx, state₀)
 
                     if is_valid_state
                         h_temp_state = hash(temp_state)
@@ -200,7 +200,7 @@ function _basis_impl(
                             local_F = F₀
                             break
                         elseif h_temp_state == h_state₀
-                            local_F += factors[idx]
+                            local_F += factors[idx] * temp_phase
                         end
                     end
                 end
@@ -268,8 +268,8 @@ function basis(
 
     get_temp_state = (idx, state₀) -> begin
         cycleᵢ = sg.cycles[idx]
-        temp_state = sg.apply(cycleᵢ, state₀)
-        (sg.check(cycleᵢ, temp_state, c), temp_state)
+        temp_state, temp_phase = sg.apply(cycleᵢ, state₀)
+        (sg.check(cycleᵢ, temp_state, c), temp_state, temp_phase)
     end
 
     return _basis_impl(
@@ -327,6 +327,7 @@ function basis(
     get_temp_state = (idx, state₀) -> begin
         is_valid = c
         temp_state = state₀
+        temp_phase = 1
         cycle = csg.cycles[idx]
         for i in 1:ndims_cycles
             is_valid || break
@@ -334,10 +335,11 @@ function basis(
         end
         if is_valid
             for i in 1:ndims_cycles
-                temp_state = csg.apply[i](cycle[i], temp_state)
+                temp_state, phaseᵢ = csg.apply[i](cycle[i], temp_state)
+                temp_phase *= phaseᵢ
             end
         end
-        (is_valid, temp_state)
+        (is_valid, temp_state, temp_phase)
     end
 
     return _basis_impl(
@@ -386,14 +388,16 @@ function is_commutative(b::Basis, csg::CombSymGroup)
                             cycle = csg.cycles[cycle_idx]
 
                             # Apply symmetry i then j
-                            state_ij = csg.apply[i](cycle[i], test_state)
-                            state_ij = csg.apply[j](cycle[j], state_ij)
+                            state_ij, phase_i = csg.apply[i](cycle[i], test_state)
+                            state_ij, phase_j = csg.apply[j](cycle[j], state_ij)
                             state_ij, factor_ij = representative(state_ij, csg)
+                            factor_ij *= phase_i * phase_j
 
                             # Apply symmetry j then i
-                            state_ji = csg.apply[j](cycle[j], test_state)
-                            state_ji = csg.apply[i](cycle[i], state_ji)
+                            state_ji, phase_j = csg.apply[j](cycle[j], test_state)
+                            state_ji, phase_i = csg.apply[i](cycle[i], state_ji)
                             state_ji, factor_ji = representative(state_ji, csg)
+                            factor_ji *= phase_i * phase_j
 
                             if state_ij != state_ji || !(factor_ij ≈ factor_ji)
                                 return false
@@ -435,15 +439,23 @@ function representative(
 ) where {T,Ti,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
     n_cycles = length(sg.cycles)
 
-    # Preallocate matrices for temp_stateₛ
-    temp_stateₛ = Vector{BaseInt{T,Ti,B}}(undef, n_cycles)
+    id_rep_state = first(eachindex(sg.cycles))
+    rep_state, rep_phase = sg.apply(sg.cycles[id_rep_state], state)
+    h_rep_state = hash(rep_state)
 
-    broadcast!(sg.apply, temp_stateₛ, sg.cycles, state |> Ref)
+    @inbounds for idx in 2:n_cycles
+        temp_state, temp_phase = sg.apply(sg.cycles[idx], state)
+        h_temp_state = hash(temp_state)
 
-    id_rep_state = argmin(hash.(temp_stateₛ))
+        if h_temp_state < h_rep_state
+            id_rep_state = idx
+            rep_state = temp_state
+            rep_phase = temp_phase
+            h_rep_state = h_temp_state
+        end
+    end
 
-    rep_fac = sg.factors[id_rep_state]
-    rep_state = temp_stateₛ[id_rep_state]
+    rep_fac = rep_phase * sg.factors[id_rep_state]
 
     return rep_state, rep_fac
 end
@@ -474,20 +486,37 @@ function representative(
     n_cycles = length(csg.cycles)
     ndims_cycles = ndims(csg.cycles)
 
-    @inbounds out_cycles = [vec([v[dim] for v in csg.cycles]) for dim in 1:ndims_cycles]
-
-    # Preallocate matrices for temp_stateₛ
-    temp_stateₛ = Vector{BaseInt{T,Ti,B}}(undef, n_cycles)
-    @views fill!(temp_stateₛ, state)
-
+    # Initialize with first cycle
+    rep_state = state
+    rep_phase = one(Ts)
     @inbounds for dim in 1:ndims_cycles
-        broadcast!(csg.apply[dim], temp_stateₛ, out_cycles[dim], temp_stateₛ)
+        rep_state, phaseᵢ = csg.apply[dim](csg.cycles[1][dim], rep_state)
+        rep_phase *= phaseᵢ
+    end
+    h_rep_state = hash(rep_state)
+    id_rep_state = 1
+
+    @inbounds for idx in 2:n_cycles
+        cycle = csg.cycles[idx]
+        temp_state = state
+        temp_phase = one(Ts)
+
+        for dim in 1:ndims_cycles
+            temp_state, phaseᵢ = csg.apply[dim](cycle[dim], temp_state)
+            temp_phase *= phaseᵢ
+        end
+
+        h_temp_state = hash(temp_state)
+
+        if h_temp_state < h_rep_state
+            id_rep_state = idx
+            rep_state = temp_state
+            rep_phase = temp_phase
+            h_rep_state = h_temp_state
+        end
     end
 
-    id_rep_state = argmin(hash.(temp_stateₛ))
-
-    rep_fac = csg.factors[id_rep_state]
-    rep_state = temp_stateₛ[id_rep_state]
+    rep_fac = rep_phase * csg.factors[id_rep_state]
 
     return rep_state, rep_fac
 end

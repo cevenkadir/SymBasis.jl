@@ -228,12 +228,12 @@ end
         )
     end
 
-    @testset "basis with ParticleNumberConservation" begin
+    @testset "basis with TotalBosonicNumber" begin
         # Boson(1) with 2 sites, 1 particle: only states with sum=1
         # bi"01"2 and bi"10"2
         @testset "Boson(1), N=2, n_particles=1" begin
             dofo = dof_object(Boson(1))
-            sg = sym(ParticleNumberConservation(1, 2), dofo)
+            sg = sym(TotalBosonicNumber(1, 2), dofo)
             test_basis_result(dofo, 2, sg;
                 expected_states=[bi"01"2, bi"10"2],
                 expected_norms=ones(Float64, 2)
@@ -244,7 +244,7 @@ end
         # bi"02"3, bi"11"3, bi"20"3
         @testset "Boson(2), N=2, n_particles=2" begin
             dofo = dof_object(Boson(2))
-            sg = sym(ParticleNumberConservation(2, 2), dofo)
+            sg = sym(TotalBosonicNumber(2, 2), dofo)
             test_basis_result(dofo, 2, sg;
                 expected_states=[bi"02"3, bi"11"3, bi"20"3],
                 expected_norms=ones(Float64, 3)
@@ -255,7 +255,7 @@ end
         # bi"000"2
         @testset "Boson(1), N=3, n_particles=0" begin
             dofo = dof_object(Boson(1))
-            sg = sym(ParticleNumberConservation(0, 3), dofo)
+            sg = sym(TotalBosonicNumber(0, 3), dofo)
             test_basis_result(dofo, 3, sg;
                 expected_states=[bi"000"2],
                 expected_norms=[1.0]
@@ -266,7 +266,7 @@ end
         # bi"001"2, bi"010"2, bi"100"2
         @testset "Boson(1), N=3, n_particles=1" begin
             dofo = dof_object(Boson(1))
-            sg = sym(ParticleNumberConservation(1, 3), dofo)
+            sg = sym(TotalBosonicNumber(1, 3), dofo)
             test_basis_result(dofo, 3, sg;
                 expected_states=[bi"001"2, bi"010"2, bi"100"2],
                 expected_norms=ones(Float64, 3)
@@ -277,7 +277,7 @@ end
         # bi"001"3, bi"010"3, bi"100"3
         @testset "Boson(2), N=3, n_particles=1" begin
             dofo = dof_object(Boson(2))
-            sg = sym(ParticleNumberConservation(1, 3), dofo)
+            sg = sym(TotalBosonicNumber(1, 3), dofo)
             test_basis_result(dofo, 3, sg;
                 expected_states=[bi"001"3, bi"010"3, bi"100"3],
                 expected_norms=ones(Float64, 3)
@@ -288,7 +288,7 @@ end
         # bi"002"3, bi"011"3, bi"020"3, bi"101"3, bi"110"3, bi"200"3
         @testset "Boson(2), N=3, n_particles=2" begin
             dofo = dof_object(Boson(2))
-            sg = sym(ParticleNumberConservation(2, 3), dofo)
+            sg = sym(TotalBosonicNumber(2, 3), dofo)
             test_basis_result(dofo, 3, sg;
                 expected_states=[bi"002"3, bi"011"3, bi"020"3, bi"101"3, bi"110"3, bi"200"3],
                 expected_norms=ones(Float64, 6)
@@ -299,7 +299,7 @@ end
         # bi"0011"2, bi"0101"2, bi"0110"2, bi"1001"2, bi"1010"2, bi"1100"2
         @testset "Boson(1), N=4, n_particles=2" begin
             dofo = dof_object(Boson(1))
-            sg = sym(ParticleNumberConservation(2, 4), dofo)
+            sg = sym(TotalBosonicNumber(2, 4), dofo)
             test_basis_result(dofo, 4, sg;
                 expected_states=[bi"0011"2, bi"0101"2, bi"0110"2, bi"1001"2, bi"1010"2, bi"1100"2],
                 expected_norms=ones(Float64, 6)
@@ -310,7 +310,7 @@ end
         # bi"03"4, bi"12"4, bi"21"4, bi"30"4
         @testset "Boson(3), N=2, n_particles=3" begin
             dofo = dof_object(Boson(3))
-            sg = sym(ParticleNumberConservation(3, 2), dofo)
+            sg = sym(TotalBosonicNumber(3, 2), dofo)
             test_basis_result(dofo, 2, sg;
                 expected_states=[bi"03"4, bi"12"4, bi"21"4, bi"30"4],
                 expected_norms=ones(Float64, 4)
@@ -321,7 +321,7 @@ end
         # bi"00"3
         @testset "Boson(2), N=2, n_particles=0" begin
             dofo = dof_object(Boson(2))
-            sg = sym(ParticleNumberConservation(0, 2), dofo)
+            sg = sym(TotalBosonicNumber(0, 2), dofo)
             test_basis_result(dofo, 2, sg;
                 expected_states=[bi"00"3],
                 expected_norms=[1.0]

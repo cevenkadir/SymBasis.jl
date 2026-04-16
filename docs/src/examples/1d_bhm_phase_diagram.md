@@ -55,7 +55,7 @@ tₛ = 0.0:0.1:0.3; # hopping strength range for which to compute the phase diag
 
 ### Defining the DoF-object and particle-number-conserved basis
 
-For bosons with a local Hilbert space of dimension $n_\mathrm{max} + 1$ (occupation numbers $0, 1, \ldots, n_\mathrm{max}$), SymBasis provides the predefined [`Boson`](@ref SymBasis.DoFObjects.Boson) DoF-object. We construct the basis by combining three symmetry groups: particle-number conservation [`ParticleNumberConservation`](@ref SymBasis.SymGroups.ParticleNumberConservation) to select states with a fixed particle number $n$, translational symmetry [`Translational`](@ref SymBasis.SymGroups.Translational) to reduce the Hilbert space by fixing the quantum momentum number $k$, and spatial reflection symmetry [`SpatialReflection`](@ref SymBasis.SymGroups.SpatialReflection) to include spatial parity sectors with the parity numbers $p = \pm 1$. These symmetries are composed to form the combined symmetry group, and we build the symmetry-resolved basis and assemble the Hamiltonian in each sector $(N, n, k, p)$ for $n \in \{N-1, N, N+1\}$, sweeping over both system sizes and hopping values.
+For bosons with a local Hilbert space of dimension $n_\mathrm{max} + 1$ (occupation numbers $0, 1, \ldots, n_\mathrm{max}$), SymBasis provides the predefined [`Boson`](@ref SymBasis.DoFObjects.Boson) DoF-object. We construct the basis by combining three symmetry groups: particle-number conservation [`TotalBosonicNumber`](@ref SymBasis.SymGroups.TotalBosonicNumber) to select states with a fixed particle number $n$, translational symmetry [`Translational`](@ref SymBasis.SymGroups.Translational) to reduce the Hilbert space by fixing the quantum momentum number $k$, and spatial reflection symmetry [`SpatialReflection`](@ref SymBasis.SymGroups.SpatialReflection) to include spatial parity sectors with the parity numbers $p = \pm 1$. These symmetries are composed to form the combined symmetry group, and we build the symmetry-resolved basis and assemble the Hamiltonian in each sector $(N, n, k, p)$ for $n \in \{N-1, N, N+1\}$, sweeping over both system sizes and hopping values.
 
 ```@example bhm
 using SymBasis.DigitBase
@@ -82,7 +82,7 @@ for (id_t, t) in enumerate(tₛ)
             for k in k_values, p in p_values
                 # construct the symmetry-resolved basis
                 dofo = dof_object(Boson(n_max))
-                pn_sg = sym(ParticleNumberConservation(n_particles, N), dofo)
+                pn_sg = sym(TotalBosonicNumber(n_particles, N), dofo)
                 T_sg = sym(Translational(k, mod1.((1:N) .+ 1, N)), dofo)
                 P_sg = sym(SpatialReflection(p, mod1.(N .- (1:N) .+ 1, N)), dofo)
                 csg = pn_sg ∘ T_sg ∘ P_sg

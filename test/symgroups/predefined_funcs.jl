@@ -560,36 +560,36 @@
         end
     end
 
-    @testset "ParticleNumberConservation constructor" begin
+    @testset "TotalBosonicNumber constructor" begin
         # Test with zero particles
-        pnc1 = ParticleNumberConservation(0, 4)
+        pnc1 = TotalBosonicNumber(0, 4)
         @test pnc1.n_particles == 0
         @test pnc1.N == 4
 
         # Test with positive particles
-        pnc2 = ParticleNumberConservation(3, 5)
+        pnc2 = TotalBosonicNumber(3, 5)
         @test pnc2.n_particles == 3
         @test pnc2.N == 5
 
         # Test with large particle numbers
-        pnc3 = ParticleNumberConservation(100, 10)
+        pnc3 = TotalBosonicNumber(100, 10)
         @test pnc3.n_particles == 100
         @test pnc3.N == 10
 
         # Test with different integer types
-        pnc4 = ParticleNumberConservation(Int8(2), Int32(3))
+        pnc4 = TotalBosonicNumber(Int8(2), Int32(3))
         @test pnc4.n_particles == 2
         @test pnc4.N == 3
 
         # Invalid: negative particles should throw AssertionError
-        @test_throws AssertionError ParticleNumberConservation(-1, 4)
-        @test_throws AssertionError ParticleNumberConservation(-10, 5)
+        @test_throws AssertionError TotalBosonicNumber(-1, 4)
+        @test_throws AssertionError TotalBosonicNumber(-10, 5)
     end
 
-    @testset "sym of ParticleNumberConservation" begin
+    @testset "sym of TotalBosonicNumber" begin
         # Boson with max occupancy 3, 2 sites, 2 total particles
         dofo1 = dof_object(Boson(3))
-        pnc1 = ParticleNumberConservation(2, 2)
+        pnc1 = TotalBosonicNumber(2, 2)
         N_sym1 = sym(pnc1, dofo1)
 
         @test N_sym1.dofo == dofo1
@@ -603,7 +603,7 @@
 
         # Boson with max occupancy 2, 3 sites, 1 total particle
         dofo2 = dof_object(Boson(2))
-        pnc2 = ParticleNumberConservation(1, 3)
+        pnc2 = TotalBosonicNumber(1, 3)
         N_sym2 = sym(pnc2, dofo2)
 
         @test N_sym2.dofo == dofo2
@@ -616,7 +616,7 @@
 
         # Boson with max occupancy 1, 2 sites, 0 total particles
         dofo3 = dof_object(Boson(1))
-        pnc3 = ParticleNumberConservation(0, 2)
+        pnc3 = TotalBosonicNumber(0, 2)
         N_sym3 = sym(pnc3, dofo3)
 
         @test N_sym3.dofo == dofo3
@@ -628,7 +628,7 @@
 
         # Boson with max occupancy 5, 4 sites, 3 total particles
         dofo4 = dof_object(Boson(5))
-        pnc4 = ParticleNumberConservation(3, 4)
+        pnc4 = TotalBosonicNumber(3, 4)
         N_sym4 = sym(pnc4, dofo4)
 
         @test N_sym4.dofo == dofo4

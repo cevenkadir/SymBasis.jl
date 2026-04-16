@@ -180,7 +180,7 @@ Particle number conservation is a symmetry where the system is invariant under t
 \hat{N}_b \ket{a(N_b)} = \sum_{i=1}^N \hat{n}_i \ket{a(N_b)} = N_b \ket{a(N_b)}\,,
 ```
 where $\hat{n}_i = \hat{b}_i^\dagger \hat{b}_i$ is the local occupation number operator at site $i$, and $N_b$ is the total particle number quantum number.
-You can define a particle number conservation symmetry group for a system with a certain number of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function and the [`ParticleNumberConservation`](@ref SymBasis.SymGroups.ParticleNumberConservation) type as follows:
+You can define a particle number conservation symmetry group for a system with a certain number of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function and the [`TotalBosonicNumber`](@ref SymBasis.SymGroups.TotalBosonicNumber) type as follows:
 ```@example
 using SymBasis.DoFObjects
 using SymBasis.SymGroups
@@ -193,7 +193,7 @@ dofo = dof_object(Boson(n_max))
 N = 5 # number of sites
 N_b = 3 # total particle number quantum number
 
-sg = sym(ParticleNumberConservation(N_b, N), dofo)
+sg = sym(TotalBosonicNumber(N_b, N), dofo)
 ```
 
 ## Custom symmetry groups

@@ -17,6 +17,6 @@ export check_multipole
 export apply_multipole
 
 include("predefined_funcs/boson.jl")
-export ParticleNumberConservation
+export ParticleNumberConservation, TotalBosonicNumber
 
 end

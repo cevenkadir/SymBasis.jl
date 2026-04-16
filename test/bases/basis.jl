@@ -643,8 +643,8 @@ end
                     [bi"001"3, bi"020"3, bi"101"3, bi"120"3]
                 )
                 test_factors = vsel(
-                    ComplexF64[cis(2π / 3), cis(-2π / 3), cis(2π / 3), cis(2π / 3)],
-                    ComplexF64[1, 1, 1, cis(2π / 3)]
+                    ComplexF64[cispi(2 / 3), cispi(-2 / 3), cispi(2 / 3), cispi(2 / 3)],
+                    ComplexF64[1, 1, 1, cispi(2 / 3)]
                 )
                 test_representatives(test_states, test_reps, test_factors, sg)
             end

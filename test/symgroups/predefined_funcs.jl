@@ -404,7 +404,7 @@
                 @test transl_sym1ₛ.check == check_perm
                 @test transl_sym1ₛ.apply == apply_perm
                 @test transl_sym1ₛ.factors ≈ [
-                    cis(-2π * r * k / length(perm1))
+                    cispi(-2 * r * k / length(perm1))
                     for r in 0:(length(perm1)-1)
                 ]
             end
@@ -427,7 +427,7 @@
                 @test transl_sym2ₛ.check == check_perm
                 @test transl_sym2ₛ.apply == apply_perm
                 @test transl_sym2ₛ.factors ≈ [
-                    cis(-2π * r * k / length(perm2))
+                    cispi(-2 * r * k / length(perm2))
                     for r in 0:(length(perm2)-1)
                 ]
             end
@@ -447,7 +447,7 @@
                 @test transl_sym3ₛ.check == check_perm
                 @test transl_sym3ₛ.apply == apply_perm
                 @test transl_sym3ₛ.factors ≈ [
-                    cis(-2π * r * k / (length(perm3) ÷ 2))
+                    cispi(-2 * r * k / (length(perm3) ÷ 2))
                     for r in 0:(length(perm3)÷2-1)
                 ]
             end
@@ -527,7 +527,7 @@
                 @test rot_sym1.check == check_perm
                 @test rot_sym1.apply == apply_perm
                 @test rot_sym1.factors ≈ [
-                    cis(-2π * i * r / R1)
+                    cispi(-2 * i * r / R1)
                     for i in 0:(R1-1)
                 ]
             end
@@ -553,7 +553,7 @@
                 @test rot_sym2.check == check_perm
                 @test rot_sym2.apply == apply_perm
                 @test rot_sym2.factors ≈ [
-                    cis(-2π * i * r / R2)
+                    cispi(-2 * i * r / R2)
                     for i in 0:(R2-1)
                 ]
             end

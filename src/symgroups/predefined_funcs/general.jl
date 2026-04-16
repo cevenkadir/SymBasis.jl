@@ -348,7 +348,7 @@ function sym(
         check_perm,
         apply_perm,
         [
-            cis(-2π * r * ss.k / R)
+            cispi(-2r * ss.k / R)
             for r in rₛ
         ],
         N
@@ -514,7 +514,7 @@ function sym(
         [(; perm=perm_wrapper(perm_k(ss.perm, i), length(dofo))) for i in rₛ],
         check_perm,
         apply_perm,
-        [cis(-2π * r * ss.r / R) for r in rₛ],
+        [cispi(-2 * r * ss.r / R) for r in rₛ],
         N
     )
 

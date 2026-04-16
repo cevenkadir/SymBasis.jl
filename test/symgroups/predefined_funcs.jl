@@ -220,7 +220,7 @@
             @test Sz_symᵢ.dofo == dofo1
             @test Sz_symᵢ.cycles == cycle1ₛ[i]
             @test Sz_symᵢ.check == check_Nₛ
-            @test Sz_symᵢ.apply == apply_Nₛ
+            @test Sz_symᵢ.apply == apply_Nₛ_generic
             @test Sz_symᵢ.factors == factor1ₛ[i]
         end
 
@@ -237,7 +237,7 @@
             @test Sz_symᵢ.dofo == dofo2
             @test Sz_symᵢ.cycles == cycle2ₛ[i]
             @test Sz_symᵢ.check == check_Nₛ
-            @test Sz_symᵢ.apply == apply_Nₛ
+            @test Sz_symᵢ.apply == apply_Nₛ_generic
             @test Sz_symᵢ.factors == factor2ₛ[i]
         end
     end
@@ -311,7 +311,7 @@
         @test ms1.dofo == dofo1
         @test ms1.cycles == [(; qₛ=ss1.qₛ, weights=ss1.weights, N=4, atol=0.0, rtol=0.0)]
         @test ms1.check == check_multipole
-        @test ms1.apply == apply_multipole
+        @test ms1.apply == apply_multipole_generic
         @test ms1.factors == ones(1)
 
         # Spin-1, N=3, RANK=1, D=1, non-uniform weights, custom tolerances
@@ -322,7 +322,7 @@
         @test ms2.dofo == dofo2
         @test ms2.cycles == [(; qₛ=ss2.qₛ, weights=ss2.weights, N=3, atol=1e-8, rtol=1e-8)]
         @test ms2.check == check_multipole
-        @test ms2.apply == apply_multipole
+        @test ms2.apply == apply_multipole_generic
         @test ms2.factors == ones(1)
 
         # Spin-1/2, RANK=2, D=1: quadrupole-like symmetry
@@ -333,7 +333,7 @@
         @test ms3.dofo == dofo3
         @test ms3.cycles == [(; qₛ=ss3.qₛ, weights=ss3.weights, N=3, atol=0.0, rtol=0.0)]
         @test ms3.check == check_multipole
-        @test ms3.apply == apply_multipole
+        @test ms3.apply == apply_multipole_generic
         @test ms3.factors == ones(1)
 
         # Non-Spin DoFObject should throw
@@ -368,7 +368,7 @@
             @test Z_sym1.dofo == dofo1
             @test Z_sym1.cycles == cycle1
             @test Z_sym1.check == check_flip
-            @test Z_sym1.apply == apply_flip
+            @test Z_sym1.apply == apply_flip_generic
             @test Z_sym1.factors == [z^0, z^1]
         end
 
@@ -386,7 +386,7 @@
             @test Z_sym2.dofo == dofo2
             @test Z_sym2.cycles == cycle2
             @test Z_sym2.check == check_flip
-            @test Z_sym2.apply == apply_flip
+            @test Z_sym2.apply == apply_flip_generic
             @test Z_sym2.factors == [z^0, z^0, z^1, z^1]
         end
     end
@@ -402,7 +402,7 @@
                     (; perm=[1, 2, 3]), (; perm=perm1), (; perm=perm1[perm1])
                 ]
                 @test transl_sym1ₛ.check == check_perm
-                @test transl_sym1ₛ.apply == apply_perm
+                @test transl_sym1ₛ.apply == apply_perm_generic
                 @test transl_sym1ₛ.factors ≈ [
                     cispi(-2 * r * k / length(perm1))
                     for r in 0:(length(perm1)-1)
@@ -425,7 +425,7 @@
                     for i in 1:length(transl_sym2ₛ.cycles)
                 )
                 @test transl_sym2ₛ.check == check_perm
-                @test transl_sym2ₛ.apply == apply_perm
+                @test transl_sym2ₛ.apply == apply_perm_generic
                 @test transl_sym2ₛ.factors ≈ [
                     cispi(-2 * r * k / length(perm2))
                     for r in 0:(length(perm2)-1)
@@ -445,7 +445,7 @@
                     (; perm=perm3[perm3]),
                 ]
                 @test transl_sym3ₛ.check == check_perm
-                @test transl_sym3ₛ.apply == apply_perm
+                @test transl_sym3ₛ.apply == apply_perm_generic
                 @test transl_sym3ₛ.factors ≈ [
                     cispi(-2 * r * k / (length(perm3) ÷ 2))
                     for r in 0:(length(perm3)÷2-1)
@@ -473,7 +473,7 @@
                 for j in 1:length(refl_symᵢ.cycles)
             )
             @test refl_symᵢ.check == check_perm
-            @test refl_symᵢ.apply == apply_perm
+            @test refl_symᵢ.apply == apply_perm_generic
             @test refl_symᵢ.factors ≈ [qᵢ^0, qᵢ^1]
         end
 
@@ -490,7 +490,7 @@
                 (; perm=1:length(perm2) |> collect), (; perm=perm2),
             ]
             @test refl_symᵢ.check == check_perm
-            @test refl_symᵢ.apply == apply_perm
+            @test refl_symᵢ.apply == apply_perm_generic
             @test refl_symᵢ.factors ≈ [qᵢ^0, qᵢ^1]
         end
     end
@@ -525,7 +525,7 @@
                     (; perm=perm1[perm1[perm1]])
                 ]
                 @test rot_sym1.check == check_perm
-                @test rot_sym1.apply == apply_perm
+                @test rot_sym1.apply == apply_perm_generic
                 @test rot_sym1.factors ≈ [
                     cispi(-2 * i * r / R1)
                     for i in 0:(R1-1)
@@ -551,7 +551,7 @@
                     for i in 1:length(rot_sym2.cycles)
                 )
                 @test rot_sym2.check == check_perm
-                @test rot_sym2.apply == apply_perm
+                @test rot_sym2.apply == apply_perm_generic
                 @test rot_sym2.factors ≈ [
                     cispi(-2 * i * r / R2)
                     for i in 0:(R2-1)
@@ -594,7 +594,7 @@
 
         @test N_sym1.dofo == dofo1
         @test N_sym1.check == check_Nₛ
-        @test N_sym1.apply == apply_Nₛ
+        @test N_sym1.apply == apply_Nₛ_generic
         @test length(N_sym1.cycles) >= 1
         @test all(haskey(c, :N) for c in N_sym1.cycles)
         @test all(c.N == 2 for c in N_sym1.cycles)
@@ -608,7 +608,7 @@
 
         @test N_sym2.dofo == dofo2
         @test N_sym2.check == check_Nₛ
-        @test N_sym2.apply == apply_Nₛ
+        @test N_sym2.apply == apply_Nₛ_generic
         # For 1 particle distributed among 3 sites: only one configuration
         # (N0=2, N1=1, N=3) meaning 2 sites empty, 1 site has 1 particle
         @test length(N_sym2.cycles) == 1
@@ -621,7 +621,7 @@
 
         @test N_sym3.dofo == dofo3
         @test N_sym3.check == check_Nₛ
-        @test N_sym3.apply == apply_Nₛ
+        @test N_sym3.apply == apply_Nₛ_generic
         # For 0 particles: only one configuration (N0=2, N1=0, N=2)
         @test length(N_sym3.cycles) == 1
         @test all(isone, N_sym3.factors)
@@ -633,7 +633,7 @@
 
         @test N_sym4.dofo == dofo4
         @test N_sym4.check == check_Nₛ
-        @test N_sym4.apply == apply_Nₛ
+        @test N_sym4.apply == apply_Nₛ_generic
         # Multiple configurations possible for 3 particles on 4 sites
         @test length(N_sym4.cycles) >= 1
         @test all(c.N == 4 for c in N_sym4.cycles)

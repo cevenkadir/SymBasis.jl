@@ -96,45 +96,21 @@ function apply_perm(
 end
 
 """
-    apply_perm_generic(p, state)
+    phase_unity(p, state)
 
-A generic wrapper for `apply_perm` that returns both the permuted state and a phase factor
-of `1`. This is useful for symmetry groups that may require a phase factor (e.g. for
-fermionic symmetries), but where the generic `apply_perm` does not include any fermionic
-phase.
+Return a phase factor of `true` (implying a phase factor of `1`) for any given input. This
+function is used as the default phase function for symmetries that do not involve any
+nontrivial phase factors.
 
 # Arguments
-- `p`: The parameter containing the permutation (e.g. a named tuple with a `perm` field).
-- `state`: The state to which the permutation will be applied.
+- `p`: A parameter containing the symmetry operation (not used in this function).
+- `state`: The state to which the symmetry operation is applied (not used in this function).
 
 # Returns
-- A tuple containing the permuted state and a phase factor of `1`.
+- `true`: A constant phase factor of `1`.
 """
-function apply_perm_generic(p, state)
-    return apply_perm(p, state), 1
-end
-
-function _fermionic_phase_from_perm(
-    p::@NamedTuple{perm::Tperm},
-    state::BaseInt{T,Ti,B}
-) where {
-    T,Ti,B,Tp,Tperm<:Union{AbstractVector{<:Ti},BitPermutation{Tp,<:PermutationBackend{Tp}}}
-}
-    inv_perm = invperm(p.perm)
-    mapped_occupied_sites = Int[]
-    is_odd_parity = false
-
-    for site in eachindex(inv_perm)
-        if read(state, Ti(site)) == 1
-            mapped_site = inv_perm[site]
-            for prev_site in mapped_occupied_sites
-                is_odd_parity ⊻= (prev_site > mapped_site)
-            end
-            push!(mapped_occupied_sites, mapped_site)
-        end
-    end
-
-    return is_odd_parity ? -1 : 1
+function phase_unity(p, state)
+    return true
 end
 
 """
@@ -152,7 +128,7 @@ permuted state and the fermionic phase factor.
 - A tuple containing the permuted state and the fermionic phase factor (`1` or `-1`).
 """
 function apply_perm_fermionic(p, state)
-    return apply_perm(p, state), _fermionic_phase_from_perm(p, state)
+    return apply_perm(p, state)
 end
 
 """
@@ -259,25 +235,6 @@ function apply_Nₛ(
 end
 
 """
-    apply_Nₛ_generic(p, state)
-
-A generic wrapper for `apply_Nₛ` that returns both the state and a phase factor of `1`. This
-is useful for symmetry groups that may require a phase factor, but where the `apply_Nₛ` does
-not include any nontrivial phase.
-
-# Arguments
-- `p`: The parameter containing the digit counts (e.g. a named tuple with fields `N`, `N0`,
-    `N1`, ...).
-- `state`: The state to which the symmetry operation will be applied.
-
-# Returns
-- A tuple containing the unchanged state and a phase factor of `1`.
-"""
-function apply_Nₛ_generic(p, state)
-    return apply_Nₛ(p, state), 1
-end
-
-"""
     check_flip(
         p::NamedTuple{names,<:Tuple{Bool,<:AbstractVector{Ti},Vararg{Integer}}},
         state::SymBasis.DigitBase.BaseInt{T,Ti,B},
@@ -335,25 +292,6 @@ function apply_flip(
         return state
     end
 end
-
-"""
-    apply_flip_generic(p, state)
-
-A generic wrapper for `apply_flip` that returns both the flipped (or original) state and a
-phase factor of `1`. This is useful for symmetry groups that may require a phase factor, but
-where the `apply_flip` does not include any nontrivial phase.
-
-# Arguments
-- `p`: The parameter containing the flip information (e.g. a named tuple with fields
-    `is_flipped`, `sites`, `N0`, `N1`, ...).
-- `state`: The state to which the flip operation will be applied.
-
-# Returns
-- A tuple containing the flipped (or original) state and a phase factor of `1`.
-"""
-function apply_flip_generic(p, state)
-    return apply_flip(p, state), 1
-end
 # END -- check and apply functions for predefined symmetries
 
 
@@ -404,8 +342,7 @@ end
 """
     sym(
         ss::SymBasis.SymGroups.Translational{T_k,Ti},
-        dofo::SymBasis.DoFObjects.DoFObject{B,T_s,T,Ti};
-        force_apply::Union{Nothing,Function}=Nothing
+        dofo::SymBasis.DoFObjects.DoFObject{B,T_s,T,Ti}
     ) where {B,T_s,T,Ti,T_k}
 
 Create a translational symmetry group for the given DoF-object `dofo`, and translational
@@ -416,22 +353,12 @@ symmetry specification `ss`.
     specification.
 - `dofo::`[`SymBasis.DoFObjects.DoFObject`](@ref)`{B,T_s,T,Ti}`: The DoF-object.
 
-# Keyword Arguments
-- `force_apply::Union{Nothing,Function}`: An optional argument that allows the user to
-    provide a custom function for applying the permutation. If `nothing` (the default), the
-    function will use `apply_perm_fermionic` for `SpinlessFermion` DoF-objects and
-    `apply_perm_generic` for other DoF-objects. If a function is provided, it will be used
-    for all DoF-object types, overriding the default behavior. This can be useful for
-    testing or for defining custom symmetry groups that may require a specific way of
-    applying permutations that does not fit the default logic.
-
 # Returns
 - [`SymBasis.SymGroups.SymGroup`](@ref): The translational symmetry group.
 """
 function sym(
     ss::Translational{T_k,Ti},
-    dofo::DoFObject{B,T_s,T,Ti};
-    force_apply::Union{Nothing,Function}=nothing
+    dofo::DoFObject{B,T_s,T,Ti}
 ) where {B,T_s,T,Ti,T_k}
     N = length(ss.perm)
     Id_vec = 1:N .|> Ti
@@ -450,11 +377,8 @@ function sym(
 
     is_spinless_fermion = dofo.type == :SpinlessFermion
 
-    apply = is_spinless_fermion ? apply_perm_fermionic : apply_perm_generic
-
-    if !(force_apply isa Nothing)
-        apply = force_apply
-    end
+    apply = is_spinless_fermion ? apply_perm_fermionic : apply_perm
+    phase = is_spinless_fermion ? phase_perm_fermionic : phase_unity
 
     T_sym = SymGroup(
         dofo,
@@ -464,6 +388,7 @@ function sym(
         ],
         check_perm,
         apply,
+        phase,
         [
             cispi(-2r * ss.k / R)
             for r in rₛ
@@ -513,8 +438,7 @@ end
 """
     sym(
         ss::SymBasis.SymGroups.SpatialReflection{T_p,Ti},
-        dofo::SymBasis.DoFObjects.DoFObject{B,T_s,T,Ti};
-        force_apply::Union{Nothing,Function}=Nothing
+        dofo::SymBasis.DoFObjects.DoFObject{B,T_s,T,Ti}
     ) where {B,T_s,T,Ti,T_p}
 
 Create a spatial reflection symmetry group for the given DoF-object `dofo`, and spatial
@@ -525,22 +449,12 @@ reflection symmetry specification `ss`.
     symmetry specification.
 - `dofo::`[`SymBasis.DoFObjects.DoFObject`](@ref)`{B,T_s,T,Ti}`: The DoF-object.
 
-# Keyword Arguments
-- `force_apply::Union{Nothing,Function}`: An optional argument that allows the user to
-    provide a custom function for applying the permutation. If `nothing` (the default), the
-    function will use `apply_perm_fermionic` for `SpinlessFermion` DoF-objects and
-    `apply_perm_generic` for other DoF-objects. If a function is provided, it will be used
-    for all DoF-object types, overriding the default behavior. This can be useful for
-    testing or for defining custom symmetry groups that may require a specific way of
-    applying permutations that does not fit the default logic.
-
 # Returns
 - [`SymBasis.SymGroups.SymGroup`](@ref): The spatial reflection symmetry group.
 """
 function sym(
     ss::SpatialReflection{T_p,Ti},
-    dofo::DoFObject{B,T_s,T,Ti};
-    force_apply::Union{Nothing,Function}=nothing
+    dofo::DoFObject{B,T_s,T,Ti}
 ) where {B,T_s,T,Ti,T_p}
     N = length(ss.perm)
     Id_vec = 1:N .|> Ti
@@ -559,17 +473,15 @@ function sym(
 
     is_spinless_fermion = dofo.type == :SpinlessFermion
 
-    apply = is_spinless_fermion ? apply_perm_fermionic : apply_perm_generic
-
-    if !(force_apply isa Nothing)
-        apply = force_apply
-    end
+    apply = is_spinless_fermion ? apply_perm_fermionic : apply_perm
+    phase = is_spinless_fermion ? phase_perm_fermionic : phase_unity
 
     P_sym = SymGroup(
         dofo,
         [(; perm=perm_wrapper(perm_k(ss.perm, i), length(dofo))) for i in rₛ],
         check_perm,
         apply,
+        phase,
         [ss.p^r for r in rₛ],
         N
     )
@@ -653,7 +565,8 @@ function sym(
         dofo,
         [(; perm=perm_wrapper(perm_k(ss.perm, i), length(dofo))) for i in rₛ],
         check_perm,
-        apply_perm_generic,
+        apply_perm,
+        phase_unity,
         [cispi(-2 * r * ss.r / R) for r in rₛ],
         N
     )

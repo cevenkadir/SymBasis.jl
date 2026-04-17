@@ -7,6 +7,7 @@ using SymBasis.DoFObjects: DoFObject
         cycles::AbstractVector{<:NamedTuple},
         check::Function,
         apply::Function,
+        phase::Function,
         factors::AbstractVector{T_f},
         N::Integer
     ) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
@@ -22,6 +23,7 @@ apply these operations, and factors associated with each symmetry cycle.
     cycles.
 - `check::Function`: A function to check the validity of symmetry operations.
 - `apply::Function`: A function to apply the symmetry operations.
+- `phase::Function`: A function to compute the phase of symmetry operations.
 - `factors::AbstractVector{T_f}`: A vector of factors associated with each symmetry cycle.
 - `N::Integer`: The total number of the DoF-objects in the system. This is used to check
     the validity of the symmetry operations.
@@ -33,6 +35,7 @@ apply these operations, and factors associated with each symmetry cycle.
     cycles.
 - `check::Function`: A function to check the validity of symmetry operations.
 - `apply::Function`: A function to apply the symmetry operations.
+- `phase::Function`: A function to compute the phase of symmetry operations.
 - `factors::AbstractVector{T_f}`: A vector of factors associated with each symmetry cycle.
 - `N::Integer`: The total number of the DoF-objects in the system. This is used to check the
     validity of the symmetry operations.
@@ -49,6 +52,7 @@ struct SymGroup{B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
     cycles::AbstractVector{<:NamedTuple}
     check::Function
     apply::Function
+    phase::Function
     factors::AbstractVector{T_f}
     N::Integer
 
@@ -57,12 +61,24 @@ struct SymGroup{B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
         cycles::AbstractVector{<:NamedTuple},
         check::Function,
         apply::Function,
+        phase::Function,
         factors::AbstractVector{T_f},
         N::Integer
     ) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
         @assert length(cycles) == length(factors)
-        return new{B,T_s,T,Ti,T_f}(dofo, cycles, check, apply, factors, N)
+        return new{B,T_s,T,Ti,T_f}(dofo, cycles, check, apply, phase, factors, N)
     end
+end
+
+function SymGroup(
+    dofo::DoFObject{B,T_s,T,Ti},
+    cycles::AbstractVector{<:NamedTuple},
+    check::Function,
+    apply::Function,
+    factors::AbstractVector{T_f},
+    N::Integer
+) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
+    return SymGroup(dofo, cycles, check, apply, phase_unity, factors, N)
 end
 
 """
@@ -72,6 +88,7 @@ end
         cycles::AbstractArray{<:AbstractVector{<:NamedTuple}},
         check::AbstractVector{<:Function},
         apply::AbstractVector{<:Function},
+        phase::AbstractVector{<:Function},
         factors::AbstractArray{T_f},
         N::Integer
     ) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
@@ -89,6 +106,8 @@ operations by combining simpler ones.
     set of symmetry operations.
 - `apply::AbstractVector{<:Function}`: A vector of functions to apply each set of symmetry
     operations.
+- `phase::AbstractVector{<:Function}`: A vector of functions to compute phase factors for
+    each set of symmetry operations.
 - `factors::AbstractArray{T_f}`: An array of factors associated with each combined symmetry
     cycle.
 - `N::Integer`: The total number of the DoF-objects in the system. This is used to check
@@ -103,6 +122,8 @@ operations by combining simpler ones.
     set of symmetry operations.
 - `apply::AbstractVector{<:Function}`: A vector of functions to apply each set of symmetry
     operations.
+- `phase::AbstractVector{<:Function}`: A vector of functions to compute phase factors for
+    each set of symmetry operations.
 - `factors::AbstractArray{T_f}`: An array of factors associated with each combined symmetry
     cycle.
 - `N::Integer`: The total number of the DoF-objects in the system. This is used to check the
@@ -120,6 +141,7 @@ struct CombSymGroup{B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
     cycles::AbstractArray{<:AbstractVector{<:NamedTuple}}
     check::AbstractVector{<:Function}
     apply::AbstractVector{<:Function}
+    phase::AbstractVector{<:Function}
     factors::AbstractArray{T_f}
     N::Integer
     function CombSymGroup(
@@ -127,14 +149,35 @@ struct CombSymGroup{B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
         cycles::AbstractArray{<:AbstractVector{<:NamedTuple}},
         check::AbstractVector{<:Function},
         apply::AbstractVector{<:Function},
+        phase::AbstractVector{<:Function},
         factors::AbstractArray{T_f},
         N::Integer
     ) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
         @assert size(cycles) == size(factors)
         @assert ndims(cycles) == length(check)
         @assert ndims(cycles) == length(apply)
-        return new{B,T_s,T,Ti,T_f}(dofo, cycles, check, apply, factors, N)
+        @assert ndims(cycles) == length(phase)
+        return new{B,T_s,T,Ti,T_f}(dofo, cycles, check, apply, phase, factors, N)
     end
+end
+
+function CombSymGroup(
+    dofo::DoFObject{B,T_s,T,Ti},
+    cycles::AbstractArray{<:AbstractVector{<:NamedTuple}},
+    check::AbstractVector{<:Function},
+    apply::AbstractVector{<:Function},
+    factors::AbstractArray{T_f},
+    N::Integer
+) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
+    return CombSymGroup(
+        dofo,
+        cycles,
+        check,
+        apply,
+        fill(phase_unity, length(apply)),
+        factors,
+        N
+    )
 end
 
 _cycles_preview(cycles; maxitems::Int=4) = begin
@@ -177,6 +220,7 @@ function Base.show(io::IO, g::SymGroup)
     )
     _print_kv(io, "check:", string(nameof(g.check)))
     _print_kv(io, "apply:", string(nameof(g.apply)))
+    _print_kv(io, "phase:", string(nameof(g.phase)))
 end
 
 function Base.show(io::IO, ::MIME"text/plain", g::SymGroup)
@@ -200,6 +244,7 @@ function Base.show(io::IO, g::CombSymGroup)
     _print_kv(io, "factors:", "size=$(size(g.factors)), eltype=$(eltype(g.factors))")
     _print_kv(io, "check:", "$(length(g.check)) function(s)")
     _print_kv(io, "apply:", "$(length(g.apply)) function(s)")
+    _print_kv(io, "phase:", "$(length(g.phase)) function(s)")
 
     # Show a small preview of a representative entry if possible
     if length(g.cycles) > 0
@@ -245,6 +290,7 @@ function Base.:(∘)(
         map(collect, Base.product(sg1.cycles, sg2.cycles)),
         [sg1.check, sg2.check],
         [sg1.apply, sg2.apply],
+        [sg1.phase, sg2.phase],
         map(x -> *(x...), Base.product(sg1.factors, sg2.factors)),
         sg1.N
     )
@@ -279,6 +325,7 @@ function Base.:(∘)(
         map(x -> vcat(x...), Base.product(csg.cycles, sg.cycles)),
         vcat(csg.check..., sg.check),
         vcat(csg.apply..., sg.apply),
+        vcat(csg.phase..., sg.phase),
         map(x -> *(x...), Base.product(csg.factors, sg.factors)),
         csg.N
     )
@@ -313,6 +360,7 @@ function Base.:(∘)(
         map(x -> vcat(x...), Base.product(sg.cycles, csg.cycles)),
         vcat(sg.check, csg.check...),
         vcat(sg.apply, csg.apply...),
+        vcat(sg.phase, csg.phase...),
         map(x -> *(x...), Base.product(sg.factors, csg.factors)),
         csg.N
     )
@@ -348,6 +396,7 @@ function Base.:(∘)(
         map(x -> vcat(x...), Base.product(csg1.cycles, csg2.cycles)),
         vcat(csg1.check..., csg2.check...),
         vcat(csg1.apply..., csg2.apply...),
+        vcat(csg1.phase..., csg2.phase...),
         map(x -> *(x...), Base.product(csg1.factors, csg2.factors)),
         csg1.N
     )

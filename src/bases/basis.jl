@@ -268,7 +268,8 @@ function basis(
 
     get_temp_state = (idx, state₀) -> begin
         cycleᵢ = sg.cycles[idx]
-        temp_state, temp_phase = sg.apply(cycleᵢ, state₀)
+        temp_state = sg.apply(cycleᵢ, state₀)
+        temp_phase = sg.phase(cycleᵢ, state₀)
         (sg.check(cycleᵢ, temp_state, c), temp_state, temp_phase)
     end
 
@@ -335,7 +336,8 @@ function basis(
         end
         if is_valid
             for i in 1:ndims_cycles
-                temp_state, phaseᵢ = csg.apply[i](cycle[i], temp_state)
+                phaseᵢ = csg.phase[i](cycle[i], temp_state)
+                temp_state = csg.apply[i](cycle[i], temp_state)
                 temp_phase *= phaseᵢ
             end
         end
@@ -388,14 +390,18 @@ function is_commutative(b::Basis, csg::CombSymGroup)
                             cycle = csg.cycles[cycle_idx]
 
                             # Apply symmetry i then j
-                            state_ij, phase_i = csg.apply[i](cycle[i], test_state)
-                            state_ij, phase_j = csg.apply[j](cycle[j], state_ij)
+                            phase_i = csg.phase[i](cycle[i], test_state)
+                            state_ij = csg.apply[i](cycle[i], test_state)
+                            phase_j = csg.phase[j](cycle[j], state_ij)
+                            state_ij = csg.apply[j](cycle[j], state_ij)
                             state_ij, factor_ij = representative(state_ij, csg)
                             factor_ij *= phase_i * phase_j
 
                             # Apply symmetry j then i
-                            state_ji, phase_j = csg.apply[j](cycle[j], test_state)
-                            state_ji, phase_i = csg.apply[i](cycle[i], state_ji)
+                            phase_j = csg.phase[j](cycle[j], test_state)
+                            state_ji = csg.apply[j](cycle[j], test_state)
+                            phase_i = csg.phase[i](cycle[i], state_ji)
+                            state_ji = csg.apply[i](cycle[i], state_ji)
                             state_ji, factor_ji = representative(state_ji, csg)
                             factor_ji *= phase_i * phase_j
 
@@ -440,11 +446,13 @@ function representative(
     n_cycles = length(sg.cycles)
 
     id_rep_state = first(eachindex(sg.cycles))
-    rep_state, rep_phase = sg.apply(sg.cycles[id_rep_state], state)
+    rep_phase = sg.phase(sg.cycles[id_rep_state], state)
+    rep_state = sg.apply(sg.cycles[id_rep_state], state)
     h_rep_state = hash(rep_state)
 
     @inbounds for idx in 2:n_cycles
-        temp_state, temp_phase = sg.apply(sg.cycles[idx], state)
+        temp_phase = sg.phase(sg.cycles[idx], state)
+        temp_state = sg.apply(sg.cycles[idx], state)
         h_temp_state = hash(temp_state)
 
         if h_temp_state < h_rep_state
@@ -490,7 +498,8 @@ function representative(
     rep_state = state
     rep_phase = one(Ts)
     @inbounds for dim in 1:ndims_cycles
-        rep_state, phaseᵢ = csg.apply[dim](csg.cycles[1][dim], rep_state)
+        phaseᵢ = csg.phase[dim](csg.cycles[1][dim], rep_state)
+        rep_state = csg.apply[dim](csg.cycles[1][dim], rep_state)
         rep_phase *= phaseᵢ
     end
     h_rep_state = hash(rep_state)
@@ -502,7 +511,8 @@ function representative(
         temp_phase = one(Ts)
 
         for dim in 1:ndims_cycles
-            temp_state, phaseᵢ = csg.apply[dim](cycle[dim], temp_state)
+            phaseᵢ = csg.phase[dim](cycle[dim], temp_state)
+            temp_state = csg.apply[dim](cycle[dim], temp_state)
             temp_phase *= phaseᵢ
         end
 

@@ -6,17 +6,28 @@
         cycle = [(; perm=perm_k(perm, i)) for i in 0:(N-1)]
         factors = [1.0 for _ in 1:length(cycle)]
 
-        sg1 = SymGroup(dofo, cycle, check_perm, apply_perm, factors, N)
+        sg1 = SymGroup(dofo, cycle, check_perm, apply_perm, phase_unity, factors, N)
         @test sg1.dofo == dofo
         @test sg1.cycles == cycle
         @test sg1.check == check_perm
         @test sg1.apply == apply_perm
+        @test sg1.phase == phase_unity
         @test sg1.factors == factors
         @test sg1.N == N
 
         @test_throws AssertionError SymGroup(
-            dofo, cycle, check_perm, apply_perm, factors[1:end-1], N
+            dofo, cycle, check_perm, apply_perm, phase_unity, factors[1:end-1], N
         )
+
+        # Backcompatible constructor without explicit phase argument.
+        sg1_backcompat = SymGroup(dofo, cycle, check_perm, apply_perm, factors, N)
+        @test sg1_backcompat.dofo == dofo
+        @test sg1_backcompat.cycles == cycle
+        @test sg1_backcompat.check == check_perm
+        @test sg1_backcompat.apply == apply_perm
+        @test sg1_backcompat.phase(nothing, nothing) == 1
+        @test sg1_backcompat.factors == factors
+        @test sg1_backcompat.N == N
     end
 
     @testset "Construction of CombSymGroup" begin
@@ -32,28 +43,44 @@
         ]
         checks = [check_perm, check_Nₛ]
         applies = [apply_perm, apply_Nₛ]
+        phases = [phase_unity, phase_unity]
         factors = [1.0 for i in 0:(N-1), N0 in 1:(N-1)]
 
-        csg1 = CombSymGroup(dofo, cycle, checks, applies, factors, N)
+        csg1 = CombSymGroup(dofo, cycle, checks, applies, phases, factors, N)
         @test csg1.dofo == dofo
         @test csg1.cycles == cycle
         @test csg1.check == checks
         @test csg1.apply == applies
+        @test csg1.phase == phases
         @test csg1.factors == factors
         @test csg1.N == N
 
         @test_throws AssertionError CombSymGroup(
-            dofo, cycle, checks, applies, factors[1:end-1, :], N
+            dofo, cycle, checks, applies, phases, factors[1:end-1, :], N
         )
         @test_throws AssertionError CombSymGroup(
-            dofo, cycle, checks, applies, factors[:, 1:end-1], N
+            dofo, cycle, checks, applies, phases, factors[:, 1:end-1], N
         )
         @test_throws AssertionError CombSymGroup(
-            dofo, cycle, checks[1:end-1], applies, factors, N
+            dofo, cycle, checks[1:end-1], applies, phases, factors, N
         )
         @test_throws AssertionError CombSymGroup(
-            dofo, cycle, checks, applies[1:end-1], factors, N
+            dofo, cycle, checks, applies[1:end-1], phases, factors, N
         )
+        @test_throws AssertionError CombSymGroup(
+            dofo, cycle, checks, applies, phases[1:end-1], factors, N
+        )
+
+        # Backcompatible constructor without explicit phase argument.
+        csg1_backcompat = CombSymGroup(dofo, cycle, checks, applies, factors, N)
+        @test csg1_backcompat.dofo == dofo
+        @test csg1_backcompat.cycles == cycle
+        @test csg1_backcompat.check == checks
+        @test csg1_backcompat.apply == applies
+        @test length(csg1_backcompat.phase) == length(applies)
+        @test all(f -> f(nothing, nothing) == 1, csg1_backcompat.phase)
+        @test csg1_backcompat.factors == factors
+        @test csg1_backcompat.N == N
     end
 
     @testset "∘ for SymGroup" begin
@@ -68,6 +95,7 @@
             @test csg.dofo == dofo
             @test csg.check == [sg1.check, sg2.check]
             @test csg.apply == [sg1.apply, sg2.apply]
+            @test csg.phase == [sg1.phase, sg2.phase]
             for i in eachindex(sg1.cycles), j in eachindex(sg2.cycles)
                 @test csg.cycles[i, j] == [sg1.cycles[i], sg2.cycles[j]]
                 @test csg.factors[i, j] ≈ sg1.factors[i] * sg2.factors[j]
@@ -83,6 +111,7 @@
             @test csg2.dofo == dofo
             @test csg2.check == vcat(csg.check..., sg3.check)
             @test csg2.apply == vcat(csg.apply..., sg3.apply)
+            @test csg2.phase == vcat(csg.phase..., sg3.phase)
             for i in eachindex(sg1.cycles),
                 j in eachindex(sg2.cycles),
                 k in eachindex(sg3.cycles)
@@ -103,6 +132,7 @@
             @test csg3.dofo == dofo
             @test csg3.check == vcat(sg3.check, csg.check...)
             @test csg3.apply == vcat(sg3.apply, csg.apply...)
+            @test csg3.phase == vcat(sg3.phase, csg.phase...)
             for i in eachindex(sg3.cycles),
                 j in eachindex(sg1.cycles),
                 k in eachindex(sg2.cycles)
@@ -123,6 +153,7 @@
             @test csg4.dofo == dofo
             @test csg4.check == vcat(csg.check..., csg.check...)
             @test csg4.apply == vcat(csg.apply..., csg.apply...)
+            @test csg4.phase == vcat(csg.phase..., csg.phase...)
             for i in eachindex(sg1.cycles),
                 j in eachindex(sg2.cycles),
                 k in eachindex(sg1.cycles),
@@ -181,6 +212,7 @@
         @test contains(str, "factors:")
         @test contains(str, "check:")
         @test contains(str, "apply:")
+        @test contains(str, "phase:")
 
         # Test text/plain MIME
         io_mime = IOBuffer()
@@ -190,7 +222,15 @@
         @test contains(str_mime, "N:")
 
         # Test edge case: SymGroup with zero cycles
-        sg_empty = SymGroup(dofo, NamedTuple[], check_perm, apply_perm, Float64[], N)
+        sg_empty = SymGroup(
+            dofo,
+            NamedTuple[],
+            check_perm,
+            apply_perm,
+            phase_unity,
+            Float64[],
+            N
+        )
         io_empty = IOBuffer()
         show(io_empty, sg_empty)
         str_empty = String(take!(io_empty))
@@ -223,6 +263,7 @@
         @test contains(str, "factors:")
         @test contains(str, "check:")
         @test contains(str, "apply:")
+        @test contains(str, "phase:")
         @test contains(str, "preview")
 
         # Test text/plain MIME

@@ -45,7 +45,7 @@ end
 
 # define the apply function for the blockade constraint (identity in this case)
 function apply_blockade(p, state::BaseInt{T,Ti,B}) where {T,Ti,B}
-    return state
+    return state, 1
 end
 
 # define the cycle for the blockade constraint

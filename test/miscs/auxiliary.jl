@@ -78,6 +78,24 @@
         @test res2 == perm
     end
 
+    @testset "invperm" begin
+        using BitPermutations: BitPermutation
+
+        perm1 = [3, 1, 2]
+        bp1 = BitPermutation{UInt64}(perm1)
+        inv1 = Miscs.invperm(bp1)
+        @test inv1 == [2, 3, 1]
+        @test inv1 == Base.invperm(Vector(bp1))
+        @test Vector(bp1)[inv1] == collect(1:length(perm1))
+
+        perm2 = [2, 5, 1, 4, 3]
+        bp2 = BitPermutation{UInt64}(perm2)
+        inv2 = Miscs.invperm(bp2)
+        @test inv2 == [3, 1, 5, 4, 2]
+        @test inv2 == Base.invperm(Vector(bp2))
+        @test Vector(bp2)[inv2] == collect(1:length(perm2))
+    end
+
     @testset "rtoldefault" begin
         # Test AbstractFloat types
         @test rtoldefault(Float64) == sqrt(eps(Float64))

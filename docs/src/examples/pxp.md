@@ -45,7 +45,7 @@ end
 
 # define the apply function for the blockade constraint (identity in this case)
 function apply_blockade(p, state::BaseInt{T,Ti,B}) where {T,Ti,B}
-    return state, 1
+    return state
 end
 
 # define the cycle for the blockade constraint
@@ -59,6 +59,7 @@ rydberg_blockade_sg = SymGroup(
     cycles,
     check_blockade,
     apply_blockade,
+    phase_unity, # no symmetry transformation, so phase is 1
     factors,
     N
 )

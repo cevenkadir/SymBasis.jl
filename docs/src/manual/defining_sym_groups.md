@@ -203,7 +203,8 @@ To define a custom symmetry group, you need to specify the following parameters:
 - `dofo`: The DoF-object that the symmetry group is associated with.
 - `cycles`: A vector of `NamedTuple`s, where each `NamedTuple` represents a cycle in the symmetry group. Each `NamedTuple` has its own special fields that depend on the type of symmetry you want to define. For example, for a custom symmetry that is defined by a permutation, you would specify the `perm` field in the `NamedTuple` to represent the permutation.
 - `check`: A function that checks whether a given state is invariant under the symmetry operation. This function should take a cycle, a state and the previous boolean result of checking the previous cycle as input and return a boolean value indicating whether the state is invariant under the symmetry operation and the previous cycles.
-- `apply`: A function that applies the symmetry operation to a given state. This function should take a cycle, a state and return the state obtained by applying the symmetry operation to the input state and the phase factor associated with the symmetry operation.
+- `apply`: A function that applies the symmetry operation to a given state. This function should take a cycle, a state and return the state obtained by applying the symmetry operation to the input state.
+- `phase`: A function that calculates the phase factor associated with the symmetry operation for a given state. This function should take a cycle, a state and return the phase factor associated with the symmetry operation for the input state.
 - `factors`: A vector of factors that are used to calculate the normalization factor for the basis states. The factors should be defined in such a way that they can be used to calculate the normalization factor for the basis states that are invariant under the symmetry operation.
 - `N`: The number of sites in the system.
 
@@ -253,7 +254,7 @@ end
 Then, we can define the apply function for the custom symmetry. This function will apply the symmetry operation to a given state. In this case, since the symmetry operation does not change the state, we can simply return the input state:
 ```@example custom_symmetry
 function apply_cat_dog(p, state::BaseInt{T,Ti,B}) where {T,Ti,B}
-    return state, 1
+    return state
 end
 ```
 Next, we define the factors for the custom symmetry. In this case, we can simply use a factor of 1 since the normalization factor for the basis states that are invariant under the symmetry operation is 1:
@@ -267,6 +268,7 @@ sg = SymGroup(
     cycles,
     check_cat_dog,
     apply_cat_dog,
+    phase_unity, # no symmetry transformation, so phase is 1
     factors,
     N
 )

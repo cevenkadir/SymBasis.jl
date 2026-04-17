@@ -18,12 +18,12 @@ SymBasis.jl provides predefined symmetry groups for commonly used symmetries, in
 - Total magnetization (for quantum mechanical spins)
 - Spin inversion (for quantum mechanical spins)
 - Spin-multipole conservation (for quantum mechanical spins)
-- Particle number conservation (for bosons)
+- Particle number conservation (for bosons and spinless fermions)
 - Spatial reflection symmetry
 - Translational symmetry
 - Rotational symmetry of space
 
-In the upcoming versions, we plan to add more predefined symmetries such as and particle number conservation for fermions and bosons, etc.
+In the upcoming versions, we plan to add more predefined symmetries for spinful fermions.
 
 ## Quick installation
 **Requirements**: Julia 1.11 or later.
@@ -61,12 +61,12 @@ SymGroup{2,Rational{Int64},UInt64,Int64,Float64} with 1 cycle(s)
   cycles:        (N0 = 2, N1 = 2, N = 4)
   factors:       1 element(s), eltype=Float64
   check:         check_Nₛ
-  apply:         apply_Nₛ
+  apply:         apply_Nₛ_generic
 
 # generate the basis
 julia> basis(dofo, N, sg)
-Basis{SymBasis.DigitBase.BaseInt{UInt64, Int64, 2},Float64} with 6 states
-  states: Vector{SymBasis.DigitBase.BaseInt{UInt64, Int64, 2}}
+Basis{BaseInt{UInt64, Int64, 2},Float64} with 6 states
+  states: Vector{BaseInt{UInt64, Int64, 2}}
   norms : Vector{Float64}
   first 6 states/norms:
     (11)₂    (norm=1.0)

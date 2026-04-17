@@ -391,6 +391,15 @@
         end
     end
 
+    @testset "Translational constructor" begin
+        t1 = Translational(1, [2, 3, 1])
+        @test t1.k == 1
+        @test t1.perm == [2, 3, 1]
+
+        @test_throws AssertionError Translational(0, [1, 2, 3])
+        @test_throws AssertionError Translational(0, [2, 2, 1])
+    end
+
     @testset "sym of Translational" begin
         @testset "without BitPermutation" begin
             dofo1 = DoFObject(:Emoji, (:🥳, :🙈, :👀))
@@ -452,6 +461,54 @@
                 ]
             end
         end
+
+        @testset "SpinlessFermion" begin
+            dofo4 = dof_object(SpinlessFermion())
+            perm4 = [2, 1]
+            transl_sym4 = sym(Translational(1, perm4), dofo4)
+
+            @test transl_sym4.dofo == dofo4
+            @test all(
+                transl_sym4.cycles[i].perm.vector == BitPermutation{UInt}(perm_k(perm4, i - 1)).vector
+                for i in 1:length(transl_sym4.cycles)
+            )
+            @test transl_sym4.check == check_perm
+            @test transl_sym4.factors ≈ [cispi(-2 * r / length(perm4)) for r in 0:(length(perm4)-1)]
+
+            state = bi"11"2
+            transformed_state, phase = transl_sym4.apply(transl_sym4.cycles[2], state)
+            @test transformed_state == state
+            @test phase == -1
+        end
+
+        @testset "force_apply keyword" begin
+            force_apply(p, state) = (state, 7)
+
+            # For non-fermionic DoFObject, force_apply should override apply_perm_generic.
+            dofo5 = DoFObject(:Emoji, (:A, :B))
+            perm5 = [2, 1]
+            transl_sym5 = sym(Translational(0, perm5), dofo5; force_apply=force_apply)
+            forced_state5, forced_phase5 = transl_sym5.apply(transl_sym5.cycles[2], bi"1"2)
+            @test forced_state5 == bi"1"2
+            @test forced_phase5 == 7
+
+            # For SpinlessFermion, force_apply should override fermionic default (-1 here).
+            dofo6 = dof_object(SpinlessFermion())
+            transl_sym6 = sym(Translational(1, perm5), dofo6; force_apply=force_apply)
+            forced_state6, forced_phase6 = transl_sym6.apply(transl_sym6.cycles[2], bi"11"2)
+            @test forced_state6 == bi"11"2
+            @test forced_phase6 == 7
+        end
+    end
+
+    @testset "SpatialReflection constructor" begin
+        p1 = SpatialReflection(-1, [4, 3, 2, 1])
+        @test p1.p == -1
+        @test p1.perm == [4, 3, 2, 1]
+
+        @test_throws AssertionError SpatialReflection(0, [4, 3, 2, 1])
+        @test_throws AssertionError SpatialReflection(1, [1, 2, 3, 4])
+        @test_throws AssertionError SpatialReflection(1, [2, 2, 3, 1])
     end
 
     @testset "sym of SpatialReflection" begin
@@ -492,6 +549,47 @@
             @test refl_symᵢ.check == check_perm
             @test refl_symᵢ.apply == apply_perm_generic
             @test refl_symᵢ.factors ≈ [qᵢ^0, qᵢ^1]
+        end
+
+        @testset "SpinlessFermion" begin
+            dofo3 = dof_object(SpinlessFermion())
+            perm3 = [2, 1]
+
+            for p in [-1, 1]
+                refl_sym3 = sym(SpatialReflection(p, perm3), dofo3)
+                @test refl_sym3.dofo == dofo3
+                @test all(
+                    refl_sym3.cycles[i].perm.vector == BitPermutation{UInt}(perm_k(perm3, i - 1)).vector
+                    for i in 1:length(refl_sym3.cycles)
+                )
+                @test refl_sym3.check == check_perm
+                @test refl_sym3.factors ≈ [p^0, p^1]
+            end
+
+            state = bi"11"2
+            refl_sym3 = sym(SpatialReflection(1, perm3), dofo3)
+            transformed_state, phase = refl_sym3.apply(refl_sym3.cycles[2], state)
+            @test transformed_state == state
+            @test phase == -1
+        end
+
+        @testset "force_apply keyword" begin
+            force_apply(p, state) = (state, 11)
+
+            # For non-fermionic DoFObject, force_apply should override apply_perm_generic.
+            dofo4 = DoFObject(:Emoji, (:A, :B))
+            perm4 = [2, 1]
+            refl_sym4 = sym(SpatialReflection(1, perm4), dofo4; force_apply=force_apply)
+            forced_state4, forced_phase4 = refl_sym4.apply(refl_sym4.cycles[2], bi"1"2)
+            @test forced_state4 == bi"1"2
+            @test forced_phase4 == 11
+
+            # For SpinlessFermion, force_apply should override fermionic default (-1 here).
+            dofo5 = dof_object(SpinlessFermion())
+            refl_sym5 = sym(SpatialReflection(1, perm4), dofo5; force_apply=force_apply)
+            forced_state5, forced_phase5 = refl_sym5.apply(refl_sym5.cycles[2], bi"11"2)
+            @test forced_state5 == bi"11"2
+            @test forced_phase5 == 11
         end
     end
 
@@ -639,5 +737,50 @@
         @test all(c.N == 4 for c in N_sym4.cycles)
         @test length(N_sym4.factors) == length(N_sym4.cycles)
         @test all(isone, N_sym4.factors)
+    end
+
+    @testset "TotalSpinlessFermionicNumber constructor" begin
+        pnf1 = TotalSpinlessFermionicNumber(0, 4)
+        @test pnf1.n_particles == 0
+        @test pnf1.N == 4
+
+        pnf2 = TotalSpinlessFermionicNumber(3, 5)
+        @test pnf2.n_particles == 3
+        @test pnf2.N == 5
+
+        pnf3 = TotalSpinlessFermionicNumber(Int8(2), Int32(6))
+        @test pnf3.n_particles == 2
+        @test pnf3.N == 6
+
+        @test_throws AssertionError TotalSpinlessFermionicNumber(-1, 4)
+        @test_throws AssertionError TotalSpinlessFermionicNumber(5, 4)
+    end
+
+    @testset "sym of TotalSpinlessFermionicNumber" begin
+        dofo1 = dof_object(SpinlessFermion())
+        pnf1 = TotalSpinlessFermionicNumber(2, 4)
+        N_sym1 = sym(pnf1, dofo1)
+
+        @test N_sym1.dofo == dofo1
+        @test N_sym1.check == check_Nₛ
+        @test N_sym1.apply == apply_Nₛ_generic
+        @test all(c.N == 4 for c in N_sym1.cycles)
+        @test length(N_sym1.factors) == length(N_sym1.cycles)
+        @test all(isone, N_sym1.factors)
+
+        # Exactly one occupancy pattern count tuple for N=4, n_particles=0.
+        dofo2 = dof_object(SpinlessFermion(T=UInt32, Ti=Int32))
+        pnf2 = TotalSpinlessFermionicNumber(0, 4)
+        N_sym2 = sym(pnf2, dofo2)
+
+        @test N_sym2.dofo == dofo2
+        @test N_sym2.check == check_Nₛ
+        @test N_sym2.apply == apply_Nₛ_generic
+        @test length(N_sym2.cycles) == 1
+        @test all(c.N == 4 for c in N_sym2.cycles)
+        @test all(isone, N_sym2.factors)
+
+        # The spinless fermion number symmetry is only valid on :SpinlessFermion dofo.
+        @test_throws AssertionError sym(TotalSpinlessFermionicNumber(1, 2), dof_object(Boson(1)))
     end
 end

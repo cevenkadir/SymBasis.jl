@@ -49,4 +49,22 @@
         @test dofo3.ldof == (0, 1, 2, 3)
         @test typeof(dofo3) == DoFObject{4,Int64,UInt32,Int32}
     end
+
+    @testset "SpinlessFermion construction and dof_object" begin
+        sf1 = SpinlessFermion()
+        @test typeof(sf1) == SpinlessFermion{UInt64,Int64}
+
+        sf2 = SpinlessFermion(T=UInt32, Ti=Int32)
+        @test typeof(sf2) == SpinlessFermion{UInt32,Int32}
+
+        dofo1 = dof_object(sf1)
+        @test dofo1.type == :SpinlessFermion
+        @test dofo1.ldof == (0, 1)
+        @test typeof(dofo1) == DoFObject{2,Int64,UInt64,Int64}
+
+        dofo2 = dof_object(sf2)
+        @test dofo2.type == :SpinlessFermion
+        @test dofo2.ldof == (0, 1)
+        @test typeof(dofo2) == DoFObject{2,Int64,UInt32,Int32}
+    end
 end

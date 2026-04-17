@@ -34,7 +34,7 @@ end
 
 # define the apply function for the blockade constraint (identity in this case)
 function apply_blockade(p, state::BaseInt{T,Ti,B}) where {T,Ti,B}
-    return state
+    return state, 1
 end
 
 # define the cycle for the blockade constraint
@@ -70,7 +70,7 @@ csg = rydberg_blockade_sg ∘ T_sg ∘ P_sg</code></pre><pre class="documenter-e
   factors:       size=(1, 22, 2), eltype=ComplexF64
   check:         3 function(s)
   apply:         3 function(s)
-  preview @[1]:  factor=1.0 - 0.0im
+  preview @[1]:  factor=1.0 + 0.0im
                  cycle=(prevent = (0x0000000000000001, 0x0000000000000001), N = 22), (perm = BitPermutation{UInt64},), (perm = BitPermutation{UInt64},)
 </code></pre><p>Here <code>T_sg</code> is the translational symmetry group at momentum <span>$k = 0$</span> and <code>P_sg</code> is the spatial reflection symmetry group with parity <span>$p = +1$</span>. Composing the three groups with <code>∘</code> produces a combined symmetry group <code>csg</code> that enforces the blockade constraint and resolves both symmetries simultaneously.</p><h2 id="Constructing-the-basis"><a class="docs-heading-anchor" href="#Constructing-the-basis">Constructing the basis</a><a id="Constructing-the-basis-1"></a><a class="docs-heading-anchor-permalink" href="#Constructing-the-basis" title="Permalink"></a></h2><pre><code class="language-julia hljs">using SymBasis.Bases
 
@@ -172,26 +172,26 @@ Z_2_vec[m_Z_2_state] = 1.0
 
 # compute the overlap of each eigenstate with the Z_2 state
 overlap = abs2.([Z_2_vec ⋅ egn.vectors[:, i] for i in 1:hilbert_dim]) .|&gt; log10</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1022-element Vector{Float64}:
- -5.356878154089941
- -3.427185727468685
- -4.505133453262009
- -4.862348645171486
- -5.454306856524204
- -4.383200521796187
- -2.300048639011477
- -4.018075337795388
- -3.0132528712638016
- -4.493623165108528
+ -5.3568781540899355
+ -3.4271857274686823
+ -4.505133453262005
+ -4.8623486451715205
+ -5.454306856524217
+ -4.383200521796189
+ -2.300048639011478
+ -4.0180753377954
+ -3.013252871263792
+ -4.4936231651085246
   ⋮
- -3.013252871263827
- -4.018075337795357
- -2.3000486390114645
- -4.383200521796173
- -5.454306856524123
- -4.86234864517148
+ -3.0132528712638305
+ -4.018075337795362
+ -2.300048639011464
+ -4.383200521796175
+ -5.454306856524125
+ -4.862348645171481
  -4.505133453261947
- -3.4271857274686157
- -5.356878154089823</code></pre><h2 id="Plotting-the-spectrum"><a class="docs-heading-anchor" href="#Plotting-the-spectrum">Plotting the spectrum</a><a id="Plotting-the-spectrum-1"></a><a class="docs-heading-anchor-permalink" href="#Plotting-the-spectrum" title="Permalink"></a></h2><p>The scar states become visible as a regular tower of eigenstates with anomalously large overlap (close to <span>$\log_{10}|\langle\mathbb{Z}_2|E_n\rangle|^2 = 0$</span>) spread across the entire energy spectrum:</p><pre><code class="language-julia hljs">using CairoMakie
+ -3.427185727468616
+ -5.356878154089824</code></pre><h2 id="Plotting-the-spectrum"><a class="docs-heading-anchor" href="#Plotting-the-spectrum">Plotting the spectrum</a><a id="Plotting-the-spectrum-1"></a><a class="docs-heading-anchor-permalink" href="#Plotting-the-spectrum" title="Permalink"></a></h2><p>The scar states become visible as a regular tower of eigenstates with anomalously large overlap (close to <span>$\log_{10}|\langle\mathbb{Z}_2|E_n\rangle|^2 = 0$</span>) spread across the entire energy spectrum:</p><pre><code class="language-julia hljs">using CairoMakie
 
 fig = Figure()
 ax = Axis(
@@ -201,4 +201,4 @@ ax = Axis(
 )
 scatter!(ax, egn.values ./ N, overlap)
 ylims!(ax, -10, 0)
-fig</code></pre><img src="f9cc5cd2.svg" alt="Example block output"/><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-Turner_2018"><a class="tag is-link" href="#citeref-Turner_2018">Turner_2018</a>C. J. Turner, A. A. Michailidis, D. A. Abanin, M. Serbyn, and Z. Papić, <em>Weak ergodicity breaking from quantum many-body scars</em>, <a href="https://doi.org/10.1038/s41567-018-0137-5">Nature Phys. <strong>14</strong>, 745 (2018)</a>.</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../spins/">« Quantum mechanical spins</a><a class="docs-footer-nextpage" href="../1d_bhm_phase_diagram/">Phase diagram of the Bose-Hubbard chain »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Friday 13 March 2026 14:19">Friday 13 March 2026</span>. Using Julia version 1.12.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+fig</code></pre><img src="f9cc5cd2.svg" alt="Example block output"/><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-Turner_2018"><a class="tag is-link" href="#citeref-Turner_2018">Turner_2018</a>C. J. Turner, A. A. Michailidis, D. A. Abanin, M. Serbyn, and Z. Papić, <em>Weak ergodicity breaking from quantum many-body scars</em>, <a href="https://doi.org/10.1038/s41567-018-0137-5">Nature Phys. <strong>14</strong>, 745 (2018)</a>.</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../spins/">« Quantum mechanical spins</a><a class="docs-footer-nextpage" href="../1d_bhm_phase_diagram/">Phase diagram of the Bose-Hubbard chain »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Friday 17 April 2026 09:25">Friday 17 April 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

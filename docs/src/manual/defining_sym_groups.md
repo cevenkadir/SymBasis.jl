@@ -1,3 +1,4 @@
+```md
 # Defining symmetry sector(s)
 In SymBasis.jl, you can generate bases that have one or more symmetries by defining the corresponding symmetry groups(s).
 
@@ -9,17 +10,21 @@ Depth = 5
 ## Predefined symmetry groups
 SymBasis.jl provides predefined symmetry groups for commonly used symmetries. You can construct these symmetry groups using the [`sym`](@ref SymBasis.SymGroups.sym) function from the [`SymBasis.SymGroups`](@ref symgroups-api) submodule.
 
-### DoF-object-independent symmetry groups
-Some symmetries are independent of the DoF-object, such as translational and reflection symmetries.
+All predefined symmetry groups are constructed together with a DoF-object. In particular, even for discrete lattice symmetries such as translation, spatial reflection, and lattice rotation, the action on basis states may depend on the DoF-object. For example, for spinless fermions, applying such a symmetry may produce an additional state-dependent phase due to fermionic exchange statistics.
+
+### Discrete lattice symmetry groups
 
 #### Translational symmetry
-Translational symmetry is a symmetry where the system is invariant under translations. In a system with $N$ sites, the translation operator $T$ acts on a state $\vert a \rangle$ as follows:
+#### Translational symmetry
+Translational symmetry is a symmetry where the system is invariant under translations. In a system with $N$ sites, the translation-resolved representative state with momentum quantum number $k$ is constructed from a reference state $\vert a \rangle$ as
 ```math
-\vert a(k) \rangle = \frac{1}{\sqrt{N_a}} \sum_{r=0}^{N-1} e^{-i k r} \hat{T}^r \vert a \rangle\,,
+\vert a(k) \rangle = \frac{1}{\sqrt{N_a}} \sum_{r=0}^{R_a-1} e^{-i 2\pi k r / R_a}\,\phi_{T^r}(a)\,\hat{T}^r \vert a \rangle\,,
 ```
-where $N_a$ is the normalization factor, $k$ is the momentum quantum number, and $\hat{T}^r$ is the translation operator applied $r$ times. The translation operator $\hat{T}$ acts on the state $\vert a(k) \rangle$ as follows:
+where $N_a$ is the normalization factor, $R_a$ is the period of the translation orbit of $\vert a \rangle$, $k$ is the momentum quantum number, and $\phi_{T^r}(a)$ is the phase associated with applying the translation operator $\hat{T}^r$ to the state $\vert a \rangle$. For spin and bosonic DoF-objects, this phase is typically equal to $1$. For fermionic DoF-objects, it may be a state-dependent sign arising from fermionic exchange statistics.
+
+The translation operator acts on the representative state as
 ```math
-\hat{T} \vert a(k) \rangle =  e^{i k} \vert a(k) \rangle\,.
+\hat{T} \vert a(k) \rangle = e^{i 2\pi k / R_a} \vert a(k) \rangle\,.
 ```
 You can define a translation symmetry group for a system with a certain number of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function and the [`Translational`](@ref SymBasis.SymGroups.Translational) type as follows:
 ```@example
@@ -35,15 +40,21 @@ k = 0 # momentum quantum number
 sg = sym(Translational(k, perm), dofo)
 ```
 
+!!! note
+    The action of translation depends on the DoF-object. For spinless fermions, applying a lattice translation may produce an additional state-dependent sign due to fermionic anticommutation relations.
+
 #### Spatial-reflection symmetry
-Spatial-reflection symmetry is a symmetry where the system is invariant under spatial reflection. In a system with $N$ sites, the reflection operator $R$ acts on a state $\vert a \rangle$ as follows:
+Spatial-reflection symmetry is a symmetry where the system is invariant under spatial reflection. In a system with $N$ sites, the reflection-resolved representative state with parity quantum number $p$ is constructed as
 ```math
-\vert a(p) \rangle = \frac{1}{\sqrt{N_a}} \sum_{r=0}^{1} p^r \hat{P}^r \vert a \rangle\,,
+\vert a(p) \rangle = \frac{1}{\sqrt{N_a}} \sum_{r=0}^{1} p^r\,\phi_{P^r}(a)\,\hat{P}^r \vert a \rangle\,,
 ```
-where $N_a$ is the normalization factor, $p$ is the parity quantum number, and $\hat{P}^r$ is the reflection operator applied $r$ times. The reflection operator $\hat{P}$ acts on the state $\vert a(p) \rangle$ as follows:
+where $N_a$ is the normalization factor, $p$ is the parity quantum number, and $\phi_{P^r}(a)$ is the phase associated with applying the reflection operator $\hat{P}^r$ to the state $\vert a \rangle$. For many DoF-objects this phase is $1$, while for fermionic DoF-objects it can be a state-dependent sign induced by reordering fermionic creation operators.
+
+The reflection operator acts on the representative state as
 ```math
-\hat{P} \vert a(p) \rangle =  p \vert a(p) \rangle\,.
+\hat{P} \vert a(p) \rangle = p \vert a(p) \rangle\,.
 ```
+
 You can define a spatial reflection symmetry group for a system with a certain number of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function and the [`SpatialReflection`](@ref SymBasis.SymGroups.SpatialReflection) type as follows:
 ```@example
 using SymBasis.DoFObjects
@@ -57,15 +68,21 @@ p = -1 # parity number
 sg = sym(SpatialReflection(p, perm), dofo)
 ```
 
+!!! note
+    For fermionic DoF-objects, a spatial reflection can contribute an additional state-dependent phase besides the parity quantum number.
+
 #### Rotational symmetry of space
-Rotational symmetry is a symmetry where the system is invariant under discrete rotations in space. For a system where the rotation operator $\hat{R}$ has period $T_R$ (i.e. $\hat{R}^{T_R} = \hat{I}$), the representative state $\vert a(r) \rangle$ with rotation quantum number $r$ is constructed as follows:
+Rotational symmetry is a symmetry where the system is invariant under discrete rotations in space. For a system where the rotation operator $\hat{R}$ has period $T_R$ (i.e. $\hat{R}^{T_R} = \hat{I}$), the representative state with rotation quantum number $q$ is constructed as
 ```math
-\vert a(r) \rangle = \frac{1}{\sqrt{N_a}} \sum_{l=0}^{T_R-1} e^{-i 2\pi r l / T_R} \hat{R}^l \vert a \rangle\,,
+\vert a(q) \rangle = \frac{1}{\sqrt{N_a}} \sum_{l=0}^{T_R-1} e^{-i 2\pi q l / T_R}\,\phi_{R^l}(a)\,\hat{R}^l \vert a \rangle\,,
 ```
-where $N_a$ is the normalization factor, $r \in \{0, 1, \ldots, T_R - 1\}$ is the rotation quantum number, and $l$ is the summation index. The rotation operator $\hat{R}$ acts on the representative state $\vert a(r) \rangle$ as an eigenstate:
+where $N_a$ is the normalization factor, $q \in \{0, 1, \ldots, T_R - 1\}$ is the rotation quantum number, and $\phi_{R^l}(a)$ is the phase associated with applying the rotation operator $\hat{R}^l$ to the state $\vert a \rangle$. For bosonic and spin DoF-objects this phase is often trivial, while for fermionic DoF-objects it may be state-dependent.
+
+The rotation operator acts on the representative state as
 ```math
-\hat{R} \vert a(r) \rangle = e^{i 2\pi r / T_R} \vert a(r) \rangle\,.
+\hat{R} \vert a(q) \rangle = e^{i 2\pi q / T_R} \vert a(q) \rangle\,.
 ```
+
 You can define a rotational symmetry group using the [`sym`](@ref SymBasis.SymGroups.sym) function and the [`Rotational`](@ref SymBasis.SymGroups.Rotational) type. The permutation supplied to `Rotational` should encode the action of $\hat{R}$ on site indices:
 ```@example
 using SymBasis.DoFObjects
@@ -74,12 +91,15 @@ using SymBasis.SymGroups
 dofo = DoFObject(:Pet, (:🐶, :🐱, :🦜)) # define, for example, a pet object
 N = 4 # number of sites (2×2 square lattice)
 perm = [2, 4, 1, 3] # permutation encoding a 90° rotation of the 2×2 lattice (T_R = 4)
-r = 0 # rotation quantum number (r = 0, 1, 2, or 3)
-sg = sym(Rotational(r, perm), dofo)
+q = 0 # rotation quantum number (q = 0, 1, 2, or 3)
+sg = sym(Rotational(q, perm), dofo)
 ```
 
-### DoF-object-dependent symmetry groups
-Some symmetries depend on the DoF-object, such as total magnetization symmetry.
+!!! note
+    For fermionic DoF-objects, a lattice rotation may induce an additional state-dependent phase coming from fermionic exchange statistics.
+
+### Other DoF-object-dependent symmetry groups
+Some symmetries explicitly depend on the DoF-object, such as total magnetization symmetry.
 
 #### Quantum mechanical spins
 
@@ -196,6 +216,34 @@ N_b = 3 # total particle number quantum number
 sg = sym(TotalBosonicNumber(N_b, N), dofo)
 ```
 
+#### Spinless fermions
+##### Particle number conservation
+
+Particle number conservation for spinless fermions is a symmetry where the system is
+invariant under the total fermion number operator $\hat{N}_f$. In a system with $N$ sites,
+$\hat{N}_f$ acts on a state $\vert a(N_f) \rangle$ as follows:
+```math
+\hat{N}_f \ket{a(N_f)} = \sum_{i=1}^N \hat{n}_i \ket{a(N_f)} = N_f \ket{a(N_f)}\,,
+```
+where $\hat{n}_i = \hat{c}_i^\dagger \hat{c}_i$ is the local fermionic occupation number
+operator at site $i$, and $N_f$ is the total fermion number quantum number.
+
+You can define a total spinless fermionic number symmetry group for a system with a
+certain number of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function and the
+[`TotalSpinlessFermionicNumber`](@ref SymBasis.SymGroups.TotalSpinlessFermionicNumber)
+type as follows:
+```@example
+using SymBasis.DoFObjects
+using SymBasis.SymGroups
+
+dofo = dof_object(SpinlessFermion())
+
+N = 6 # number of sites
+N_f = 3 # total fermion number quantum number
+
+sg = sym(TotalSpinlessFermionicNumber(N_f, N), dofo)
+```
+
 ## Custom symmetry groups
 In addition to the predefined symmetry groups, you can also define your own custom symmetry groups by specifying the appropriate parameters when constructing the symmetry group via the [`SymGroup`](@ref SymBasis.SymGroups.SymGroup) constructor from the [`SymBasis.SymGroups`](@ref symgroups-api) submodule.
 
@@ -204,7 +252,7 @@ To define a custom symmetry group, you need to specify the following parameters:
 - `cycles`: A vector of `NamedTuple`s, where each `NamedTuple` represents a cycle in the symmetry group. Each `NamedTuple` has its own special fields that depend on the type of symmetry you want to define. For example, for a custom symmetry that is defined by a permutation, you would specify the `perm` field in the `NamedTuple` to represent the permutation.
 - `check`: A function that checks whether a given state is invariant under the symmetry operation. This function should take a cycle, a state and the previous boolean result of checking the previous cycle as input and return a boolean value indicating whether the state is invariant under the symmetry operation and the previous cycles.
 - `apply`: A function that applies the symmetry operation to a given state. This function should take a cycle, a state and return the state obtained by applying the symmetry operation to the input state.
-- `phase`: A function that calculates the phase factor associated with the symmetry operation for a given state. This function should take a cycle, a state and return the phase factor associated with the symmetry operation for the input state.
+- `phase`: A function that calculates the phase factor associated with the symmetry operation for a given state. This function should take a cycle, a state and return the phase factor associated with the symmetry operation for the input state. This is useful, for example, when applying lattice symmetries to fermionic basis states, where the site permutation can induce an additional state-dependent sign.
 - `factors`: A vector of factors that are used to calculate the normalization factor for the basis states. The factors should be defined in such a way that they can be used to calculate the normalization factor for the basis states that are invariant under the symmetry operation.
 - `N`: The number of sites in the system.
 
@@ -273,6 +321,7 @@ sg = SymGroup(
     N
 )
 ```
+
 ## Combining symmetry groups
 You can also combine multiple symmetry groups to generate bases that conserve multiple symmetries simultaneously. This can be done using the [`∘`](@ref Base.:(∘)) function from the [`SymBasis.SymGroups`](@ref symgroups-api) submodule, which eventually returns a [`CombSymGroup`](@ref SymBasis.SymGroups.CombSymGroup) type that represents the combined symmetries.
 

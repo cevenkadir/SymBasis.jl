@@ -7,6 +7,9 @@ spinless fermionic number symmetry specification. The type parameter `T_b` repre
 target total number of fermions, while `T_N` represents the total number of DoF-objects in
 the system.
 
+This symmetry selects the subspace with fixed total fermion number, i.e. states whose
+binary occupations sum to `n_particles`.
+
 # Fields
 - `n_particles::T_b`: The target total number of spinless fermions for the symmetry
     specification.
@@ -29,8 +32,7 @@ struct TotalSpinlessFermionicNumber{T_b<:Integer,T_N<:Integer} <: AbstractSymSpe
         n_particles::T_b, N::T_N
     ) where {T_b,T_N}
         @assert n_particles >= 0 "Number of particles must be non-negative."
-        @assert n_particles <= N "Number of particles cannot exceed the total number of
-        DoF-objects."
+        @assert n_particles <= N "Number of particles cannot exceed the total number of DoF-objects."
 
         return new{T_b,T_N}(n_particles, N)
     end

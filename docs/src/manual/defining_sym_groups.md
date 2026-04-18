@@ -1,4 +1,3 @@
-```md
 # Defining symmetry sector(s)
 In SymBasis.jl, you can generate bases that have one or more symmetries by defining the corresponding symmetry groups(s).
 

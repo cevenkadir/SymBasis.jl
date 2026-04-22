@@ -546,9 +546,9 @@ function sym(
     ss::Rotational{T_r,Ti},
     dofo::DoFObject{B,T_s,T,Ti}
 ) where {B,T_s,T,Ti,T_r}
-    dofo.type == :SpinlessFermion && error(
-        "Rotational symmetry is not supported for SpinlessFermion DoF-object."
-    )
+    # dofo.type == :SpinlessFermion && error(
+    #     "Rotational symmetry is not supported for SpinlessFermion DoF-object."
+    # )
 
     N = length(ss.perm)
     Id_vec = 1:N .|> Ti
@@ -561,12 +561,17 @@ function sym(
 
     rₛ = 0:(R-1)
 
+    is_spinless_fermion = dofo.type == :SpinlessFermion
+
+    apply = is_spinless_fermion ? apply_perm_fermionic : apply_perm
+    phase = is_spinless_fermion ? phase_perm_fermionic : phase_unity
+
     R_sym = SymGroup(
         dofo,
         [(; perm=perm_wrapper(perm_k(ss.perm, i), length(dofo))) for i in rₛ],
         check_perm,
-        apply_perm,
-        phase_unity,
+        apply,
+        phase,
         [cispi(-2 * r * ss.r / R) for r in rₛ],
         N
     )

@@ -399,10 +399,10 @@ end
             test_basis_result(dofo, N, csg;
                 expected_states=vsel114(
                     [bi"1010"2, bi"1100"2],
-                    [bi"0101"2, bi"0011"2],
+                    [bi"11"2, bi"101"2],
                     [bi"11"2, bi"101"2]
                 ),
-                expected_norms=vsel114(Float64[8, 4], Float64[8, 4], Float64[4, 8]),
+                expected_norms=vsel114(Float64[8, 4], Float64[4, 8], Float64[4, 8]),
                 check_commutative=true
             )
         end
@@ -419,14 +419,14 @@ end
                 expected_states=vsel114(
                     [bi"0"2, bi"100"2, bi"111"2, bi"1000"2, bi"1010"2, bi"1011"2,
                         bi"1100"2, bi"1111"2],
-                    [bi"0"2, bi"1"2, bi"110"2, bi"1000"2, bi"1010"2, bi"1011"2,
-                        bi"1100"2, bi"1111"2],
+                    [bi"0"2, bi"1"2, bi"10"2, bi"11"2, bi"101"2, bi"1101"2,
+                        bi"1110"2, bi"1111"2],
                     [bi"0"2, bi"1"2, bi"10"2, bi"11"2, bi"101"2, bi"1101"2,
                         bi"1110"2, bi"1111"2]
                 ),
                 expected_norms=vsel114(
                     Float64[4, 2, 2, 2, 2, 2, 2, 4],
-                    Float64[4, 2, 4, 2, 2, 2, 2, 4],
+                    Float64[4, 2, 2, 2, 2, 2, 2, 4],
                     Float64[4, 2, 2, 2, 2, 2, 2, 4]
                 )
             )
@@ -438,14 +438,14 @@ end
                 expected_states=vsel114(
                     [bi"100"2, bi"110"2, bi"111"2, bi"1000"2, bi"1001"2, bi"1010"2,
                         bi"1011"2, bi"1100"2],
-                    [bi"1"2, bi"110"2, bi"111"2, bi"1000"2, bi"1001"2, bi"1010"2,
-                        bi"1011"2, bi"1100"2],
+                    [bi"1"2, bi"10"2, bi"11"2, bi"101"2, bi"110"2, bi"1001"2,
+                        bi"1101"2, bi"1110"2],
                     [bi"1"2, bi"10"2, bi"11"2, bi"101"2, bi"110"2, bi"1001"2,
                         bi"1101"2, bi"1110"2]
                 ),
                 expected_norms=vsel114(
                     Float64[2, 4, 2, 2, 4, 2, 2, 2],
-                    Float64[2, 4, 2, 2, 4, 2, 2, 2],
+                    Float64[2, 2, 2, 2, 4, 4, 2, 2],
                     Float64[2, 2, 2, 2, 4, 4, 2, 2]
                 )
             )
@@ -457,7 +457,7 @@ end
             test_basis_result(dofo, N, csg;
                 expected_states=vsel114(
                     [bi"1010"2, bi"1100"2],
-                    [bi"0101"2, bi"0011"2],
+                    [bi"11"2, bi"101"2],
                     [bi"11"2, bi"101"2]
                 ),
                 expected_norms=Float64[2, 2],
@@ -471,10 +471,10 @@ end
             test_basis_result(dofo, N, csg;
                 expected_states=vsel114(
                     [bi"110"2, bi"1001"2, bi"1010"2, bi"1100"2],
-                    [bi"0110"2, bi"1001"2, bi"0101"2, bi"0011"2],
+                    [bi"11"2, bi"101"2, bi"110"2, bi"1001"2],
                     [bi"11"2, bi"101"2, bi"110"2, bi"1001"2]
                 ),
-                expected_norms=vsel114(Float64[4, 4, 2, 2], Float64[4, 4, 2, 2], Float64[2, 2, 4, 4]),
+                expected_norms=vsel114(Float64[4, 4, 2, 2], Float64[2, 2, 4, 4], Float64[2, 2, 4, 4]),
                 check_commutative=true
             )
         end
@@ -1131,7 +1131,7 @@ end
                     test_basis_result(dofo, N, sg;
                         expected_states=vsel114(
                             [bi"0"2, bi"1000"2, bi"1011"2, bi"1100"2],
-                            [bi"0"2, bi"10"2, bi"1101"2, bi"11"2],
+                            [bi"0"2, bi"10"2, bi"11"2, bi"1101"2],
                             [bi"0"2, bi"10"2, bi"11"2, bi"1101"2]
                         ),
                         expected_norms=Float64[16, 4, 4, 4]
@@ -1143,12 +1143,12 @@ end
                     test_basis_result(dofo, N, sg;
                         expected_states=vsel114(
                             [bi"1000"2, bi"1001"2, bi"1011"2, bi"1100"2],
-                            [bi"10"2, bi"11"2, bi"1101"2, bi"110"2],
+                            [bi"10"2, bi"11"2, bi"110"2, bi"1101"2],
                             [bi"10"2, bi"11"2, bi"110"2, bi"1101"2]
                         ),
                         expected_norms=vsel114(
                             Float64[4, 8, 4, 4],
-                            Float64[4, 4, 4, 8],
+                            Float64[4, 4, 8, 4],
                             Float64[4, 4, 8, 4]
                         )
                     )
@@ -1159,7 +1159,7 @@ end
                     test_basis_result(dofo, N, sg;
                         expected_states=vsel114(
                             [bi"1000"2, bi"1011"2, bi"1100"2, bi"1111"2],
-                            [bi"10"2, bi"1101"2, bi"11"2, bi"1111"2],
+                            [bi"10"2, bi"11"2, bi"1101"2, bi"1111"2],
                             [bi"10"2, bi"11"2, bi"1101"2, bi"1111"2]
                         ),
                         expected_norms=Float64[4, 4, 4, 16]
@@ -1171,12 +1171,12 @@ end
                     test_basis_result(dofo, N, sg;
                         expected_states=vsel114(
                             [bi"1000"2, bi"1001"2, bi"1011"2, bi"1100"2],
-                            [bi"10"2, bi"11"2, bi"1101"2, bi"110"2],
+                            [bi"10"2, bi"11"2, bi"110"2, bi"1101"2],
                             [bi"10"2, bi"11"2, bi"110"2, bi"1101"2]
                         ),
                         expected_norms=vsel114(
                             Float64[4, 8, 4, 4],
-                            Float64[4, 4, 4, 8],
+                            Float64[4, 4, 8, 4],
                             Float64[4, 4, 8, 4]
                         )
                     )
@@ -1189,7 +1189,7 @@ end
                 @testset "r = 0" begin
                     csg = sgpn ∘ sym(Rotational(0, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
-                        expected_states=vsel([bi"1100"2], [bi"11"2]),
+                        expected_states=vsel114([bi"1100"2], [bi"11"2], [bi"11"2]),
                         expected_norms=Float64[4],
                         check_commutative=true
                     )
@@ -1198,8 +1198,16 @@ end
                 @testset "r = 1" begin
                     csg = sgpn ∘ sym(Rotational(1, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
-                        expected_states=vsel([bi"1001"2, bi"1100"2], [bi"11"2, bi"110"2]),
-                        expected_norms=vsel(Float64[8, 4], Float64[4, 8]),
+                        expected_states=vsel114(
+                            [bi"1001"2, bi"1100"2],
+                            [bi"11"2, bi"110"2],
+                            [bi"11"2, bi"110"2]
+                        ),
+                        expected_norms=vsel114(
+                            Float64[8, 4],
+                            Float64[4, 8],
+                            Float64[4, 8]
+                        ),
                         check_commutative=true
                     )
                 end
@@ -1207,7 +1215,7 @@ end
                 @testset "r = 2" begin
                     csg = sgpn ∘ sym(Rotational(2, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
-                        expected_states=vsel([bi"1100"2], [bi"11"2]),
+                        expected_states=vsel114([bi"1100"2], [bi"11"2], [bi"11"2]),
                         expected_norms=Float64[4],
                         check_commutative=true
                     )
@@ -1216,8 +1224,16 @@ end
                 @testset "r = 3" begin
                     csg = sgpn ∘ sym(Rotational(3, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
-                        expected_states=vsel([bi"1001"2, bi"1100"2], [bi"11"2, bi"110"2]),
-                        expected_norms=vsel(Float64[8, 4], Float64[4, 8]),
+                        expected_states=vsel114(
+                            [bi"1001"2, bi"1100"2],
+                            [bi"11"2, bi"110"2],
+                            [bi"11"2, bi"110"2]
+                        ),
+                        expected_norms=vsel114(
+                            Float64[8, 4],
+                            Float64[4, 8],
+                            Float64[4, 8]
+                        ),
                         check_commutative=true
                     )
                 end

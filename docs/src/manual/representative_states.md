@@ -36,9 +36,12 @@ where $N_{a(q)}$ and $N_{b_j(q)}$ are the state normalization factors.
 
 For a single symmetry group, this coefficient can be viewed schematically as
 ```math
-\xi_j = \phi_{\hat{S}^{\ell_j}}\!\big(b'_j(q)\big)\,\chi_{\hat{S}^{\ell_j}},
+\xi_j = \eta(q,\ell_j)\,\chi_{\ell_j},
 ```
-with $\phi_{\hat{S}^{\ell_j}}\!\big(b'_j(q)\big)$ the phase from the symmetry action and $\chi_{\hat{S}^{\ell_j}}$ the symmetry-sector factor associated with the cycle that produces the representative (for translational symmetry this is analogous to notation such as $\phi_{\hat{T}^{r}}(a)$ in the symmetry-group documentation).
+with $\eta(q,\ell_j)$ the phase from the symmetry action and $\chi_{\ell_j}$ the symmetry-sector factor associated with the cycle that produces the representative.
+
+!!! note
+    The factor $\chi_{\ell_j}$ depends on the symmetry construction (and corresponding sector definition). In particular, for fermionic DoF-objects it may differ from bosonic or spin cases due to fermion-specific conventions in symmetry-sector factors.
 
 ## Matrix elements
 
@@ -52,7 +55,7 @@ with $\phi_{\hat{S}^{\ell_j}}\!\big(b'_j(q)\big)$ the phase from the symmetry ac
 \langle b_j(q)\lvert \hat{F}_{j>0}\rvert a(q)\rangle
 = f_{j>0}[a(q)]\,\xi_j\,\sqrt{\frac{N_{b_j(q)}}{N_{a(q)}}}~,
 ```
-where $\xi_j$ is obtained from `rep_state, rep_factor = representative(b'_j(q), \text{symmetry group})`.
+where $\xi_j$ is obtained from `rep_state, rep_factor = representative(b_prime_j_q, sg)`.
 
 ## Implementation in SymBasis.jl
 To obtain the representative for an arbitrary state (and the associated representative coefficient), use [`representative`](@ref SymBasis.Bases.representative) from [`SymBasis.Bases`](@ref bases-api). It takes a state and a symmetry group and returns the corresponding representative data used to build symmetry-resolved matrix elements.

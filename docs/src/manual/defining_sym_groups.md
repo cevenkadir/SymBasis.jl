@@ -14,7 +14,6 @@ All predefined symmetry groups are constructed together with a DoF-object. In pa
 ### Discrete lattice symmetry groups
 
 #### Translational symmetry
-#### Translational symmetry
 Translational symmetry is a symmetry where the system is invariant under translations. In a system with $N$ sites, the translation-resolved representative state with momentum quantum number $k$ is constructed from a reference state $\vert a \rangle$ as
 ```math
 \vert a(k) \rangle = \frac{1}{\sqrt{N_a}} \sum_{r=0}^{R_a-1} e^{-i 2\pi k r / R_a}\,\phi_{T^r}(a)\,\hat{T}^r \vert a \rangle\,,

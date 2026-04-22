@@ -336,8 +336,6 @@ end
 Create a spin multipole symmetry group for the given DoF-object `dofo`, and spin multipole
 symmetry specification `ss`. The function computes the multipole sum for each state using
 the weights and checks if it matches the target qₛ values within the specified tolerances.
-The symmetry group is constructed using the [`SymBasis.SymGroups.check_multipole`](@ref) and
-[`SymBasis.SymGroups.apply_multipole`](@ref) functions.
 
 # Arguments
 - `ss::`[`SymBasis.SymGroups.SpinMultipole`](@ref)`{RANK,T_q,T_w,T_N}`: The spin multipole
@@ -404,8 +402,7 @@ end
 
 Create a spin inversion symmetry group for the given DoF-object `dofo`, and spin inversion
 symmetry specification `ss`. The function generates all combinations of spin projections
-that sum to zero, and constructs the spin inversion symmetry group using the `check_flip`
-and `apply_flip` functions.
+that sum to zero.
 
 # Arguments
 - `ss::`[`SymBasis.SymGroups.SpinInversion`](@ref)`{T_z,T_N}`: The spin inversion symmetry

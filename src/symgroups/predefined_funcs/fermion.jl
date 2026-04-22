@@ -70,8 +70,7 @@ end
 Create a total spinless fermionic number symmetry group for the given spinless fermionic
 DoF-object `dofo`, and target total spinless fermionic number specification `ss`. The
 function generates all combinations of occupation numbers that sum to the target number of
-particles, and constructs the symmetry group using the [`SymBasis.SymGroups.check_Nₛ`](@ref)
-and [`SymBasis.SymGroups.apply_Nₛ`](@ref) functions.
+particles.
 
 # Arguments
 - `ss::`[`SymBasis.SymGroups.TotalSpinlessFermionicNumber`](@ref)`{T_b,T_N}`: The total

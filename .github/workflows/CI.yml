@@ -26,7 +26,6 @@ jobs:
           - '1.11'
           - '1.12'
           - '1'
-          - 'beta'
           - 'nightly'
         os: [ubuntu-latest, windows-latest, macOS-latest]
         arch: [x64, aarch64]

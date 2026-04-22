@@ -39,7 +39,7 @@ sg = sym(Translational(k, perm), dofo)
 ```
 
 !!! note
-    The action of translation depends on the DoF-object. For spinless fermions, applying a lattice translation may produce an additional state-dependent sign due to fermionic anticommutation relations.
+    The action of translation depends on the DoF-object. For spinless fermions, applying a lattice translation may produce an additional state-dependent sign due to fermionic exchange statistics.
 
 #### Spatial-reflection symmetry
 Spatial-reflection symmetry is a symmetry where the system is invariant under spatial reflection. In a system with $N$ sites, the reflection-resolved representative state with parity quantum number $p$ is constructed as
@@ -67,7 +67,7 @@ sg = sym(SpatialReflection(p, perm), dofo)
 ```
 
 !!! note
-    For fermionic DoF-objects, a spatial reflection can contribute an additional state-dependent phase besides the parity quantum number.
+    The action of spatial reflection depends on the DoF-object. For fermionic DoF-objects, applying a spatial reflection may produce an additional state-dependent sign due to fermionic exchange statistics.
 
 #### Rotational symmetry of space
 Rotational symmetry is a symmetry where the system is invariant under discrete rotations in space. For a system where the rotation operator $\hat{R}$ has period $T_R$ (i.e. $\hat{R}^{T_R} = \hat{I}$), the representative state with rotation quantum number $q$ is constructed as
@@ -94,7 +94,7 @@ sg = sym(Rotational(q, perm), dofo)
 ```
 
 !!! note
-    For fermionic DoF-objects, a lattice rotation may induce an additional state-dependent phase coming from fermionic exchange statistics.
+    The action of rotation depends on the DoF-object. For fermionic DoF-objects, applying a spatial rotation may produce an additional state-dependent sign due to fermionic exchange statistics.
 
 ### Other DoF-object-dependent symmetry groups
 Some symmetries explicitly depend on the DoF-object, such as total magnetization symmetry.

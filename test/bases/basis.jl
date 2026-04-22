@@ -329,6 +329,138 @@ end
         end
     end
 
+    @testset "basis without any symmetry (SpinlessFermion)" begin
+        N1 = 2
+        dofo1 = dof_object(SpinlessFermion())
+        test_basis_result(dofo1, N1;
+            expected_states=[bi"0"2, bi"1"2, bi"10"2, bi"11"2],
+            expected_norms=ones(Float64, 2^N1)
+        )
+
+        N2 = 3
+        test_basis_result(dofo1, N2;
+            expected_states=[
+                bi"0"2, bi"1"2, bi"10"2, bi"11"2, bi"100"2, bi"101"2, bi"110"2,
+                bi"111"2
+            ],
+            expected_norms=ones(Float64, 2^N2)
+        )
+    end
+
+    @testset "basis with TotalSpinlessFermionicNumber" begin
+        @testset "N=4, n_particles=2" begin
+            N = 4
+            dofo = dof_object(SpinlessFermion())
+            sg = sym(TotalSpinlessFermionicNumber(2, N), dofo)
+            test_basis_result(dofo, N, sg;
+                expected_states=[bi"11"2, bi"101"2, bi"110"2, bi"1001"2, bi"1010"2, bi"1100"2],
+                expected_norms=ones(Float64, 6)
+            )
+        end
+
+        @testset "N=4, n_particles=0" begin
+            N = 4
+            dofo = dof_object(SpinlessFermion())
+            sg = sym(TotalSpinlessFermionicNumber(0, N), dofo)
+            test_basis_result(dofo, N, sg;
+                expected_states=[bi"0"2],
+                expected_norms=[1.0]
+            )
+        end
+    end
+
+    @testset "basis with spinless-fermion translation" begin
+        N = 4
+        dofo = dof_object(SpinlessFermion())
+        perm = [2, 3, 4, 1] # cyclic translation
+
+        @testset "n_particles=2, k=0" begin
+            csg = sym(TotalSpinlessFermionicNumber(2, N), dofo) ∘
+                  sym(Translational(0, perm), dofo)
+            test_basis_result(dofo, N, csg;
+                expected_states=vsel([bi"1100"2], [bi"0011"2]),
+                expected_norms=Float64[4],
+                check_commutative=true
+            )
+
+            test_states = [bi"0011"2, bi"1001"2]
+            test_reps = vsel([bi"1100"2, bi"1100"2], [bi"0011"2, bi"0011"2])
+            test_factors = Float64[1, -1]
+            test_representatives(test_states, test_reps, test_factors, csg)
+        end
+
+        @testset "n_particles=2, k=1" begin
+            csg = sym(TotalSpinlessFermionicNumber(2, N), dofo) ∘
+                  sym(Translational(1, perm), dofo)
+            test_basis_result(dofo, N, csg;
+                expected_states=vsel([bi"1010"2, bi"1100"2], [bi"0101"2, bi"0011"2]),
+                expected_norms=Float64[8, 4],
+                check_commutative=true
+            )
+        end
+    end
+
+    @testset "basis with spinless-fermion spatial reflection" begin
+        N = 4
+        dofo = dof_object(SpinlessFermion())
+        perm = [4, 3, 2, 1] # reflection
+
+        @testset "R = 1" begin
+            sg = sym(SpatialReflection(1, perm), dofo)
+            test_basis_result(dofo, N, sg;
+                expected_states=vsel(
+                    [bi"0"2, bi"100"2, bi"111"2, bi"1000"2, bi"1010"2, bi"1011"2,
+                        bi"1100"2, bi"1111"2],
+                    [bi"0"2, bi"1"2, bi"110"2, bi"1000"2, bi"1010"2, bi"1011"2,
+                        bi"1100"2, bi"1111"2]
+                ),
+                expected_norms=vsel(
+                    Float64[4, 2, 2, 2, 2, 2, 2, 4],
+                    Float64[4, 2, 4, 2, 2, 2, 2, 4]
+                )
+            )
+        end
+
+        @testset "R = -1" begin
+            sg = sym(SpatialReflection(-1, perm), dofo)
+            test_basis_result(dofo, N, sg;
+                expected_states=vsel(
+                    [bi"100"2, bi"110"2, bi"111"2, bi"1000"2, bi"1001"2, bi"1010"2,
+                        bi"1011"2, bi"1100"2],
+                    [bi"1"2, bi"110"2, bi"111"2, bi"1000"2, bi"1001"2, bi"1010"2,
+                        bi"1011"2, bi"1100"2]
+                ),
+                expected_norms=vsel(
+                    Float64[2, 4, 2, 2, 4, 2, 2, 2],
+                    Float64[2, 4, 2, 2, 4, 2, 2, 2]
+                )
+            )
+        end
+
+        @testset "n_particles=2 and R = 1" begin
+            csg = sym(TotalSpinlessFermionicNumber(2, N), dofo) ∘
+                  sym(SpatialReflection(1, perm), dofo)
+            test_basis_result(dofo, N, csg;
+                expected_states=vsel([bi"1010"2, bi"1100"2], [bi"0101"2, bi"0011"2]),
+                expected_norms=Float64[2, 2],
+                check_commutative=true
+            )
+        end
+
+        @testset "n_particles=2 and R = -1" begin
+            csg = sym(TotalSpinlessFermionicNumber(2, N), dofo) ∘
+                  sym(SpatialReflection(-1, perm), dofo)
+            test_basis_result(dofo, N, csg;
+                expected_states=vsel(
+                    [bi"110"2, bi"1001"2, bi"1010"2, bi"1100"2],
+                    [bi"0110"2, bi"1001"2, bi"0101"2, bi"0011"2]
+                ),
+                expected_norms=Float64[4, 4, 2, 2],
+                check_commutative=true
+            )
+        end
+    end
+
     @testset "basis with one symmetry" begin
         @testset "spin-1/2 with Sz symmetry" begin
             N = 3
@@ -964,6 +1096,103 @@ end
                     test_basis_result(dofo, N, csg;
                         expected_states=vsel([bi"222"3, bi"2121"3], [bi"2022"3, bi"2121"3]),
                         expected_norms=Float64[4, 4],
+                        check_commutative=true
+                    )
+                end
+            end
+        end
+
+        @testset "2x2 spinless fermion with Rotational symmetry" begin
+            N = 4
+            dofo = dof_object(SpinlessFermion())
+
+            @testset "Rotational only" begin
+                @testset "r = 0" begin
+                    sg = sym(Rotational(0, perm_R2), dofo)
+                    test_basis_result(dofo, N, sg;
+                        expected_states=vsel(
+                            [bi"0"2, bi"1000"2, bi"1011"2, bi"1100"2],
+                            [bi"0"2, bi"10"2, bi"1101"2, bi"11"2]
+                        ),
+                        expected_norms=vsel(
+                            Float64[16, 4, 4, 4], Float64[16, 4, 4, 4]
+                        )
+                    )
+                end
+
+                @testset "r = 1" begin
+                    sg = sym(Rotational(1, perm_R2), dofo)
+                    test_basis_result(dofo, N, sg;
+                        expected_states=vsel(
+                            [bi"1000"2, bi"1001"2, bi"1011"2, bi"1100"2],
+                            [bi"10"2, bi"11"2, bi"1101"2, bi"110"2]
+                        ),
+                        expected_norms=vsel(
+                            Float64[4, 8, 4, 4], Float64[4, 4, 4, 8]
+                        )
+                    )
+                end
+
+                @testset "r = 2" begin
+                    sg = sym(Rotational(2, perm_R2), dofo)
+                    test_basis_result(dofo, N, sg;
+                        expected_states=vsel(
+                            [bi"1000"2, bi"1011"2, bi"1100"2, bi"1111"2],
+                            [bi"10"2, bi"1101"2, bi"11"2, bi"1111"2]
+                        ),
+                        expected_norms=Float64[4, 4, 4, 16]
+                    )
+                end
+
+                @testset "r = 3" begin
+                    sg = sym(Rotational(3, perm_R2), dofo)
+                    test_basis_result(dofo, N, sg;
+                        expected_states=vsel(
+                            [bi"1000"2, bi"1001"2, bi"1011"2, bi"1100"2],
+                            [bi"10"2, bi"11"2, bi"1101"2, bi"110"2]
+                        ),
+                        expected_norms=vsel(
+                            Float64[4, 8, 4, 4], Float64[4, 4, 4, 8]
+                        )
+                    )
+                end
+            end
+
+            @testset "n_particles=2 and Rotational" begin
+                sgpn = sym(TotalSpinlessFermionicNumber(2, N), dofo)
+
+                @testset "r = 0" begin
+                    csg = sgpn ∘ sym(Rotational(0, perm_R2), dofo)
+                    test_basis_result(dofo, N, csg;
+                        expected_states=vsel([bi"1100"2], [bi"11"2]),
+                        expected_norms=Float64[4],
+                        check_commutative=true
+                    )
+                end
+
+                @testset "r = 1" begin
+                    csg = sgpn ∘ sym(Rotational(1, perm_R2), dofo)
+                    test_basis_result(dofo, N, csg;
+                        expected_states=vsel([bi"1001"2, bi"1100"2], [bi"11"2, bi"110"2]),
+                        expected_norms=vsel(Float64[8, 4], Float64[4, 8]),
+                        check_commutative=true
+                    )
+                end
+
+                @testset "r = 2" begin
+                    csg = sgpn ∘ sym(Rotational(2, perm_R2), dofo)
+                    test_basis_result(dofo, N, csg;
+                        expected_states=vsel([bi"1100"2], [bi"11"2]),
+                        expected_norms=Float64[4],
+                        check_commutative=true
+                    )
+                end
+
+                @testset "r = 3" begin
+                    csg = sgpn ∘ sym(Rotational(3, perm_R2), dofo)
+                    test_basis_result(dofo, N, csg;
+                        expected_states=vsel([bi"1001"2, bi"1100"2], [bi"11"2, bi"110"2]),
+                        expected_norms=vsel(Float64[8, 4], Float64[4, 8]),
                         check_commutative=true
                     )
                 end

@@ -19,6 +19,15 @@ dofo = dof_object(Spin(s))
 ```
 This creates a spin-1/2 DoF-object for specifying symmetries and generating bases.
 
+### Bosons
+Define a boson DoF-object using the [`dof_object`](@ref SymBasis.DoFObjects.dof_object) function and the [`Boson`](@ref SymBasis.DoFObjects.Boson) type from the [`SymBasis.DoFObjects`](@ref dofobjects-api) submodule:
+```@example
+using SymBasis.DoFObjects
+max_occupancy = 3
+dofo = dof_object(Boson(max_occupancy))
+```
+This creates a local DoF-object with occupations `(0, 1, ..., max_occupancy)`, suitable for specifying symmetries and generating bosonic bases.
+
 ### Spinless fermions
 Define a spinless fermion DoF-object using the [`dof_object`](@ref SymBasis.DoFObjects.dof_object) function and the [`SpinlessFermion`](@ref SymBasis.DoFObjects.SpinlessFermion) type from the [`SymBasis.DoFObjects`](@ref dofobjects-api) submodule:
 ```@example

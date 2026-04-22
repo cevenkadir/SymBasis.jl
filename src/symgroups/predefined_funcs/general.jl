@@ -546,10 +546,6 @@ function sym(
     ss::Rotational{T_r,Ti},
     dofo::DoFObject{B,T_s,T,Ti}
 ) where {B,T_s,T,Ti,T_r}
-    # dofo.type == :SpinlessFermion && error(
-    #     "Rotational symmetry is not supported for SpinlessFermion DoF-object."
-    # )
-
     N = length(ss.perm)
     Id_vec = 1:N .|> Ti
 

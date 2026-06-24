@@ -12,6 +12,7 @@ dofo = dof_object(Spin(1 // 2)) # define a DoF-object for spin-1/2
 b = basis(dofo, N) # generate the full basis without any symmetries</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Basis{SymBasis.DigitBase.BaseInt{UInt64, Int64, 2},Float64} with 16 states
   states: Vector{SymBasis.DigitBase.BaseInt{UInt64, Int64, 2}}
   norms : Vector{Float64}
+  symmetry groups: Nothing
   first 10 states/norms:
     (0)₂     (norm=1.0)
     (1)₂     (norm=1.0)
@@ -37,6 +38,7 @@ sg_Sz = sym(TotalMagnetization(Sz, N), dofo) # define the symmetry group for tot
 b = basis(dofo, N, sg_Sz) # generate the basis that resolves the total magnetization symmetry</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Basis{SymBasis.DigitBase.BaseInt{UInt64, Int64, 3},Float64} with 19 states
   states: Vector{SymBasis.DigitBase.BaseInt{UInt64, Int64, 3}}
   norms : Vector{Float64}
+  symmetry groups: SymBasis.SymGroups.SymGroup{3, Rational{Int64}, UInt64, Int64, Float64}
   first 10 states/norms:
     (22)₃    (norm=1.0)
     (112)₃   (norm=1.0)
@@ -69,6 +71,7 @@ csg = sg_Sz ∘ sg_translational
 b = basis(dofo, N, csg) # generate the basis that resolves both symmetries</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Basis{SymBasis.DigitBase.BaseInt{UInt64, Int64, 2},Float64} with 2 states
   states: Vector{SymBasis.DigitBase.BaseInt{UInt64, Int64, 2}}
   norms : Vector{Float64}
+  symmetry groups: SymBasis.SymGroups.CombSymGroup{2, Rational{Int64}, UInt64, Int64, ComplexF64}
   first 2 states/norms:
     (1010)₂  (norm=8.0)
     (1100)₂  (norm=4.0)
@@ -118,6 +121,7 @@ csg = sg_Sz ∘ sg_translational_x ∘ sg_reflection_x ∘ sg_translational_y �
 b = basis(dofo, N, csg) # generate the basis that resolves all three symmetries</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Basis{SymBasis.DigitBase.BaseInt{UInt64, Int64, 2},Float64} with 14 states
   states: Vector{SymBasis.DigitBase.BaseInt{UInt64, Int64, 2}}
   norms : Vector{Float64}
+  symmetry groups: SymBasis.SymGroups.CombSymGroup{2, Rational{Int64}, UInt64, Int64, ComplexF64}
   first 10 states/norms:
     (1011100011)₂    (norm=48.0)
     (1110001110)₂    (norm=48.0)
@@ -130,4 +134,4 @@ b = basis(dofo, N, csg) # generate the basis that resolves all three symmetries<
     (101100100101)₂  (norm=48.0)
     (101110001001)₂  (norm=48.0)
     ⋮
-</code></pre><p>This will generate a basis that consists of the basis states with total magnetization quantum number <span>$S^z = 0$</span>, momentum quantum numbers <span>$k_x = 0$</span> and <span>$k_y = 0$</span>, and parity quantum numbers <span>$p_x = -1$</span> and <span>$p_y = 1$</span> for a system of 14 spin-1/2 objects on a 2D square lattice. The basis states in this combined symmetry sector will be linear combinations of the basis states from the previous examples that are invariant under the total magnetization, translational, and spatial reflection symmetry operations. Each basis state in this combined symmetry sector will have a specific normalization factor that accounts for the number of states that are combined to form the invariant state under the symmetry operations.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../manual/state_operations/">« State operations</a><a class="docs-footer-nextpage" href="../pxp/">Quantum many-body scars in the PXP chain »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Wednesday 22 April 2026 21:28">Wednesday 22 April 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+</code></pre><p>This will generate a basis that consists of the basis states with total magnetization quantum number <span>$S^z = 0$</span>, momentum quantum numbers <span>$k_x = 0$</span> and <span>$k_y = 0$</span>, and parity quantum numbers <span>$p_x = -1$</span> and <span>$p_y = 1$</span> for a system of 14 spin-1/2 objects on a 2D square lattice. The basis states in this combined symmetry sector will be linear combinations of the basis states from the previous examples that are invariant under the total magnetization, translational, and spatial reflection symmetry operations. Each basis state in this combined symmetry sector will have a specific normalization factor that accounts for the number of states that are combined to form the invariant state under the symmetry operations.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../manual/state_operations/">« State operations</a><a class="docs-footer-nextpage" href="../pxp/">Quantum many-body scars in the PXP chain »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Wednesday 24 June 2026 14:29">Wednesday 24 June 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

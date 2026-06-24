@@ -101,7 +101,7 @@ function Base.show(
 
     println(io, ind, "states: ", typeof(b.states))
     println(io, ind, "norms : ", typeof(b.norms))
-    println(io, ind, "symmetry groups: ", typeof(b.sg))
+    println(io, ind, "symmetry group: ", typeof(b.sg))
 
     n == 0 && return
 

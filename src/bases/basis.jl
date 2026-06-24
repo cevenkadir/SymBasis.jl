@@ -437,6 +437,22 @@ function is_commutative(b::Basis, csg::CombSymGroup)
 end
 
 """
+    is_commutative(b::Basis)
+
+Checks whether the symmetries in the basis commute with each other.
+
+# Arguments
+- `b::`[`SymBasis.Bases.Basis`](@ref): The basis to be checked.
+
+# Returns
+- `Bool`: Returns `true` if the symmetries in the basis commute with each other, and `false`
+otherwise.
+"""
+function is_commutative(b::Basis)
+    return is_commutative(b, b.sg)
+end
+
+"""
     representative(
         state::SymBasis.DigitBase.BaseInt{T,Ti,B},
         sg::SymGroup{B,T_s,T,Ti,Ts}
@@ -544,4 +560,32 @@ function representative(
     rep_fac = rep_phase * csg.factors[id_rep_state]
 
     return rep_state, rep_fac
+end
+
+"""
+    representative(
+        state::BaseInt{T,Ti,B},
+        basis::Basis{T,T_n}
+    ) where {T,Ti,B,T_n}
+
+Finds the representative state and corresponding factor for a given state under the action
+of the symmetry group associated with the provided basis.
+
+# Arguments
+- `state::`[`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: The state for which the
+    representative is to be found.
+- `basis::`[`SymBasis.Bases.Basis`](@ref)`{T,T_n}`: The basis containing the symmetry group.
+
+# Returns
+- `rep_state::`[`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: The representative state.
+- `rep_fac`: The corresponding factor associated with the representative state.
+"""
+function representative(
+    state::BaseInt{T,Ti,B}, basis::Basis{T,T_n}
+) where {T,Ti,B,T_n}
+    if basis.sg isa Nothing
+        return state
+    else
+        return representative(state, basis.sg)
+    end
 end

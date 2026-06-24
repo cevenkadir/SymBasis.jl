@@ -565,7 +565,7 @@ end
 """
     representative(
         state::BaseInt{T,Ti,B},
-        basis::Basis{T,T_n}
+        basis::Basis{BaseInt{T,Ti,B},T_n}
     ) where {T,Ti,B,T_n}
 
 Finds the representative state and corresponding factor for a given state under the action
@@ -574,14 +574,15 @@ of the symmetry group associated with the provided basis.
 # Arguments
 - `state::`[`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: The state for which the
     representative is to be found.
-- `basis::`[`SymBasis.Bases.Basis`](@ref)`{T,T_n}`: The basis containing the symmetry group.
+- `basis::`[`SymBasis.Bases.Basis`](@ref)`{BaseInt{T,Ti,B},T_n}`: The basis containing the
+    symmetry group.
 
 # Returns
 - `rep_state::`[`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: The representative state.
 - `rep_fac`: The corresponding factor associated with the representative state.
 """
 function representative(
-    state::BaseInt{T,Ti,B}, basis::Basis{T,T_n}
+    state::BaseInt{T,Ti,B}, basis::Basis{BaseInt{T,Ti,B},T_n}
 ) where {T,Ti,B,T_n}
     if basis.sg isa Nothing
         return state

@@ -7,7 +7,8 @@ using SymBasis.DoFObjects: DoFObject
     Basis{T,T_n<:Number}
     Basis(
         states::AbstractVector{T},
-        norms::AbstractVector{T_n}
+        norms::AbstractVector{T_n},
+        sg::Union{SymGroup,CombSymGroup,Nothing}=nothing
     ) where {T,T_n<:Number}
 
 A basis struct consisting of a collection of basis states and their corresponding norms. The
@@ -19,15 +20,21 @@ efficient representation and manipulation of states in different bases.
     states.
 - `norms::AbstractVector{T_n}`: A vector of norms corresponding to each basis state, where
     `T_n` is the data type for the norms.
+- `sg::Union{SymGroup,CombSymGroup,Nothing}`: An optional symmetry group associated with the
+    basis. It can be either a [`SymBasis.SymGroups.SymGroup`](@ref) or a
+    [`SymBasis.SymGroups.CombSymGroup`](@ref), or `nothing` if no symmetry group is
+    associated.
 
 # Constructor Arguments
 - `states::AbstractVector{T}`: A vector of basis states, where `T` is the type of the basis
     states.
 - `norms::AbstractVector{T_n}`: A vector of norms corresponding to each basis state.
+- `sg::Union{SymGroup,CombSymGroup,Nothing}`: An optional symmetry group associated with the
+    basis.
 
 # Returns
-- [`SymBasis.Bases.Basis`](@ref)`{T,T_n}`: A new [`SymBasis.Bases.Basis`](@ref)
-    instance containing the provided states and norms.
+- [`SymBasis.Bases.Basis`](@ref)`{T,T_n}`: A new [`SymBasis.Bases.Basis`](@ref) instance
+    containing the provided states, norms and optional symmetry group.
 
 The constructor checks that the length of states matches the length of norms to ensure
 consistency.
@@ -35,29 +42,32 @@ consistency.
 struct Basis{T,T_n<:Number}
     states::AbstractVector{T}
     norms::AbstractVector{T_n}
+    sg::Union{SymGroup,CombSymGroup,Nothing}
     function Basis(
         states::AbstractVector{T},
-        norms::AbstractVector{T_n}
+        norms::AbstractVector{T_n},
+        sg::Union{SymGroup,CombSymGroup,Nothing}=nothing
     ) where {T,T_n<:Number}
         @assert length(states) == length(norms) "Length of states and norms must be equal"
-        return new{T,T_n}(states, norms)
+        return new{T,T_n}(states, norms, sg)
     end
 end
 
 function Base.isequal(b1::Basis{T,T_n}, b2::Basis{T,T_n}) where {T,T_n}
-    return b1.states == b2.states && b1.norms == b2.norms
+    return b1.states == b2.states && b1.norms == b2.norms && b1.sg == b2.sg
 end
 
 function Base.:(==)(b1::Basis{T,T_n}, b2::Basis{T,T_n}) where {T,T_n}
-    return b1.states == b2.states && b1.norms == b2.norms
+    return b1.states == b2.states && b1.norms == b2.norms && b1.sg == b2.sg
 end
 
 function Base.hash(b::Basis, h::UInt)
-    return hash(b.states, hash(b.norms, hash(:BaseNumber, h)))
+    return hash(b.states, hash(b.norms, hash(b.sg, hash(:BaseNumber, h))))
 end
 
 Base.iterate(b::Basis) = (b.states, Val(:norms))
-Base.iterate(b::Basis, ::Val{:norms}) = (b.norms, Val(:done))
+Base.iterate(b::Basis, ::Val{:norms}) = (b.norms, Val(:sg))
+Base.iterate(b::Basis, ::Val{:sg}) = (b.sg, Val(:done))
 Base.iterate(b::Basis, ::Val{:done}) = nothing
 
 function Base.summary(io::IO, b::Basis{T,T_n}) where {T,T_n}
@@ -91,6 +101,7 @@ function Base.show(
 
     println(io, ind, "states: ", typeof(b.states))
     println(io, ind, "norms : ", typeof(b.norms))
+    println(io, ind, "symmetry groups: ", typeof(b.sg))
 
     n == 0 && return
 
@@ -157,12 +168,12 @@ end
 function _basis_impl(
     all_bints::BaseIntRange{T,Ti,B},
     n_cycles::Int,
-    factors,
+    sg::Union{SymGroup{B,T_s,T,Ti,Ts},CombSymGroup{B,T_s,T,Ti,Ts}},
     F₀::Complex{T_n},
     eps_norm_type::T_n,
     get_temp_state,
     is_sorted::Bool
-) where {T,Ti,B,T_n<:Real}
+) where {T,Ti,B,T_n<:Real,T_s,Ts}
     nthreads = Threads.nthreads()
 
     tasks = map(Iterators.partition(all_bints, length(all_bints) ÷ nthreads + 1)) do chunk
@@ -200,7 +211,7 @@ function _basis_impl(
                             local_F = F₀
                             break
                         elseif h_temp_state == h_state₀
-                            local_F += factors[idx] * temp_phase
+                            local_F += sg.factors[idx] * temp_phase
                         end
                     end
                 end
@@ -222,9 +233,9 @@ function _basis_impl(
 
     if is_sorted
         sorted_indices = sortperm(states)
-        return Basis(states[sorted_indices], norms[sorted_indices])
+        return Basis(states[sorted_indices], norms[sorted_indices], sg)
     else
-        return Basis(states, norms)
+        return Basis(states, norms, sg)
     end
 end
 
@@ -276,7 +287,7 @@ function basis(
     return _basis_impl(
         all_bints,
         length(sg.cycles),
-        sg.factors,
+        sg,
         F₀,
         eps_norm_type,
         get_temp_state,
@@ -347,7 +358,7 @@ function basis(
     return _basis_impl(
         all_bints,
         length(csg.cycles),
-        csg.factors,
+        csg,
         F₀,
         eps_norm_type,
         get_temp_state,
@@ -370,6 +381,10 @@ Checks whether the given symmetries commute with each other in the given basis.
     symmetry group, and `false` otherwise.
 """
 function is_commutative(b::Basis, csg::CombSymGroup)
+    if b.sg != csg
+        @warn "The symmetry group of the basis does not match the provided combined symmetry group."
+    end
+
     n_cycles = csg.cycles |> length
     ndims_cycles = csg.cycles |> ndims
     nthreads = Threads.nthreads()

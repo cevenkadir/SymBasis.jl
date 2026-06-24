@@ -64,11 +64,15 @@ end
         iter_result2 = iterate(b, Val(:norms))
         @test iter_result2 !== nothing
         @test iter_result2[1] == b.norms
-        @test iter_result2[2] == Val(:done)
+
+        iter_result3 = iterate(b, Val(:sg))
+        @test iter_result3 !== nothing
+        @test iter_result3[1] == b.sg
+        @test iter_result3[2] == Val(:done)
 
         # Test that iteration terminates (tests the selected line)
-        iter_result3 = iterate(b, Val(:done))
-        @test iter_result3 === nothing
+        iter_result4 = iterate(b, Val(:done))
+        @test iter_result4 === nothing
 
         # Test Base.summary
         summary_str = sprint(summary, b)

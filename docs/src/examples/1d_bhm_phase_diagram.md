@@ -118,7 +118,7 @@ for (id_t, t) in enumerate(tₛ)
                         if DigitBase.read(sₙ, xᵢ₊₁) > 0
                             temp_s₁ = dec(sₙ, xᵢ₊₁)
                             temp_s₁ = inc(temp_s₁, xᵢ)
-                            rep_s₁, rep_fac₁ = representative(temp_s₁, csg)
+                            rep_s₁, rep_fac₁ = representative(temp_s₁, ba)
                             
                             if haskey(b, rep_s₁)
                                 m = b[rep_s₁]
@@ -134,7 +134,7 @@ for (id_t, t) in enumerate(tₛ)
                         if DigitBase.read(sₙ, xᵢ) > 0
                             temp_s₂ = dec(sₙ, xᵢ)
                             temp_s₂ = inc(temp_s₂, xᵢ₊₁)
-                            rep_s₂, rep_fac₂ = representative(temp_s₂, csg)
+                            rep_s₂, rep_fac₂ = representative(temp_s₂, ba)
                             
                             if haskey(b, rep_s₂)
                                 m = b[rep_s₂]

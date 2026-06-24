@@ -120,7 +120,7 @@ for sₙ in ba.states
         if DigitBase.read(sₙ, xᵢ) == DigitBase.read(sₙ, xᵢ₊₂) == 0
 
             temp_s = flip(sₙ, xᵢ₊₁)
-            rep_s, rep_fac = representative(temp_s, csg)
+            rep_s, rep_fac = representative(temp_s, ba)
 
             if rep_s ∈ ba.states
                 m = b[rep_s]
@@ -160,7 +160,7 @@ for i in 2:2:N
     global Z_2_state = flip(Z_2_state, i)
 end
 # find the representative of the Z_2 state in the symmetry-resolved basis
-rep_Z_2_state, _ = representative(Z_2_state, csg)
+rep_Z_2_state, _ = representative(Z_2_state, ba)
 # determine the index of the representative state in the basis
 m_Z_2_state = b[rep_Z_2_state]
 # construct the vector representation of the Z_2 state in the symmetry-resolved basis

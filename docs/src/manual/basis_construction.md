@@ -58,6 +58,6 @@ This will generate a basis that consists of the basis states with total magnetiz
 !!! warning
     If you are unsure about whether these symmetries commute with each other in the constructed basis, you can simply pass the combined symmetry group to the [`is_commutative`](@ref SymBasis.Bases.is_commutative) function from the [`SymBasis.SymGroups`](@ref symgroups-api) submodule to check if the symmetries commute:
     ```@example basis_construction
-    is_commutative(b_with_both_syms, csg)
+    is_commutative(b_with_both_syms)
     ```
     This will return `true` if the symmetries with commute and `false` otherwise. If the symmetries do not commute, you cannot combine them to construct a basis that resolves both symmetries simultaneously.

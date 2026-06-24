@@ -136,7 +136,7 @@ function sector_hamiltonian(dofo, N, n_particles, k, p, J, μ, U)
                 anticomm_sign *= cispi(-sum(DigitBase.read(temp_s₁, x) for x in 1:(xᵢ - 1); init=0))
                 temp_s₁ = inc(temp_s₁, xᵢ)
 
-                rep_s₁, rep_fac₁ = representative(temp_s₁, csg) # map to sector representative
+                rep_s₁, rep_fac₁ = representative(temp_s₁, ba) # map to sector representative
 
                 if haskey(b, rep_s₁)
                     m = b[rep_s₁]
@@ -158,7 +158,7 @@ function sector_hamiltonian(dofo, N, n_particles, k, p, J, μ, U)
                 anticomm_sign *= cispi(-sum(DigitBase.read(temp_s₂, x) for x in 1:(xᵢ₊₁ - 1); init=0))
                 temp_s₂ = inc(temp_s₂, xᵢ₊₁)
 
-                rep_s₂, rep_fac₂ = representative(temp_s₂, csg)
+                rep_s₂, rep_fac₂ = representative(temp_s₂, ba)
 
                 if haskey(b, rep_s₂)
                     m = b[rep_s₂]

@@ -19,7 +19,7 @@ Because translation and reflection commute only in special momentum sectors on a
 ## Defining the spinless-fermion DoF-object
 
 We work with spinless fermions on a periodic chain of length \(N=8\) at half filling, i.e. with \(N_f=4\) particles.
-</code></pre><p>@example tv_chain using SymBasis.DigitBase using SymBasis.DoFObjects using SymBasis.SymGroups</p><p>N = 8 n_particles = 4</p><p>J = 0.5 μ = 0.4</p><p>dofo = dof_object(SpinlessFermion())</p><pre><code class="nohighlight hljs">
+</code></pre><p>@example tv_chain using SymBasis</p><p>N = 8 n_particles = 4</p><p>J = 0.5 μ = 0.4</p><p>dofo = dof_object(SpinlessFermion())</p><pre><code class="nohighlight hljs">
 ## Constructing the symmetry groups
 
 We now define symmetry groups for:
@@ -31,7 +31,7 @@ These can be composed into a combined symmetry group:</code></pre><p>@example tv
 The translational and reflection symmetry groups act on the fermionic basis with the appropriate fermionic phase factors determined by the DoF-object.
 
 ## Constructing the basis
-</code></pre><p>@example tv_chain using SymBasis.Bases</p><p>ba = basis(dofo, N, csg) hilbert<em>dim = length(ba.states) hilbert</em>dim</p><pre><code class="nohighlight hljs">
+</code></pre><p>@example tv<em>chain ba = basis(dofo, N, csg) hilbert</em>dim = length(ba.states) hilbert_dim</p><pre><code class="nohighlight hljs">
 This basis contains only states in the fixed particle-number sector with
 - \(N_f=4\),
 - momentum \(k=0\),
@@ -56,7 +56,7 @@ for sₙ in ba.states
 
     # diagonal chemical potential term
     for xᵢ in 1:N
-        n_xᵢ = DigitBase.read(sₙ, xᵢ)
+        n_xᵢ = read(sₙ, xᵢ)
 
         push!(I_vec, n)
         push!(J_vec, n)
@@ -65,9 +65,9 @@ for sₙ in ba.states
 
     # diagonal interaction term
     for xᵢ in 1:N
-        n_xᵢ = DigitBase.read(sₙ, xᵢ)
+        n_xᵢ = read(sₙ, xᵢ)
         xⱼ = mod1(xᵢ + 1, N) # nearest neighbor with periodic wrapping
-        n_xⱼ = DigitBase.read(sₙ, xⱼ)
+        n_xⱼ = read(sₙ, xⱼ)
 
         push!(I_vec, n)
         push!(J_vec, n)
@@ -79,10 +79,10 @@ for sₙ in ba.states
         xᵢ₊₁ = mod1(xᵢ + 1, N)
 
         # annihilate at xᵢ₊₁, create at xᵢ
-        if DigitBase.read(sₙ, xᵢ₊₁) == 1 &amp;&amp; DigitBase.read(sₙ, xᵢ) == 0
+        if read(sₙ, xᵢ₊₁) == 1 &amp;&amp; read(sₙ, xᵢ) == 0
             temp_s₁ = dec(sₙ, xᵢ₊₁)
-            anticomm_sign = cispi(sum(DigitBase.read(temp_s₁, x) for x in 1:(xᵢ₊₁ - 1); init=0))
-            anticomm_sign *= cispi(-sum(DigitBase.read(temp_s₁, x) for x in 1:(xᵢ - 1); init=0))
+            anticomm_sign = cispi(sum(read(temp_s₁, x) for x in 1:(xᵢ₊₁ - 1); init=0))
+            anticomm_sign *= cispi(-sum(read(temp_s₁, x) for x in 1:(xᵢ - 1); init=0))
             temp_s₁ = inc(temp_s₁, xᵢ)
 
             rep_s₁, rep_fac₁ = representative(temp_s₁, ba) # map to sector representative
@@ -101,10 +101,10 @@ for sₙ in ba.states
         end
 
         # annihilate at xᵢ, create at xᵢ₊₁
-        if DigitBase.read(sₙ, xᵢ) == 1 &amp;&amp; DigitBase.read(sₙ, xᵢ₊₁) == 0
+        if read(sₙ, xᵢ) == 1 &amp;&amp; read(sₙ, xᵢ₊₁) == 0
             temp_s₂ = dec(sₙ, xᵢ)
-            anticomm_sign = cispi(sum(DigitBase.read(temp_s₂, x) for x in 1:(xᵢ - 1); init=0))
-            anticomm_sign *= cispi(-sum(DigitBase.read(temp_s₂, x) for x in 1:(xᵢ₊₁ - 1); init=0))
+            anticomm_sign = cispi(sum(read(temp_s₂, x) for x in 1:(xᵢ - 1); init=0))
+            anticomm_sign *= cispi(-sum(read(temp_s₂, x) for x in 1:(xᵢ₊₁ - 1); init=0))
             temp_s₂ = inc(temp_s₂, xᵢ₊₁)
 
             rep_s₂, rep_fac₂ = representative(temp_s₂, ba)
@@ -162,7 +162,7 @@ for sₙ in ba.states
 
     # diagonal chemical potential term
     for xᵢ in 1:N
-        n_xᵢ = DigitBase.read(sₙ, xᵢ)
+        n_xᵢ = read(sₙ, xᵢ)
 
         push!(I_vec, n)
         push!(J_vec, n)
@@ -171,9 +171,9 @@ for sₙ in ba.states
 
     # diagonal interaction term
     for xᵢ in 1:N
-        n_xᵢ = DigitBase.read(sₙ, xᵢ)
+        n_xᵢ = read(sₙ, xᵢ)
         xⱼ = mod1(xᵢ + 1, N)
-        n_xⱼ = DigitBase.read(sₙ, xⱼ)
+        n_xⱼ = read(sₙ, xⱼ)
 
         push!(I_vec, n)
         push!(J_vec, n)
@@ -185,10 +185,10 @@ for sₙ in ba.states
         xᵢ₊₁ = mod1(xᵢ + 1, N)
 
         # annihilate at xᵢ₊₁, create at xᵢ
-        if DigitBase.read(sₙ, xᵢ₊₁) == 1 &amp;&amp; DigitBase.read(sₙ, xᵢ) == 0
+        if read(sₙ, xᵢ₊₁) == 1 &amp;&amp; read(sₙ, xᵢ) == 0
             temp_s₁ = dec(sₙ, xᵢ₊₁)
-            anticomm_sign = cispi(sum(DigitBase.read(temp_s₁, x) for x in 1:(xᵢ₊₁ - 1); init=0))
-            anticomm_sign *= cispi(-sum(DigitBase.read(temp_s₁, x) for x in 1:(xᵢ - 1); init=0))
+            anticomm_sign = cispi(sum(read(temp_s₁, x) for x in 1:(xᵢ₊₁ - 1); init=0))
+            anticomm_sign *= cispi(-sum(read(temp_s₁, x) for x in 1:(xᵢ - 1); init=0))
             temp_s₁ = inc(temp_s₁, xᵢ)
 
             if haskey(b, temp_s₁)
@@ -202,10 +202,10 @@ for sₙ in ba.states
         end
 
         # annihilate at xᵢ, create at xᵢ₊₁
-        if DigitBase.read(sₙ, xᵢ) == 1 &amp;&amp; DigitBase.read(sₙ, xᵢ₊₁) == 0
+        if read(sₙ, xᵢ) == 1 &amp;&amp; read(sₙ, xᵢ₊₁) == 0
             temp_s₂ = dec(sₙ, xᵢ)
-            anticomm_sign = cispi(sum(DigitBase.read(temp_s₂, x) for x in 1:(xᵢ - 1); init=0))
-            anticomm_sign *= cispi(-sum(DigitBase.read(temp_s₂, x) for x in 1:(xᵢ₊₁ - 1); init=0))
+            anticomm_sign = cispi(sum(read(temp_s₂, x) for x in 1:(xᵢ - 1); init=0))
+            anticomm_sign *= cispi(-sum(read(temp_s₂, x) for x in 1:(xᵢ₊₁ - 1); init=0))
             temp_s₂ = inc(temp_s₂, xᵢ₊₁)
 
             if haskey(b, temp_s₂)
@@ -230,7 +230,7 @@ return ba, Matrix(h)</code></pre><p>end</p><pre><code class="nohighlight hljs">
 The CDW structure factor is defined as</code></pre><p>math S(\pi) = \frac{1}{N} \sum<em>{i,j} (-1)^{i-j} \left( \langle n</em>i n_j \rangle</p><ul><li></li></ul><p>\langle n<em>i \rangle \langle n</em>j \rangle \right).</p><pre><code class="nohighlight hljs"></code></pre><p>@example tv<em>chain function cdw</em>structure<em>factor(ba, ψ, N)     occ</em>exp = zeros(Float64, N)</p><pre><code class="nohighlight hljs">for (idx, s) in enumerate(ba.states)
     prob = abs2(ψ[idx]) # probability weight of basis state s
     for i in 1:N
-        occ_exp[i] += prob * DigitBase.read(s, i)
+        occ_exp[i] += prob * read(s, i)
     end
 end
 
@@ -239,7 +239,7 @@ for i in 1:N, j in 1:N
     nij_exp = 0.0
     for (idx, s) in enumerate(ba.states)
         prob = abs2(ψ[idx])
-        nij_exp += prob * DigitBase.read(s, i) * DigitBase.read(s, j)
+        nij_exp += prob * read(s, i) * read(s, j)
     end
     Sπ += (-1)^(i - j) * (nij_exp - occ_exp[i] * occ_exp[j])
 end
@@ -267,4 +267,4 @@ This example illustrates three useful finite-size diagnostics of the CDW transit
 
 In the thermodynamic limit, the half-filled \(t\)-\(V\) chain undergoes a transition at</code></pre><p>math \frac{U}{J}=2.</p><pre><code class="nohighlight hljs">The exact diagonalization calculations above do not reproduce the singular thermodynamic transition directly, but they clearly show its finite-size precursor in a symmetry-resolved setting.
 
-[^1]: For the exact solution and its relation to the XXZ chain, see for example M. Takahashi, *Thermodynamics of One-Dimensional Solvable Models* (Cambridge University Press, 1999).</code></pre></article><nav class="docs-footer"><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Wednesday 24 June 2026 15:21">Wednesday 24 June 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+[^1]: For the exact solution and its relation to the XXZ chain, see for example M. Takahashi, *Thermodynamics of One-Dimensional Solvable Models* (Cambridge University Press, 1999).</code></pre></article><nav class="docs-footer"><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Sunday 28 June 2026 20:26">Sunday 28 June 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

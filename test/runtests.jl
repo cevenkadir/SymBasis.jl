@@ -1,10 +1,6 @@
 using Test
 
-using SymBasis.DigitBase
-using SymBasis.DoFObjects
-using SymBasis.Miscs
-using SymBasis.SymGroups
-using SymBasis.Bases
+using SymBasis
 
 @testset "SymBasis.jl Tests" begin
     @info "Testing BaseInt..."

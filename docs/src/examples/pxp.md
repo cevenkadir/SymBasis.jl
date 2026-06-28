@@ -113,7 +113,7 @@ for sₙ in ba.states
         xᵢ₊₂ = mod1(xᵢ + 2, N)
 
         # only flip site i+1 if sites i and i+2 are both in the ground state (digit `0`)
-        if DigitBase.read(sₙ, xᵢ) == DigitBase.read(sₙ, xᵢ₊₂) == 0
+        if read(sₙ, xᵢ) == read(sₙ, xᵢ₊₂) == 0
 
             temp_s = flip(sₙ, xᵢ₊₁)
             rep_s, rep_fac = representative(temp_s, ba)

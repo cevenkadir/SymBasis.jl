@@ -108,7 +108,7 @@ for sₙ in ba.states
     n = b[sₙ]
     Nₙ = ba.norms[n]
 
-    for xᵢ in 1:(N-1)
+    for xᵢ in 1:N
         xᵢ₊₁ = mod1(xᵢ + 1, N)
         xᵢ₊₂ = mod1(xᵢ + 2, N)
 

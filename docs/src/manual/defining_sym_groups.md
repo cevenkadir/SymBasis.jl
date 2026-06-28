@@ -26,8 +26,7 @@ The translation operator acts on the representative state as
 ```
 You can define a translation symmetry group for a system with a certain number of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function and the [`Translational`](@ref SymBasis.SymGroups.Translational) type as follows:
 ```@example
-using SymBasis.DoFObjects
-using SymBasis.SymGroups
+using SymBasis
 
 dofo = dof_object(Spin(1 // 2)) # define, for example, a spin-1/2
 
@@ -55,8 +54,7 @@ The reflection operator acts on the representative state as
 
 You can define a spatial reflection symmetry group for a system with a certain number of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function and the [`SpatialReflection`](@ref SymBasis.SymGroups.SpatialReflection) type as follows:
 ```@example
-using SymBasis.DoFObjects
-using SymBasis.SymGroups
+using SymBasis
 
 dofo = DoFObject(:Pet, (:🐶, :🐱, :🦜)) # define, for example, a pet object
 N = 4 # number of sites
@@ -83,8 +81,7 @@ The rotation operator acts on the representative state as
 
 You can define a rotational symmetry group using the [`sym`](@ref SymBasis.SymGroups.sym) function and the [`Rotational`](@ref SymBasis.SymGroups.Rotational) type. The permutation supplied to `Rotational` should encode the action of $\hat{R}$ on site indices:
 ```@example
-using SymBasis.DoFObjects
-using SymBasis.SymGroups
+using SymBasis
 
 dofo = DoFObject(:Pet, (:🐶, :🐱, :🦜)) # define, for example, a pet object
 N = 4 # number of sites (2×2 square lattice)
@@ -109,8 +106,7 @@ Total magnetization symmetry is a symmetry where the system is invariant under t
 where $S_i^z$ is the magnetization of the $i$-th site, and $S^z$ is the total magnetization quantum number.
 You can define a total magnetization symmetry group for a system with a certain number of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function and the [`TotalMagnetization`](@ref SymBasis.SymGroups.TotalMagnetization) type as follows:
 ```@example
-using SymBasis.DoFObjects
-using SymBasis.SymGroups
+using SymBasis
 
 dofo = dof_object(Spin(1 // 1)) # define, for example, a spin-1
 N = 5 # number of sites
@@ -130,8 +126,7 @@ where $w_{i, \alpha_j}$ is the weight of site $i$ at its $j$-th spatial dimensio
 ```
 You can define a multipole symmetry group for a system with a certain number of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function and the [`SpinMultipole`](@ref SymBasis.SymGroups.SpinMultipole) type as follows:
 ```@example
-using SymBasis.DoFObjects
-using SymBasis.SymGroups
+using SymBasis
 
 dofo = dof_object(Spin(1 // 2)) # define, for example, a spin-1/2
 N = 4 # number of sites
@@ -148,8 +143,7 @@ sg = sym(SpinMultipole(Q, w, N), dofo)
 ```
 For a 1D system, you can define the weights as a vector `w = collect(1:N)` and the multipole quantum number as a single real number `Q`:
 ```@example
-using SymBasis.DoFObjects
-using SymBasis.SymGroups
+using SymBasis
 
 dofo = dof_object(Spin(1 // 2)) # define, for example, a spin-1/2
 N = 4 # number of sites
@@ -180,8 +174,7 @@ where $N_a$ is the normalization factor and $z$ is the parity quantum number. Th
 ```
 where $z$ is the parity quantum number. You can define a spin-inversion symmetry group for a system with a certain number of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function and the [`SpinInversion`](@ref SymBasis.SymGroups.SpinInversion) type as follows:
 ```@example
-using SymBasis.DoFObjects
-using SymBasis.SymGroups
+using SymBasis
 
 dofo = dof_object(Spin(1 // 2)) # define, for example, a spin-1/2
 N = 4 # number of sites
@@ -200,8 +193,7 @@ Particle number conservation is a symmetry where the system is invariant under t
 where $\hat{n}_i = \hat{b}_i^\dagger \hat{b}_i$ is the local occupation number operator at site $i$, and $N_b$ is the total particle number quantum number.
 You can define a particle number conservation symmetry group for a system with a certain number of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function and the [`TotalBosonicNumber`](@ref SymBasis.SymGroups.TotalBosonicNumber) type as follows:
 ```@example
-using SymBasis.DoFObjects
-using SymBasis.SymGroups
+using SymBasis
 
 n_max = 2 # maximum occupation number for each site
 
@@ -231,8 +223,7 @@ certain number of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function 
 [`TotalSpinlessFermionicNumber`](@ref SymBasis.SymGroups.TotalSpinlessFermionicNumber)
 type as follows:
 ```@example
-using SymBasis.DoFObjects
-using SymBasis.SymGroups
+using SymBasis
 
 dofo = dof_object(SpinlessFermion())
 
@@ -258,9 +249,7 @@ As an example, let's define a custom symmetry group for a DoF-object that repres
 
 Let's first import the necessary submodules and then define our DoF-object for the system containing pet emojis:
 ```@example custom_symmetry
-using SymBasis.DigitBase
-using SymBasis.DoFObjects
-using SymBasis.SymGroups
+using SymBasis
 
 dofo = DoFObject(:Pet, (:🐶, :🐱, :🦜, :🐢))
 ```
@@ -325,8 +314,7 @@ You can also combine multiple symmetry groups to generate bases that conserve mu
 
 For example, if you want to combine the total magnetization symmetry and the translational symmetry, you can define the combined symmetry group as follows:
 ```@example
-using SymBasis.DoFObjects
-using SymBasis.SymGroups
+using SymBasis
 
 dofo = dof_object(Spin(1 // 2)) # define, for example, a spin-1/2
 

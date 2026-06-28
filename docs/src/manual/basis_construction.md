@@ -6,15 +6,10 @@ Pages = ["basis_construction.md"]
 Depth = 2
 ```
 
-First, let's import the necessary submodules:
+First, we define a DoF object for a system, for example, containing spin-1/2 particles:
 ```@example basis_construction
-using SymBasis.DoFObjects
-using SymBasis.SymGroups
-using SymBasis.Bases
-```
+using SymBasis
 
-Next, we define a DoF object for a system, for example, containing spin-1/2 particles:
-```@example basis_construction
 N = 4 # number of sites
 dofo = dof_object(Spin(1 // 2)) # define, for example, a spin-1/2
 ```

@@ -3,8 +3,7 @@
 ## Spin-1/2 objects on a chain without any symmetries
 In this example, we will construct a basis for a system of spin-1/2 objects on a chain without any symmetries. We will first define the DoF-object for spin-1/2 and then generate the full basis for a system of 4 spin-1/2 objects.
 ```@example spin_half_chain_no_sym
-using SymBasis.DoFObjects
-using SymBasis.Bases
+using SymBasis
 
 N = 4 # number of sites
 dofo = dof_object(Spin(1 // 2)) # define a DoF-object for spin-1/2
@@ -16,9 +15,7 @@ This will generate the full basis for a system of 4 spin-1/2 particles, which co
 ## Spin-1 objects on a chain with total magnetization symmetry
 In this example, we will construct a basis for a system of spin-1 objects on a chain with total magnetization symmetry. We will first define the DoF-object for spin-1 and then define the symmetry group for total magnetization. Finally, we will generate the basis that resolves the total magnetization symmetry for a system of 4 spin-1 objects.
 ```@example spin_one_chain_Sz_sym
-using SymBasis.DoFObjects
-using SymBasis.SymGroups
-using SymBasis.Bases
+using SymBasis
 
 N = 4 # number of sites
 dofo = dof_object(Spin(1 // 1)) # define a DoF-object for spin-1
@@ -33,9 +30,7 @@ This will generate a basis that consists of the basis states with total magnetiz
 ## Spin-1/2 objects on a chain with total magnetization and translational symmetries
 In this example, we will construct a basis for a system of spin-1/2 objects on a chain with both total magnetization and translational symmetries. We will first define the DoF-object for spin-1/2, then define the symmetry groups for total magnetization and translational symmetries, and finally combine the symmetry groups to generate the basis that resolves both symmetries for a system of 4 spin-1/2 objects.
 ```@example spin_half_chain_Sz_translational_syms
-using SymBasis.DoFObjects
-using SymBasis.SymGroups
-using SymBasis.Bases
+using SymBasis
 
 N = 4 # number of sites
 dofo = dof_object(Spin(1 // 2)) # define a DoF-object for spin-1/2
@@ -58,9 +53,7 @@ This will generate a basis that consists of the basis states with total magnetiz
 ## Spin-1/2 objects on a 2D square lattice with total magnetization, translational, and spatial reflection symmetries
 In this example, we will construct a basis for a system of spin-1/2 objects on a 2D square lattice with total magnetization, translational, and spatial reflection symmetries. We will first define the DoF-object for spin-1/2, then define the symmetry groups for total magnetization, translational, and spatial reflection symmetries, and finally combine the symmetry groups to generate the basis that resolves all three symmetries for a system of 4 spin-1/2 objects on a 2D square lattice.
 ```@example spin_one_square_lattice_Sz_translational_reflection_syms
-using SymBasis.DoFObjects
-using SymBasis.SymGroups
-using SymBasis.Bases
+using SymBasis
 
 Lₛ = (4, 3) # dimensions of the square lattice (x and y directions)
 N = prod(Lₛ) # total number of sites

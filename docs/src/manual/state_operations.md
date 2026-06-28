@@ -30,7 +30,7 @@ The `dec` function decreases the value of digit(s) by one, useful for implementi
 Use [`dec(state, pos)`](@ref SymBasis.DigitBase.dec(::SymBasis.DigitBase.BaseInt{T,Ti,B}, ::Ti) where {T,Ti,B}) to decrement the digit at position `pos`.
 
 ```@example dec
-using SymBasis.DigitBase
+using SymBasis
 state = bi"11"2 # Binary state (11)₂
 pos = 2 # Position to decrement
 dec(state, pos) # Returns (1)₂
@@ -54,7 +54,7 @@ The `inc` function increases the value of digit(s) by one, useful for implementi
 Use [`inc(state, pos)`](@ref SymBasis.DigitBase.inc(::SymBasis.DigitBase.BaseInt{T,Ti,B}, ::Ti) where {T,Ti,B}) to increment the digit at position `pos`.
 
 ```@example inc
-using SymBasis.DigitBase
+using SymBasis
 state = bi"10"2 # Binary state (10)₂
 pos = 1 # Position to increment
 inc(state, pos) # Returns (11)₂
@@ -78,7 +78,7 @@ The `flip` function toggles digit values within the allowed range, useful for sp
 Use [`flip(state, pos)`](@ref SymBasis.DigitBase.flip(::SymBasis.DigitBase.BaseInt{T,Ti,B}, ::Ti) where {T,Ti,B}) to flip the digit at position `pos`.
 
 ```@example flip
-using SymBasis.DigitBase
+using SymBasis
 state = bi"22"3 # Base-3 state (22)₃
 pos = 1 # Position to flip
 flip(state, pos) # Returns (20)₃ (flips 2→0)
@@ -102,7 +102,7 @@ The `write` function directly sets digit(s) to specified value(s), useful for pr
 Use [`write(state, pos, value)`](@ref SymBasis.DigitBase.Base.write(::SymBasis.DigitBase.BaseInt{T,Ti,B}, ::Ti, ::Integer) where {T,Ti,B}) to set a specific value at position `pos`.
 
 ```@example write
-using SymBasis.DigitBase
+using SymBasis
 state = bi"1201"3 # Base-3 state (1201)₃
 pos = 2 # Position to write to
 value = 2 # New value
@@ -126,7 +126,7 @@ write(state, posₛ, values) # Returns (1002)₃
 Use [`permute(state, perm_vector)`](@ref SymBasis.DigitBase.permute(::SymBasis.DigitBase.BaseInt{T,Ti,B}, ::AbstractVector{Ti}) where {T,Ti,B}) to rearrange the positions of digits, useful for translation or other spatial symmetry operations.
 
 ```@example permute1
-using SymBasis.DigitBase
+using SymBasis
 state = bi"123"4 # Base-4 state (123)₄
 permute(state, [3, 1, 2]) # Returns (231)₄ - digit at pos 1 moves to pos 3, etc.
 ```
@@ -140,7 +140,7 @@ These operations permute the *values* of digits (not their positions), useful fo
 Use [`permute(state, pos, perm_vector)`](@ref SymBasis.DigitBase.permute) to permute the local degree of freedom at position `pos`.
 
 ```@example permute2
-using SymBasis.DigitBase
+using SymBasis
 state = bi"123"4 # Base-4 state (123)₄
 pos = 1 # Position to permute
 # Permutation: 0→3, 1→0, 2→1, 3→2
@@ -167,7 +167,7 @@ The `read` function extracts digit value(s) without modifying the state, useful 
 Use [`read(state, pos)`](@ref SymBasis.DigitBase.Base.read(::SymBasis.DigitBase.BaseInt{T,Ti,B}, ::Ti) where {T,Ti,B}) to get the value at position `pos`.
 
 ```@example read
-using SymBasis.DigitBase
+using SymBasis
 state = bi"1201"3 # Base-3 state (1201)₃
 pos = 2 # Query position 2
 read(state, pos) # Returns 0
@@ -191,7 +191,7 @@ The `count` function tallies how many times specific digit value(s) appear in gi
 Use [`count(state, positions, digit)`](@ref SymBasis.DigitBase.Base.count) to count occurrences of a specific digit.
 
 ```@example count
-using SymBasis.DigitBase
+using SymBasis
 state = bi"1201"3 # Base-3 state (1201)₃
 posₛ = [1, 2, 3, 4] # Positions to check
 digit = 1 # Value to count

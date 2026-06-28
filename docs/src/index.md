@@ -40,9 +40,7 @@ pkg> add SymBasis
 ## Quick example
 You can determine the basis with zero total magnetization for a spin-1/2 system with 4 sites as follows:
 ```julia
-julia> using SymBasis.DoFObjects
-julia> using SymBasis.SymGroups
-julia> using SymBasis.Bases
+julia> using SymBasis
 
 julia> N = 4; # number of sites
 julia> Sz = 0; # total magnetization

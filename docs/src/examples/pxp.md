@@ -14,9 +14,7 @@ state $\ket{r g r g \cdots}$, leading to persistent oscillations when the system
 We first define the Rydberg degree-of-freedom object and a custom symmetry group encoding the blockade constraint. The blockade is represented as a `SymGroup` with a `check` function that returns `false` whenever two adjacent sites are both in state $\ket{r}$.
 
 ```@example pxp
-using SymBasis.DigitBase
-using SymBasis.DoFObjects
-using SymBasis.SymGroups
+using SymBasis
 
 N = 22 # number of sites in the chain
 # define the Rydberg DoF-object with two states: ground (g) and Rydberg (r)
@@ -86,8 +84,6 @@ Here `T_sg` is the translational symmetry group at momentum $k = 0$ and `P_sg` i
 ## Constructing the basis
 
 ```@example pxp
-using SymBasis.Bases
-
 # construct the symmetry-resolved basis for the PXP model
 ba = basis(dofo, N, csg)
 ```

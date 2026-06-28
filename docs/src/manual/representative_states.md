@@ -62,10 +62,7 @@ To obtain the representative for an arbitrary state (and the associated represen
 
 For example, if you have a state $\lvert \downarrow \uparrow \uparrow \downarrow \rangle$ in a spin-1/2 chain with total magnetization symmetry ($S^z=0$ sector) and translational symmetry ($k=0$ sector), you can find its representative state and representative coefficient as follows:
 ```@example
-using SymBasis.DigitBase
-using SymBasis.DoFObjects
-using SymBasis.SymGroups
-using SymBasis.Bases
+using SymBasis
 
 N = 4 # number of sites
 dofo = dof_object(Spin(1 // 2)) # define a DoF-object for spin-1/2

@@ -30,9 +30,7 @@ Because translation and reflection commute only in special momentum sectors on a
 We work with spinless fermions on a periodic chain of length \(N=8\) at half filling, i.e. with \(N_f=4\) particles.
 
 ```@example tv_chain
-using SymBasis.DigitBase
-using SymBasis.DoFObjects
-using SymBasis.SymGroups
+using SymBasis
 
 N = 8
 n_particles = 4
@@ -66,8 +64,6 @@ The translational and reflection symmetry groups act on the fermionic basis with
 ## Constructing the basis
 
 ```@example tv_chain
-using SymBasis.Bases
-
 ba = basis(dofo, N, csg)
 hilbert_dim = length(ba.states)
 hilbert_dim
@@ -107,7 +103,7 @@ function sector_hamiltonian(dofo, N, n_particles, k, p, J, μ, U)
 
         # diagonal chemical potential term
         for xᵢ in 1:N
-            n_xᵢ = DigitBase.read(sₙ, xᵢ)
+            n_xᵢ = read(sₙ, xᵢ)
 
             push!(I_vec, n)
             push!(J_vec, n)
@@ -116,9 +112,9 @@ function sector_hamiltonian(dofo, N, n_particles, k, p, J, μ, U)
 
         # diagonal interaction term
         for xᵢ in 1:N
-            n_xᵢ = DigitBase.read(sₙ, xᵢ)
+            n_xᵢ = read(sₙ, xᵢ)
             xⱼ = mod1(xᵢ + 1, N) # nearest neighbor with periodic wrapping
-            n_xⱼ = DigitBase.read(sₙ, xⱼ)
+            n_xⱼ = read(sₙ, xⱼ)
 
             push!(I_vec, n)
             push!(J_vec, n)
@@ -130,10 +126,10 @@ function sector_hamiltonian(dofo, N, n_particles, k, p, J, μ, U)
             xᵢ₊₁ = mod1(xᵢ + 1, N)
 
             # annihilate at xᵢ₊₁, create at xᵢ
-            if DigitBase.read(sₙ, xᵢ₊₁) == 1 && DigitBase.read(sₙ, xᵢ) == 0
+            if read(sₙ, xᵢ₊₁) == 1 && read(sₙ, xᵢ) == 0
                 temp_s₁ = dec(sₙ, xᵢ₊₁)
-                anticomm_sign = cispi(sum(DigitBase.read(temp_s₁, x) for x in 1:(xᵢ₊₁ - 1); init=0))
-                anticomm_sign *= cispi(-sum(DigitBase.read(temp_s₁, x) for x in 1:(xᵢ - 1); init=0))
+                anticomm_sign = cispi(sum(read(temp_s₁, x) for x in 1:(xᵢ₊₁ - 1); init=0))
+                anticomm_sign *= cispi(-sum(read(temp_s₁, x) for x in 1:(xᵢ - 1); init=0))
                 temp_s₁ = inc(temp_s₁, xᵢ)
 
                 rep_s₁, rep_fac₁ = representative(temp_s₁, ba) # map to sector representative
@@ -152,10 +148,10 @@ function sector_hamiltonian(dofo, N, n_particles, k, p, J, μ, U)
             end
 
             # annihilate at xᵢ, create at xᵢ₊₁
-            if DigitBase.read(sₙ, xᵢ) == 1 && DigitBase.read(sₙ, xᵢ₊₁) == 0
+            if read(sₙ, xᵢ) == 1 && read(sₙ, xᵢ₊₁) == 0
                 temp_s₂ = dec(sₙ, xᵢ)
-                anticomm_sign = cispi(sum(DigitBase.read(temp_s₂, x) for x in 1:(xᵢ - 1); init=0))
-                anticomm_sign *= cispi(-sum(DigitBase.read(temp_s₂, x) for x in 1:(xᵢ₊₁ - 1); init=0))
+                anticomm_sign = cispi(sum(read(temp_s₂, x) for x in 1:(xᵢ - 1); init=0))
+                anticomm_sign *= cispi(-sum(read(temp_s₂, x) for x in 1:(xᵢ₊₁ - 1); init=0))
                 temp_s₂ = inc(temp_s₂, xᵢ₊₁)
 
                 rep_s₂, rep_fac₂ = representative(temp_s₂, ba)
@@ -268,7 +264,7 @@ function particle_number_hamiltonian(dofo, N, n_particles, J, μ, U)
 
         # diagonal chemical potential term
         for xᵢ in 1:N
-            n_xᵢ = DigitBase.read(sₙ, xᵢ)
+            n_xᵢ = read(sₙ, xᵢ)
 
             push!(I_vec, n)
             push!(J_vec, n)
@@ -277,9 +273,9 @@ function particle_number_hamiltonian(dofo, N, n_particles, J, μ, U)
 
         # diagonal interaction term
         for xᵢ in 1:N
-            n_xᵢ = DigitBase.read(sₙ, xᵢ)
+            n_xᵢ = read(sₙ, xᵢ)
             xⱼ = mod1(xᵢ + 1, N)
-            n_xⱼ = DigitBase.read(sₙ, xⱼ)
+            n_xⱼ = read(sₙ, xⱼ)
 
             push!(I_vec, n)
             push!(J_vec, n)
@@ -291,10 +287,10 @@ function particle_number_hamiltonian(dofo, N, n_particles, J, μ, U)
             xᵢ₊₁ = mod1(xᵢ + 1, N)
 
             # annihilate at xᵢ₊₁, create at xᵢ
-            if DigitBase.read(sₙ, xᵢ₊₁) == 1 && DigitBase.read(sₙ, xᵢ) == 0
+            if read(sₙ, xᵢ₊₁) == 1 && read(sₙ, xᵢ) == 0
                 temp_s₁ = dec(sₙ, xᵢ₊₁)
-                anticomm_sign = cispi(sum(DigitBase.read(temp_s₁, x) for x in 1:(xᵢ₊₁ - 1); init=0))
-                anticomm_sign *= cispi(-sum(DigitBase.read(temp_s₁, x) for x in 1:(xᵢ - 1); init=0))
+                anticomm_sign = cispi(sum(read(temp_s₁, x) for x in 1:(xᵢ₊₁ - 1); init=0))
+                anticomm_sign *= cispi(-sum(read(temp_s₁, x) for x in 1:(xᵢ - 1); init=0))
                 temp_s₁ = inc(temp_s₁, xᵢ)
 
                 if haskey(b, temp_s₁)
@@ -308,10 +304,10 @@ function particle_number_hamiltonian(dofo, N, n_particles, J, μ, U)
             end
 
             # annihilate at xᵢ, create at xᵢ₊₁
-            if DigitBase.read(sₙ, xᵢ) == 1 && DigitBase.read(sₙ, xᵢ₊₁) == 0
+            if read(sₙ, xᵢ) == 1 && read(sₙ, xᵢ₊₁) == 0
                 temp_s₂ = dec(sₙ, xᵢ)
-                anticomm_sign = cispi(sum(DigitBase.read(temp_s₂, x) for x in 1:(xᵢ - 1); init=0))
-                anticomm_sign *= cispi(-sum(DigitBase.read(temp_s₂, x) for x in 1:(xᵢ₊₁ - 1); init=0))
+                anticomm_sign = cispi(sum(read(temp_s₂, x) for x in 1:(xᵢ - 1); init=0))
+                anticomm_sign *= cispi(-sum(read(temp_s₂, x) for x in 1:(xᵢ₊₁ - 1); init=0))
                 temp_s₂ = inc(temp_s₂, xᵢ₊₁)
 
                 if haskey(b, temp_s₂)
@@ -357,7 +353,7 @@ function cdw_structure_factor(ba, ψ, N)
     for (idx, s) in enumerate(ba.states)
         prob = abs2(ψ[idx]) # probability weight of basis state s
         for i in 1:N
-            occ_exp[i] += prob * DigitBase.read(s, i)
+            occ_exp[i] += prob * read(s, i)
         end
     end
 
@@ -366,7 +362,7 @@ function cdw_structure_factor(ba, ψ, N)
         nij_exp = 0.0
         for (idx, s) in enumerate(ba.states)
             prob = abs2(ψ[idx])
-            nij_exp += prob * DigitBase.read(s, i) * DigitBase.read(s, j)
+            nij_exp += prob * read(s, i) * read(s, j)
         end
         Sπ += (-1)^(i - j) * (nij_exp - occ_exp[i] * occ_exp[j])
     end

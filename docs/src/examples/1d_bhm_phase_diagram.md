@@ -58,10 +58,7 @@ tₛ = 0.0:0.1:0.3; # hopping strength range for which to compute the phase diag
 For bosons with a local Hilbert space of dimension $n_\mathrm{max} + 1$ (occupation numbers $0, 1, \ldots, n_\mathrm{max}$), SymBasis provides the predefined [`Boson`](@ref SymBasis.DoFObjects.Boson) DoF-object. We construct the basis by combining three symmetry groups: particle-number conservation [`TotalBosonicNumber`](@ref SymBasis.SymGroups.TotalBosonicNumber) to select states with a fixed particle number $n$, translational symmetry [`Translational`](@ref SymBasis.SymGroups.Translational) to reduce the Hilbert space by fixing the quantum momentum number $k$, and spatial reflection symmetry [`SpatialReflection`](@ref SymBasis.SymGroups.SpatialReflection) to include spatial parity sectors with the parity numbers $p = \pm 1$. These symmetries are composed to form the combined symmetry group, and we build the symmetry-resolved basis and assemble the Hamiltonian in each sector $(N, n, k, p)$ for $n \in \{N-1, N, N+1\}$, sweeping over both system sizes and hopping values.
 
 ```@example bhm
-using SymBasis.DigitBase
-using SymBasis.DoFObjects
-using SymBasis.SymGroups
-using SymBasis.Bases
+using SymBasis
 using LinearAlgebra, SparseArrays, Arpack
 
 # initialize array to store ground state energies for each (t, N, n_particles)
@@ -102,7 +99,7 @@ for (id_t, t) in enumerate(tₛ)
                     
                     # diagonal interaction term
                     for xᵢ in 1:N
-                        n_xᵢ = DigitBase.read(sₙ, xᵢ)
+                        n_xᵢ = read(sₙ, xᵢ)
                         if n_xᵢ > 0
                             push!(I_vec, n)
                             push!(J_vec, n)
@@ -115,7 +112,7 @@ for (id_t, t) in enumerate(tₛ)
                         xᵢ₊₁ = mod1(xᵢ + 1, N)
                         
                         # annihilate at xᵢ₊₁, create at xᵢ
-                        if DigitBase.read(sₙ, xᵢ₊₁) > 0
+                        if read(sₙ, xᵢ₊₁) > 0
                             temp_s₁ = dec(sₙ, xᵢ₊₁)
                             temp_s₁ = inc(temp_s₁, xᵢ)
                             rep_s₁, rep_fac₁ = representative(temp_s₁, ba)
@@ -131,7 +128,7 @@ for (id_t, t) in enumerate(tₛ)
                         end
                         
                         # annihilate at xᵢ, create at xᵢ₊₁
-                        if DigitBase.read(sₙ, xᵢ) > 0
+                        if read(sₙ, xᵢ) > 0
                             temp_s₂ = dec(sₙ, xᵢ)
                             temp_s₂ = inc(temp_s₂, xᵢ₊₁)
                             rep_s₂, rep_fac₂ = representative(temp_s₂, ba)

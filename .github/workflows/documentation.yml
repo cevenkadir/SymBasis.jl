@@ -10,11 +10,10 @@ on:
 
 jobs:
   # Regenerates the SymBasis vs XDiag.jl vs QuSpin basis-construction benchmark (benchmark/)
-  # and writes docs/src/benchmarks.md + docs/src/assets/benchmarks/. Only runs on a tagged
-  # release or a manual dispatch -- running the full sweep on every push/PR would be far too
-  # slow, and the numbers only make sense to refresh when SymBasis itself has actually changed.
+  # and writes docs/src/benchmarks.md + docs/src/assets/benchmarks/. Runs on every push (to
+  # main or a tag) and on manual dispatch; skipped for pull_request events.
   benchmark:
-    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     permissions:
@@ -80,8 +79,8 @@ jobs:
 
   build:
     needs: benchmark
-    # Run regardless of whether `benchmark` ran (tag/dispatch) or was skipped (regular
-    # push/PR) -- `needs:` otherwise cascades a skip into this job too.
+    # Run regardless of whether `benchmark` ran (push/dispatch) or was skipped (pull_request)
+    # -- `needs:` otherwise cascades a skip into this job too.
     if: always() && !cancelled()
     # These permissions are needed to:
     # - Deploy the documentation: https://documenter.juliadocs.org/stable/man/hosting/#Permissions

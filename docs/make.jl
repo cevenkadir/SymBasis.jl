@@ -33,6 +33,7 @@ makedocs(;
             "Quantum many-body scars in the PXP chain" => "examples/pxp.md",
             "Phase diagram of the Bose-Hubbard chain" => "examples/1d_bhm_phase_diagram.md",
         ],
+        "Benchmarks" => "benchmarks.md",
         "API Reference" => [
             "DigitBase" => "api/digitbase.md",
             "DoFObjects" => "api/dofobjects.md",

@@ -28,6 +28,9 @@ Manifest.toml
 /docs/build/
 
 
+# Generated benchmark output
+/benchmark/results/
+
 # VSCode
 .vscode/
 

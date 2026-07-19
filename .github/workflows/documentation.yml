@@ -6,9 +6,83 @@ on:
       - main # update to match your development branch (master, main, dev, trunk, ...)
     tags: '*'
   pull_request:
+  workflow_dispatch:
 
 jobs:
+  # Regenerates the SymBasis vs XDiag.jl vs QuSpin basis-construction benchmark (benchmark/)
+  # and writes docs/src/benchmarks.md + docs/src/assets/benchmarks/. Only runs on a tagged
+  # release or a manual dispatch -- running the full sweep on every push/PR would be far too
+  # slow, and the numbers only make sense to refresh when SymBasis itself has actually changed.
+  benchmark:
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      actions: write
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1'
+      - uses: julia-actions/cache@v2
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          channels: conda-forge
+          python-version: '3.12'
+      - name: Install QuSpin (latest, conda-forge)
+        shell: bash -el {0}
+        run: conda install -y -c conda-forge quspin
+      - name: Install Julia deps (SymBasis dev checkout + XDiag/BenchmarkTools/CairoMakie latest)
+        shell: julia --color=yes --project=benchmark {0}
+        run: |
+          using Pkg
+          Pkg.develop(PackageSpec(path=pwd()))
+          Pkg.instantiate()
+      - name: Run benchmarks
+        shell: bash -el {0}
+        env:
+          JULIA_NUM_THREADS: 1
+          OMP_NUM_THREADS: 1
+        run: |
+          julia --project=benchmark benchmark/spin_basis.jl
+          julia --project=benchmark benchmark/fermion_basis.jl
+          julia --project=benchmark benchmark/boson_basis.jl
+          python benchmark/quspin_bench.py
+          julia --project=benchmark benchmark/plot_results.jl
+          julia --project=benchmark benchmark/compare_results.jl
+      # Hand the freshly generated page/plots to the `build` job so it builds this exact run's
+      # docs (correct tag source + fresh benchmark data), regardless of what ref `build` checks
+      # out -- avoids relying on the commit below having landed/being visible in time.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-docs-page
+          path: |
+            docs/src/benchmarks.md
+            docs/src/assets/benchmarks/
+      # Also persist to `main` so dev-docs between releases show the last real numbers instead
+      # of the placeholder. Done via a separate worktree checked out from origin/main, since
+      # this job's own checkout is at the release tag, not main -- switching branches in place
+      # while carrying uncommitted generated files could conflict.
+      - name: Commit results to main
+        run: |
+          git fetch origin main
+          git worktree add /tmp/main-checkout origin/main
+          mkdir -p /tmp/main-checkout/docs/src/assets
+          cp docs/src/benchmarks.md /tmp/main-checkout/docs/src/benchmarks.md
+          rm -rf /tmp/main-checkout/docs/src/assets/benchmarks
+          cp -r docs/src/assets/benchmarks /tmp/main-checkout/docs/src/assets/benchmarks
+          cd /tmp/main-checkout
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/src/benchmarks.md docs/src/assets/benchmarks
+          git diff --staged --quiet || (git commit -m "Update benchmark results [skip ci]" && git push origin HEAD:main)
+
   build:
+    needs: benchmark
+    # Run regardless of whether `benchmark` ran (tag/dispatch) or was skipped (regular
+    # push/PR) -- `needs:` otherwise cascades a skip into this job too.
+    if: always() && !cancelled()
     # These permissions are needed to:
     # - Deploy the documentation: https://documenter.juliadocs.org/stable/man/hosting/#Permissions
     # - Delete old caches: https://github.com/julia-actions/cache#usage
@@ -20,6 +94,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Use this run's fresh benchmark results, if any were generated
+        if: needs.benchmark.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: benchmark-docs-page
       - uses: julia-actions/setup-julia@v2
         with:
           version: '1'

@@ -1,6 +1,8 @@
 # Aggregate the CSV outputs from spin_basis.jl / fermion_basis.jl / boson_basis.jl (SymBasis +
 # XDiag.jl) and quspin_bench.py (QuSpin) into a single markdown comparison page for the docs.
-# Run `plot_results.jl` first if you want the page to embed the construction-time plots.
+# Plots are NOT pre-rendered here -- the page embeds `@example` code blocks (see
+# benchmark/plotting.jl) that Documenter executes live during `docs/make.jl`, reading the same
+# CSVs this script reads. No image file is ever generated or committed by this script.
 #
 # Run with: julia --project=benchmark benchmark/compare_results.jl
 
@@ -48,11 +50,12 @@ function construction_table(io, name::AbstractString, label::AbstractString)
 
     println(io, "### $label — basis construction")
     println(io)
-    plot_path = "assets/benchmarks/$(name)_construction.svg"
-    if isfile(joinpath(@__DIR__, "..", "docs", "src", plot_path))
-        println(io, "![$label construction time]($plot_path)")
-        println(io)
-    end
+    # Executed live by Documenter (see the shared setup block in `main`, which `include`s
+    # benchmark/plotting.jl into this page's persistent `@example benchmarks` session).
+    println(io, "```@example benchmarks")
+    println(io, "plot_construction(\"$name\", \"$label\")")
+    println(io, "```")
+    println(io)
     println(io, "| N | config | dim | SymBasis | XDiag | QuSpin | XDiag/SymBasis | QuSpin/SymBasis |")
     println(io, "|---|---|---|---|---|---|---|---|")
     for r in sym_rows
@@ -123,7 +126,24 @@ function main()
             "every SymBasis release.",
         )
         println(io)
+        println(
+            io,
+            "Threads are left at each library's own defaults (`JULIA_NUM_THREADS=auto`, ",
+            "`OMP_NUM_THREADS` unset) rather than pinned to 1 -- these numbers reflect ",
+            "out-of-the-box performance, not a strictly single-threaded comparison.",
+        )
+        println(io)
         println(io, "Sweep: `BENCH_SWEEP=$(get(ENV, "BENCH_SWEEP", "quick"))`")
+        println(io)
+        # Shared setup for every `@example benchmarks` block below -- Documenter evaluates all
+        # blocks sharing a session name in one persistent module, so this only needs to run
+        # once per page build.
+        println(io, "```@example benchmarks")
+        println(io, "using CairoMakie # hide")
+        println(io, "CairoMakie.activate!(type = \"svg\") # hide")
+        println(io, "include(joinpath(@__DIR__, \"..\", \"..\", \"benchmark\", \"plotting.jl\")) # hide")
+        println(io, "nothing # hide")
+        println(io, "```")
         println(io)
         for (name, label) in
             (("spin", "Spin-1/2"), ("fermion", "Spinless fermion"), ("boson", "Boson (d=3)"))

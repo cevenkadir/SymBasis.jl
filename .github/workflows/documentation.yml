@@ -10,8 +10,10 @@ on:
 
 jobs:
   # Regenerates the SymBasis vs XDiag.jl vs QuSpin basis-construction benchmark (benchmark/)
-  # and writes docs/src/benchmarks.md + docs/src/assets/benchmarks/. Runs on every push (to
-  # main or a tag) and on manual dispatch; skipped for pull_request events.
+  # and writes docs/src/benchmarks.md + the raw result CSVs. No plots are rendered here -- the
+  # page embeds `@example` code blocks that Documenter executes live from the CSVs during
+  # `docs/make.jl` (build job), so no image file ever needs to be generated or committed. Runs
+  # on every push (to main or a tag) and on manual dispatch; skipped for pull_request events.
   benchmark:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
@@ -30,49 +32,34 @@ jobs:
           python-version: '3.12'
       - name: Install QuSpin (latest, PyPI)
         run: pip install quspin
-      - name: Install Julia deps (SymBasis dev checkout + XDiag/BenchmarkTools/CairoMakie latest)
+      - name: Install Julia deps (SymBasis dev checkout + XDiag/BenchmarkTools latest)
         shell: julia --color=yes --project=benchmark {0}
         run: |
           using Pkg
           Pkg.develop(PackageSpec(path=pwd()))
           Pkg.instantiate()
+      # Threads intentionally left at their defaults (JULIA_NUM_THREADS=auto picks up all
+      # runner cores; OMP_NUM_THREADS is left unset so XDiag's/QuSpin's OpenMP-backed code
+      # also uses its own default) -- this reports what each library actually does out of the
+      # box, rather than an artificially single-threaded comparison.
       - name: Run benchmarks
         env:
-          JULIA_NUM_THREADS: 1
-          OMP_NUM_THREADS: 1
+          JULIA_NUM_THREADS: auto
         run: |
           julia --project=benchmark benchmark/spin_basis.jl
           julia --project=benchmark benchmark/fermion_basis.jl
           julia --project=benchmark benchmark/boson_basis.jl
           python benchmark/quspin_bench.py
-          julia --project=benchmark benchmark/plot_results.jl
           julia --project=benchmark benchmark/compare_results.jl
-      # Hand the freshly generated page/plots to the `build` job so it builds this exact run's
-      # docs (correct tag source + fresh benchmark data), regardless of what ref `build` checks
-      # out -- avoids relying on the commit below having landed/being visible in time.
+      # Hand the raw CSVs + generated page to the `build` job -- `docs/make.jl` renders the
+      # plots live from these CSVs using the docs environment's CairoMakie (already required
+      # there for docs/src/examples/pxp.md), so no image ever needs to be built or shipped here.
       - uses: actions/upload-artifact@v4
         with:
           name: benchmark-docs-page
           path: |
             docs/src/benchmarks.md
-            docs/src/assets/benchmarks/
-      # Also persist to `main` so dev-docs between releases show the last real numbers instead
-      # of the placeholder. Done via a separate worktree checked out from origin/main, since
-      # this job's own checkout is at the release tag, not main -- switching branches in place
-      # while carrying uncommitted generated files could conflict.
-      - name: Commit results to main
-        run: |
-          git fetch origin main
-          git worktree add /tmp/main-checkout origin/main
-          mkdir -p /tmp/main-checkout/docs/src/assets
-          cp docs/src/benchmarks.md /tmp/main-checkout/docs/src/benchmarks.md
-          rm -rf /tmp/main-checkout/docs/src/assets/benchmarks
-          cp -r docs/src/assets/benchmarks /tmp/main-checkout/docs/src/assets/benchmarks
-          cd /tmp/main-checkout
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/src/benchmarks.md docs/src/assets/benchmarks
-          git diff --staged --quiet || (git commit -m "Update benchmark results [skip ci]" && git push origin HEAD:main)
+            benchmark/results/
 
   build:
     needs: benchmark
@@ -105,6 +92,25 @@ jobs:
           using Pkg
           Pkg.develop(PackageSpec(path=pwd()))
           Pkg.instantiate()
+      # Persist the raw CSVs + page to `main` so dev-docs between releases still render (live,
+      # from this data) instead of going stale -- no image is committed, only the small
+      # diffable source data the `@example` blocks in benchmarks.md read at build time. Done
+      # via a separate worktree checked out from origin/main, since this job's own checkout may
+      # be at a release tag, not main -- switching branches in place while carrying uncommitted
+      # generated files could conflict.
+      - name: Commit results to main
+        if: needs.benchmark.result == 'success'
+        run: |
+          git fetch origin main
+          git worktree add /tmp/main-checkout origin/main
+          cp docs/src/benchmarks.md /tmp/main-checkout/docs/src/benchmarks.md
+          mkdir -p /tmp/main-checkout/benchmark/results
+          cp benchmark/results/*.csv /tmp/main-checkout/benchmark/results/
+          cd /tmp/main-checkout
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/src/benchmarks.md benchmark/results/*.csv
+          git diff --staged --quiet || (git commit -m "Update benchmark results [skip ci]" && git push origin HEAD:main)
       - name: Build and deploy
         run: julia --color=yes --project=docs docs/make.jl
         env:

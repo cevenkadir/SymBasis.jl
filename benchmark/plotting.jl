@@ -1,13 +1,14 @@
-# Plot construction-time vs N (U1+T+P config, the richest symmetry sector) for each basis
-# type, one SVG per basis type, written into docs/src/assets/benchmarks/ for embedding in the
-# "Benchmarks" docs page. Run this before compare_results.jl so the page can link the images.
+# Shared plotting logic for the "Benchmarks" docs page (docs/src/benchmarks.md). `include`d
+# directly from a `@example` block during `docs/make.jl`, so the figures are rendered live at
+# docs-build time from the committed CSVs in benchmark/results/ -- nothing here writes files to
+# disk, and no SVG is ever committed to git.
 #
-# Run with: julia --project=benchmark benchmark/plot_results.jl
+# Not meant to be run standalone; `@__DIR__` resolves to this file's own directory regardless
+# of who `include`s it, so `RESULTS` correctly finds benchmark/results/ either way.
 
 using CairoMakie
 
 const RESULTS = joinpath(@__DIR__, "results")
-const ASSETS_DIR = joinpath(@__DIR__, "..", "docs", "src", "assets", "benchmarks")
 const CONFIG = "U1+T(k=0)+P(p=1)"
 
 function read_csv(path::AbstractString)
@@ -47,7 +48,13 @@ function series_for(
     return Ns[order], means[order], stds[order]
 end
 
-function plot_basis_type(name::AbstractString, label::AbstractString)
+"""
+    plot_construction(name, label) -> Union{Figure,Nothing}
+
+Construction-time vs N (U1+T+P config) for basis type `name`, one series per library. Returns
+`nothing` (rendered as no image) if no data is available yet.
+"""
+function plot_construction(name::AbstractString, label::AbstractString)
     sym_path = joinpath(RESULTS, "$(name)_construction.csv")
     series = (
         (series_for(sym_path, "symbasis_mean_seconds", "symbasis_std_seconds"), "SymBasis", :dodgerblue),
@@ -77,19 +84,5 @@ function plot_basis_type(name::AbstractString, label::AbstractString)
         scatterlines!(ax, Ns, means; label=lbl, color=color, marker=:circle)
     end
     axislegend(ax; position=:lt)
-
-    mkpath(ASSETS_DIR)
-    outpath = joinpath(ASSETS_DIR, "$(name)_construction.svg")
-    save(outpath, fig)
-    println("wrote $outpath")
-    return outpath
+    return fig
 end
-
-function main()
-    for (name, label) in
-        (("spin", "Spin-1/2"), ("fermion", "Spinless fermion"), ("boson", "Boson (d=3)"))
-        plot_basis_type(name, label)
-    end
-end
-
-main()

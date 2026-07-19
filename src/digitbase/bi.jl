@@ -32,6 +32,12 @@ struct BaseInt{T<:Integer,Ti<:Integer,B}
         @assert base >= 2 "Base must be at least 2, got $base"
         return new{T,Ti,base}(value)
     end
+
+    # Fully static constructor for hot paths: with `B` in the type domain, no keyword
+    # handling or runtime base checks are needed.
+    function BaseInt{T,Ti,B}(value::Integer) where {T<:Integer,Ti<:Integer,B}
+        return new{T,Ti,B}(T(value))
+    end
 end
 
 """
@@ -48,7 +54,7 @@ Create a copy of the [`SymBasis.DigitBase.BaseInt`](@ref) instance `b`.
     instance with the same value as `b`.
 """
 function Base.copy(b::BaseInt{T,Ti,B}) where {T,Ti,B}
-    return BaseInt(b.value |> copy; base=B, Ti=Ti)
+    return BaseInt{T,Ti,B}(b.value |> copy)
 end
 
 """
@@ -140,7 +146,7 @@ function flip(b::BaseInt{T,Ti,B}, pos::Ti) where {T,Ti,B}
 
     new_value = b.value + (new_digit - digit) * power
 
-    return BaseInt(new_value; base=B, Ti=Ti)
+    return BaseInt{T,Ti,B}(new_value)
 end
 
 """
@@ -184,7 +190,7 @@ optimized specialization for base-2, using bitwise XOR.
 function flip(b::BaseInt{T,Ti,2}, pos::Ti) where {T,Ti}
     pos > 0 || throw(ArgumentError("position must be positive, got $pos"))
     mask = one(T) << (pos - 1)
-    return BaseInt(b.value ⊻ mask; base=2, Ti=Ti)
+    return BaseInt{T,Ti,2}(b.value ⊻ mask)
 end
 
 """
@@ -207,7 +213,7 @@ function flip(b::BaseInt{T,Ti,2}, pos::AbstractVector{Ti}) where {T,Ti}
         p > 0 || throw(ArgumentError("position must be positive, got $p"))
     end
     mask = reduce((m, p) -> m | (one(T) << (p - 1)), pos; init=zero(T))
-    return BaseInt(b.value ⊻ mask; base=2, Ti=Ti)
+    return BaseInt{T,Ti,2}(b.value ⊻ mask)
 end
 
 """
@@ -247,7 +253,7 @@ function inc(b::BaseInt{T,Ti,B}, pos::Ti) where {T,Ti,B}
         pos_next += 1
     end
 
-    return BaseInt(new_val, base=B, Ti=Ti)
+    return BaseInt{T,Ti,B}(new_val)
 end
 
 """
@@ -295,7 +301,7 @@ function dec(b::BaseInt{T,Ti,B}, pos::Ti) where {T,Ti,B}
 
     if digit > 0
         new_val = b.value - base_pow
-        return BaseInt(new_val, base=B, Ti=Ti)
+        return BaseInt{T,Ti,B}(new_val)
     else
         pos_next = pos + 1
         while true
@@ -312,13 +318,13 @@ function dec(b::BaseInt{T,Ti,B}, pos::Ti) where {T,Ti,B}
                     current_digit_p = (b.value ÷ base_pow_p) % B
                     new_val += (B - 1 - current_digit_p) * base_pow_p
                 end
-                return BaseInt(new_val, base=B, Ti=Ti)
+                return BaseInt{T,Ti,B}(new_val)
             end
             pos_next += 1
         end
 
         new_val = b.value + (B - 1) * base_pow
-        return BaseInt(new_val, base=B, Ti=Ti)
+        return BaseInt{T,Ti,B}(new_val)
     end
 end
 
@@ -388,46 +394,27 @@ function permute(b::BaseInt{T,Ti,B}, perm::AbstractVector{Ti}) where {T,Ti,B}
     B > 1 || throw(ArgumentError("Base must be ≥ 2"))
 
     n = length(perm)
-    @assert all(1 .<= perm .<= n) "perm must index into 1:length(perm)"
+    @assert all(p -> 1 <= p <= n, perm) "perm must index into 1:length(perm)"
 
     BB = T(B)
+
+    # digits of b in LSD-first order
+    digitsb = Vector{T}(undef, n)
     v = b.value
+    @inbounds for i in 1:n
+        digitsb[i] = v % BB
+        v ÷= BB
+    end
 
     out = zero(T)
     pBk = one(T) # B^(k-1)
 
     @inbounds for k in 1:n
-        j = perm[k] # want digit j (LSD-first) from input
-        dj = (v ÷ (BB^(j - 1))) % BB # extract j-th LSD digit
-        out += dj * pBk # place it as k-th LSD digit
+        out += digitsb[perm[k]] * pBk # place digit perm[k] as k-th LSD digit
         pBk *= BB
     end
 
-    return BaseInt(out; base=B, Ti=Ti)
-
-    #! OLD IMPLEMENTATION -- check whether is is INEFFICIENT
-    # n = length(perm)
-    # @assert all(1 .<= perm .<= n) "perm must index into 1:length(perm)"
-
-    # # digits in LSD-first order, padded with zeros up to n digits
-    # v = b.value
-    # digits = fill(zero(T), n) # digits[1] is LSD
-    # for i in 1:n
-    #     digits[i] = v % T(B)
-    #     v ÷= T(B)
-    # end
-
-    # new_digits = digits[perm] # still LSD-first
-
-    # # rebuild integer from LSD-first digits
-    # out = zero(T)
-    # pow = one(T)
-    # for d in new_digits
-    #     out += d * pow
-    #     pow *= T(B)
-    # end
-
-    # return BaseInt(out; base=B, Ti=Ti)
+    return BaseInt{T,Ti,B}(out)
 end
 
 """
@@ -480,7 +467,7 @@ function permute(
     (delta > 0) && (new_val > T_max) &&
         throw(OverflowError("incrementing digit causes overflow"))
 
-    return BaseInt(new_val; base=B, Ti=Ti)
+    return BaseInt{T,Ti,B}(new_val)
 end
 
 """
@@ -543,6 +530,25 @@ function Base.read(b::BaseInt{T,Ti,B}, pos::Ti) where {T,Ti,B}
 end
 
 """
+    Base.read(b::SymBasis.DigitBase.BaseInt{T,Ti,2}, pos::Ti) where {T,Ti}
+
+Read the bit at position `pos` in the base-2 representation of the integer `b`. This is an
+optimized specialization for base-2, using bitwise shifts.
+
+# Arguments
+- `b::`[`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,2}`: The base-2 integer.
+- `pos::Ti`: The position of the bit to read (1-based indexing).
+
+# Returns
+- The bit at the specified position.
+"""
+function Base.read(b::BaseInt{T,Ti,2}, pos::Ti) where {T,Ti}
+    pos >= 1 || throw(ArgumentError("position must be ≥ 1 (1‑based indexing)"))
+
+    return (b.value >> (pos - 1)) % 2
+end
+
+"""
     Base.read(b::SymBasis.DigitBase.BaseInt{T,Ti,B}, pos::AbstractVector{Ti}) where {T,Ti,B}
 
 Read the digits at the specified positions in the base-`B` representation of the integer
@@ -594,7 +600,7 @@ function Base.write(b::BaseInt{T,Ti,B}, pos::Ti, d::Integer) where {T,Ti,B}
     (delta > 0) && (new_val > T_max) &&
         throw(OverflowError("incrementing digit causes overflow"))
 
-    return BaseInt(new_val; base=B, Ti=Ti)
+    return BaseInt{T,Ti,B}(new_val)
 end
 
 """

@@ -30,7 +30,7 @@ function Base.show(io::IO, r::BaseIntRange)
 end
 
 function Base.:(:)(first::TB, last::TB) where {T,Ti,B,TB<:BaseInt{T,Ti,B}}
-    BaseIntRange{T,Ti,B}(first, BaseInt(T(1); base=B, Ti=Ti), last)
+    BaseIntRange{T,Ti,B}(first, BaseInt{T,Ti,B}(T(1)), last)
 end
 
 function Base.:(:)(a::TB, s::TB, b::TB) where {T,Ti,B,TB<:BaseInt{T,Ti,B}}
@@ -55,7 +55,7 @@ function Base.iterate(
 ) where {T,Ti,B}
     state.value > r.last.value && return nothing
 
-    next_state = BaseInt(state.value + r.step.value; base=B, Ti=Ti)
+    next_state = BaseInt{T,Ti,B}(state.value + r.step.value)
     return (state, next_state)
 end
 
@@ -66,7 +66,7 @@ function Base.collect(r::BaseIntRange{T,Ti,B}) where {T,Ti,B}
     cur = r.first.value
     step_val = r.step.value
     @inbounds for i = 1:len
-        out[i] = BaseInt(cur; base=B, Ti=Ti)
+        out[i] = BaseInt{T,Ti,B}(cur)
         cur += step_val
     end
     return out
@@ -82,5 +82,5 @@ Base.firstindex(::BaseIntRange) = 1
 function Base.getindex(r::BaseIntRange{T,Ti,B}, x::Ti) where {T,Ti,B}
     new_val = r.first.value + (x - 1) * r.step.value
     new_val > r.last.value && throw(BoundsError(r, x))
-    return BaseInt(T(new_val); base=B, Ti=Ti)
+    return BaseInt{T,Ti,B}(T(new_val))
 end

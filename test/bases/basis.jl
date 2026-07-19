@@ -1,3 +1,13 @@
+# Version constant: true when running Julia < 1.13
+const IS_PRE_V113 = VERSION.major == 1 && VERSION.minor < 13
+const IS_V114_PLUS = VERSION.major > 1 || VERSION.minor >= 14
+
+# Select a value based on Julia version (< 1.13 → pre, >= 1.13 → post)
+vsel(pre, post) = IS_PRE_V113 ? pre : post
+
+# Select a value based on Julia version (< 1.13 → pre, 1.13.x → post113, >= 1.14 → post114)
+vsel114(pre, post113, post114) = IS_PRE_V113 ? pre : (IS_V114_PLUS ? post114 : post113)
+
 # Helper function to test that unsorted basis matches sorted basis
 function test_unsorted_basis(dofo, N, args...; sorted_states, sorted_norms)
     states_unsorted, norms_unsorted = basis(dofo, N, args...; is_sorted=false)
@@ -376,13 +386,13 @@ end
             csg = sym(TotalSpinlessFermionicNumber(2, N), dofo) ∘
                   sym(Translational(0, perm), dofo)
             test_basis_result(dofo, N, csg;
-                expected_states=[bi"11"2],
+                expected_states=vsel114([bi"1100"2], [bi"0011"2], [bi"11"2]),
                 expected_norms=Float64[4],
                 check_commutative=true
             )
 
             test_states = [bi"0011"2, bi"1001"2]
-            test_reps = [bi"11"2, bi"11"2]
+            test_reps = vsel([bi"1100"2, bi"1100"2], [bi"0011"2, bi"0011"2])
             test_factors = Float64[1, -1]
             test_representatives(test_states, test_reps, test_factors, csg)
         end
@@ -391,8 +401,12 @@ end
             csg = sym(TotalSpinlessFermionicNumber(2, N), dofo) ∘
                   sym(Translational(1, perm), dofo)
             test_basis_result(dofo, N, csg;
-                expected_states=[bi"11"2, bi"101"2],
-                expected_norms=Float64[4, 8],
+                expected_states=vsel114(
+                    [bi"1010"2, bi"1100"2],
+                    [bi"11"2, bi"101"2],
+                    [bi"11"2, bi"101"2]
+                ),
+                expected_norms=vsel114(Float64[8, 4], Float64[4, 8], Float64[4, 8]),
                 check_commutative=true
             )
         end
@@ -406,18 +420,38 @@ end
         @testset "R = 1" begin
             sg = sym(SpatialReflection(1, perm), dofo)
             test_basis_result(dofo, N, sg;
-                expected_states=[bi"0"2, bi"1"2, bi"10"2, bi"11"2, bi"101"2, bi"111"2,
-                    bi"1011"2, bi"1111"2],
-                expected_norms=Float64[4, 2, 2, 2, 2, 2, 2, 4]
+                expected_states=vsel114(
+                    [bi"0"2, bi"100"2, bi"111"2, bi"1000"2, bi"1010"2, bi"1011"2,
+                        bi"1100"2, bi"1111"2],
+                    [bi"0"2, bi"1"2, bi"10"2, bi"11"2, bi"101"2, bi"1101"2,
+                        bi"1110"2, bi"1111"2],
+                    [bi"0"2, bi"1"2, bi"10"2, bi"11"2, bi"101"2, bi"1101"2,
+                        bi"1110"2, bi"1111"2]
+                ),
+                expected_norms=vsel114(
+                    Float64[4, 2, 2, 2, 2, 2, 2, 4],
+                    Float64[4, 2, 2, 2, 2, 2, 2, 4],
+                    Float64[4, 2, 2, 2, 2, 2, 2, 4]
+                )
             )
         end
 
         @testset "R = -1" begin
             sg = sym(SpatialReflection(-1, perm), dofo)
             test_basis_result(dofo, N, sg;
-                expected_states=[bi"1"2, bi"10"2, bi"11"2, bi"101"2, bi"110"2, bi"111"2,
-                    bi"1001"2, bi"1011"2],
-                expected_norms=Float64[2, 2, 2, 2, 4, 2, 4, 2]
+                expected_states=vsel114(
+                    [bi"100"2, bi"110"2, bi"111"2, bi"1000"2, bi"1001"2, bi"1010"2,
+                        bi"1011"2, bi"1100"2],
+                    [bi"1"2, bi"10"2, bi"11"2, bi"101"2, bi"110"2, bi"1001"2,
+                        bi"1101"2, bi"1110"2],
+                    [bi"1"2, bi"10"2, bi"11"2, bi"101"2, bi"110"2, bi"1001"2,
+                        bi"1101"2, bi"1110"2]
+                ),
+                expected_norms=vsel114(
+                    Float64[2, 4, 2, 2, 4, 2, 2, 2],
+                    Float64[2, 2, 2, 2, 4, 4, 2, 2],
+                    Float64[2, 2, 2, 2, 4, 4, 2, 2]
+                )
             )
         end
 
@@ -425,7 +459,11 @@ end
             csg = sym(TotalSpinlessFermionicNumber(2, N), dofo) ∘
                   sym(SpatialReflection(1, perm), dofo)
             test_basis_result(dofo, N, csg;
-                expected_states=[bi"11"2, bi"101"2],
+                expected_states=vsel114(
+                    [bi"1010"2, bi"1100"2],
+                    [bi"11"2, bi"101"2],
+                    [bi"11"2, bi"101"2]
+                ),
                 expected_norms=Float64[2, 2],
                 check_commutative=true
             )
@@ -435,8 +473,12 @@ end
             csg = sym(TotalSpinlessFermionicNumber(2, N), dofo) ∘
                   sym(SpatialReflection(-1, perm), dofo)
             test_basis_result(dofo, N, csg;
-                expected_states=[bi"11"2, bi"101"2, bi"110"2, bi"1001"2],
-                expected_norms=Float64[2, 2, 4, 4],
+                expected_states=vsel114(
+                    [bi"110"2, bi"1001"2, bi"1010"2, bi"1100"2],
+                    [bi"11"2, bi"101"2, bi"110"2, bi"1001"2],
+                    [bi"11"2, bi"101"2, bi"110"2, bi"1001"2]
+                ),
+                expected_norms=vsel114(Float64[4, 4, 2, 2], Float64[2, 2, 4, 4], Float64[2, 2, 4, 4]),
                 check_commutative=true
             )
         end
@@ -471,15 +513,23 @@ end
             @testset "k = 0 for N = 4" begin
                 sg = sym(Translational(0, perm), dofo)
                 test_basis_result(dofo, N, sg;
-                    expected_states=[bi"0"2, bi"1"2, bi"11"2, bi"101"2, bi"111"2, bi"1111"2],
-                    expected_norms=Float64[16, 4, 4, 8, 4, 16]
+                    expected_states=vsel(
+                        [bi"0000"2, bi"1000"2, bi"1010"2, bi"1011"2, bi"1100"2, bi"1111"2],
+                        [bi"0000"2, bi"0010"2, bi"0011"2, bi"0101"2, bi"1101"2, bi"1111"2]
+                    ),
+                    expected_norms=vsel(
+                        Float64[16, 4, 8, 4, 4, 16], Float64[16, 4, 4, 8, 4, 16]
+                    )
                 )
             end
 
             @testset "k = 1" begin
                 sg = sym(Translational(1, perm), dofo)
                 test_basis_result(dofo, N, sg;
-                    expected_states=[bi"1"2, bi"11"2, bi"111"2],
+                    expected_states=vsel(
+                        [bi"1000"2, bi"1011"2, bi"1100"2],
+                        [bi"0010"2, bi"0011"2, bi"1101"2]
+                    ),
                     expected_norms=Float64[4, 4, 4]
                 )
             end
@@ -493,17 +543,25 @@ end
             @testset "k = 0 for N = 3" begin
                 sg = sym(Translational(0, perm), dofo)
                 test_basis_result(dofo, N, sg;
-                    expected_states=[bi"0"3, bi"1"3, bi"2"3, bi"11"3, bi"12"3, bi"21"3,
-                        bi"22"3, bi"111"3, bi"112"3, bi"122"3, bi"222"3],
-                    expected_norms=Float64[9, 3, 3, 3, 3, 3, 3, 9, 3, 3, 9]
+                    expected_states=vsel(
+                        [bi"000"3, bi"002"3, bi"010"3, bi"011"3, bi"102"3, bi"111"3,
+                            bi"120"3, bi"121"3, bi"122"3, bi"220"3, bi"222"3],
+                        [bi"000"3, bi"001"3, bi"020"3, bi"021"3, bi"101"3, bi"111"3,
+                            bi"120"3, bi"121"3, bi"122"3, bi"202"3, bi"222"3]
+                    ),
+                    expected_norms=Float64[9, 3, 3, 3, 3, 9, 3, 3, 3, 3, 9]
                 )
             end
 
             @testset "k = 1" begin
                 sg = sym(Translational(1, perm), dofo)
                 test_basis_result(dofo, N, sg;
-                    expected_states=[bi"1"3, bi"2"3, bi"11"3, bi"12"3, bi"21"3, bi"22"3,
-                        bi"112"3, bi"122"3],
+                    expected_states=vsel(
+                        [bi"002"3, bi"010"3, bi"011"3, bi"102"3, bi"120"3, bi"121"3,
+                            bi"122"3, bi"220"3],
+                        [bi"001"3, bi"020"3, bi"021"3, bi"101"3, bi"120"3, bi"121"3,
+                            bi"122"3, bi"202"3]
+                    ),
                     expected_norms=Float64[3, 3, 3, 3, 3, 3, 3, 3]
                 )
             end
@@ -516,8 +574,11 @@ end
 
             sg = sym(SpatialReflection(1, perm), dofo)
             test_basis_result(dofo, N, sg;
-                expected_states=[bi"0"2, bi"1"2, bi"10"2, bi"11"2, bi"101"2, bi"111"2],
-                expected_norms=Float64[4, 2, 4, 2, 4, 4]
+                expected_states=vsel(
+                    [bi"000"2, bi"010"2, bi"100"2, bi"101"2, bi"110"2, bi"111"2],
+                    [bi"000"2, bi"001"2, bi"010"2, bi"011"2, bi"101"2, bi"111"2]
+                ),
+                expected_norms=vsel(Float64[4, 4, 2, 4, 2, 4], Float64[4, 2, 4, 2, 4, 4])
             )
         end
 
@@ -528,8 +589,12 @@ end
 
             sg = sym(SpatialReflection(-1, perm), dofo)
             test_basis_result(dofo, N, sg;
-                expected_states=[bi"1"5, bi"2"5, bi"3"5, bi"4"5, bi"12"5,
-                    bi"13"5, bi"14"5, bi"23"5, bi"24"5, bi"34"5],
+                expected_states=vsel(
+                    [bi"03"5, bi"10"5, bi"13"5, bi"14"5, bi"20"5,
+                        bi"21"5, bi"23"5, bi"40"5, bi"42"5, bi"43"5],
+                    [bi"10"5, bi"12"5, bi"20"5, bi"23"5, bi"24"5,
+                        bi"30"5, bi"31"5, bi"40"5, bi"41"5, bi"43"5]
+                ),
                 expected_norms=Float64[2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
             )
         end
@@ -541,8 +606,8 @@ end
             for z in [1, -1]
                 sg = sym(SpinInversion(z, N), dofo)
                 # For spin-1/2, no state is its own flip, so both spin inversion sectors
-                # have the same representative: the smaller-valued state of {bi"01"2, bi"10"2}
-                expected_rep = bi"01"2
+                # have the same representative (one state from the pair {bi"01"2, bi"10"2})
+                expected_rep = hash(bi"10"2) < hash(bi"01"2) ? bi"10"2 : bi"01"2
                 test_basis_result(dofo, N, sg;
                     expected_states=[expected_rep],
                     expected_norms=Float64[2]
@@ -559,8 +624,8 @@ end
                 # bi"11"3 maps to itself under flip (self-conjugate), so it's included
                 # for z=1 (norm=4) but not z=-1 (norm=0)
                 test_basis_result(dofo, N, sg;
-                    expected_states=[bi"2"3, bi"11"3],
-                    expected_norms=Float64[2, 4]
+                    expected_states=vsel([bi"2"3, bi"11"3], [bi"11"3, bi"20"3]),
+                    expected_norms=vsel(Float64[2, 4], Float64[4, 2])
                 )
             end
 
@@ -568,7 +633,7 @@ end
                 sg = sym(SpinInversion(-1, N), dofo)
                 # bi"11"3 is excluded (norm=0 for z=-1), leaving one state from the pair
                 test_basis_result(dofo, N, sg;
-                    expected_states=[bi"2"3],
+                    expected_states=vsel([bi"2"3], [bi"20"3]),
                     expected_norms=Float64[2]
                 )
             end
@@ -582,7 +647,10 @@ end
                 sg = sym(SpinInversion(z, N), dofo)
                 # Sz=0 sector has C(4,2)=6 states forming 3 flip pairs → 3 representatives
                 test_basis_result(dofo, N, sg;
-                    expected_states=[bi"11"2, bi"101"2, bi"110"2],
+                    expected_states=vsel(
+                        [bi"1001"2, bi"1010"2, bi"1100"2],
+                        [bi"0011"2, bi"0101"2, bi"0110"2]
+                    ),
                     expected_norms=Float64[2, 2, 2]
                 )
             end
@@ -598,8 +666,8 @@ end
                 csg = sym(TotalMagnetization(0 // 1, N), dofo) ∘
                       sym(Translational(0, perm), dofo)
                 test_basis_result(dofo, N, csg;
-                    expected_states=[bi"11"2, bi"101"2],
-                    expected_norms=Float64[4, 8],
+                    expected_states=vsel([bi"1010"2, bi"1100"2], [bi"0011"2, bi"0101"2]),
+                    expected_norms=vsel(Float64[8, 4], Float64[4, 8]),
                     check_commutative=true
                 )
             end
@@ -608,7 +676,7 @@ end
                 csg = sym(TotalMagnetization(0 // 1, N), dofo) ∘
                       sym(Translational(1, perm), dofo)
                 test_basis_result(dofo, N, csg;
-                    expected_states=[bi"11"2],
+                    expected_states=vsel([bi"1100"2], [bi"0011"2]),
                     expected_norms=Float64[4],
                     check_commutative=true
                 )
@@ -618,7 +686,7 @@ end
                 csg = sym(TotalMagnetization(-1 // 1, N), dofo) ∘
                       sym(Translational(0, perm), dofo)
                 test_basis_result(dofo, N, csg;
-                    expected_states=[bi"1"2],
+                    expected_states=vsel([bi"1000"2], [bi"0010"2]),
                     expected_norms=Float64[4],
                     check_commutative=true
                 )
@@ -628,7 +696,7 @@ end
                 csg = sym(TotalMagnetization(-1 // 1, N), dofo) ∘
                       sym(Translational(3, perm), dofo)
                 test_basis_result(dofo, N, csg;
-                    expected_states=[bi"1"2],
+                    expected_states=vsel([bi"1000"2], [bi"0010"2]),
                     expected_norms=Float64[4],
                     check_commutative=true
                 )
@@ -646,8 +714,14 @@ end
                       sym(Translational(0, perm_T), dofo) ∘
                       sym(SpatialReflection(1, perm_R), dofo)
                 test_basis_result(dofo, N, csg;
-                    expected_states=[bi"22"3, bi"112"3, bi"121"3, bi"202"3, bi"1111"3],
-                    expected_norms=Float64[16, 8, 16, 32, 64],
+                    expected_states=vsel(
+                        [bi"0121"3, bi"1111"3, bi"1120"3, bi"2002"3, bi"2020"3],
+                        [bi"0022"3, bi"0121"3, bi"0202"3, bi"1111"3, bi"2011"3]
+                    ),
+                    expected_norms=vsel(
+                        Float64[16, 64, 8, 16, 32],
+                        Float64[16, 16, 32, 64, 8]
+                    ),
                     check_commutative=true
                 )
             end
@@ -700,8 +774,14 @@ end
                 perm = [2, 3, 4, 1] # cyclic translation
                 sg = sym(Translational(1, perm), dofo)
                 test_states = [bi"0001"2, bi"0111"2, bi"0110"2]
-                test_reps = [bi"1"2, bi"111"2, bi"11"2]
-                test_factors = ComplexF64[1, 1, -1im]
+                test_reps = vsel(
+                    [bi"1000"2, bi"1011"2, bi"1100"2],
+                    [bi"0010"2, bi"1101"2, bi"0011"2]
+                )
+                test_factors = vsel(
+                    ComplexF64[-1im, -1im, 1im],
+                    ComplexF64[1im, -1, -1im]
+                )
                 test_representatives(test_states, test_reps, test_factors, sg)
             end
         end
@@ -713,8 +793,14 @@ end
                 perm = [2, 3, 1] # cyclic translation
                 sg = sym(Translational(1, perm), dofo)
                 test_states = [bi"001"3, bi"020"3, bi"101"3, bi"012"3]
-                test_reps = [bi"1"3, bi"2"3, bi"11"3, bi"12"3]
-                test_factors = ComplexF64[1, cispi(-2 / 3), cispi(2 / 3), 1]
+                test_reps = vsel(
+                    [bi"010"3, bi"002"3, bi"011"3, bi"120"3],
+                    [bi"001"3, bi"020"3, bi"101"3, bi"120"3]
+                )
+                test_factors = vsel(
+                    ComplexF64[cispi(2 / 3), cispi(-2 / 3), cispi(2 / 3), cispi(2 / 3)],
+                    ComplexF64[1, 1, 1, cispi(2 / 3)]
+                )
                 test_representatives(test_states, test_reps, test_factors, sg)
             end
         end
@@ -725,9 +811,9 @@ end
                 dofo = dof_object(Spin(1 // 2))
                 perm = [3, 2, 1] # reflection
                 sg = sym(SpatialReflection(-1, perm), dofo)
-                test_states = [bi"1"2, bi"11"2]
-                test_reps = [bi"1"2, bi"11"2]
-                test_representatives(test_states, test_reps, Float64[1, 1], sg)
+                test_states = vsel([bi"001"2, bi"011"2], [bi"100"2, bi"110"2])
+                test_reps = vsel([bi"100"2, bi"110"2], [bi"001"2, bi"011"2])
+                test_representatives(test_states, test_reps, Float64[-1, -1], sg)
             end
         end
 
@@ -737,9 +823,9 @@ end
                 dofo = dof_object(Spin(1 // 1))
                 perm = [2, 1] # reflection
                 sg = sym(SpatialReflection(-1, perm), dofo)
-                test_states = [bi"01"3, bi"20"3, bi"21"3]
-                test_reps = [bi"1"3, bi"2"3, bi"12"3]
-                test_representatives(test_states, test_reps, Float64[1, -1, -1], sg)
+                test_states = vsel([bi"01"3, bi"20"3, bi"21"3], [bi"10"3, bi"02"3, bi"21"3])
+                test_reps = vsel([bi"10"3, bi"2"3, bi"21"3], [bi"01"3, bi"20"3, bi"21"3])
+                test_representatives(test_states, test_reps, Float64[-1, -1, 1], sg)
             end
         end
 
@@ -749,10 +835,15 @@ end
                 dofo = dof_object(Spin(1 // 2))
                 sg = sym(SpinInversion(-1, N), dofo)
 
-                # Representative is whichever of the flip pair has the smaller value
+                # Representative is whichever of the flip pair has the smaller hash
                 test_states = [bi"01"2, bi"10"2]
-                test_reps = [bi"01"2, bi"01"2]
-                test_factors = Float64[1, -1]
+                if hash(bi"10"2) < hash(bi"01"2)
+                    test_reps = [bi"10"2, bi"10"2]
+                    test_factors = Float64[-1, 1]
+                else
+                    test_reps = [bi"01"2, bi"01"2]
+                    test_factors = Float64[1, -1]
+                end
 
                 test_representatives(test_states, test_reps, test_factors, sg)
             end
@@ -764,7 +855,7 @@ end
                 dofo = dof_object(Spin(1 // 1))
                 sg = sym(SpinInversion(1, N), dofo)
                 test_states = [bi"2"3, bi"11"3, bi"20"3]
-                test_reps = [bi"2"3, bi"11"3, bi"2"3]
+                test_reps = vsel([bi"2"3, bi"11"3, bi"2"3], [bi"20"3, bi"11"3, bi"20"3])
                 test_representatives(test_states, test_reps, Float64[1, 1, 1], sg)
             end
 
@@ -773,8 +864,8 @@ end
                 dofo = dof_object(Spin(1 // 1))
                 sg = sym(SpinInversion(-1, N), dofo)
                 test_states = [bi"2"3, bi"11"3, bi"20"3]
-                test_reps = [bi"2"3, bi"11"3, bi"2"3]
-                test_factors = Float64[1, 1, -1]
+                test_reps = vsel([bi"2"3, bi"11"3, bi"2"3], [bi"20"3, bi"11"3, bi"20"3])
+                test_factors = vsel(Float64[1, 1, -1], Float64[-1, 1, 1])
                 test_representatives(test_states, test_reps, test_factors, sg)
             end
         end
@@ -791,9 +882,9 @@ end
                 csg = sym(TotalMagnetization(0 // 1, N), dofo) ∘
                       sym(Translational(2, perm_T), dofo) ∘
                       sym(SpatialReflection(-1, perm_R), dofo)
-                test_states = [bi"101"2]
-                test_reps = [bi"101"2]
-                test_representatives(test_states, test_reps, ComplexF64[1], csg)
+                test_states = vsel([bi"0101"2], [bi"1010"2])
+                test_reps = vsel([bi"1010"2], [bi"0101"2])
+                test_representatives(test_states, test_reps, ComplexF64[-1], csg)
             end
 
             @testset "Sz = 1, k = 0, R = 1 for N = 4" begin
@@ -801,7 +892,7 @@ end
                       sym(Translational(0, perm_T), dofo) ∘
                       sym(SpatialReflection(1, perm_R), dofo)
                 test_states = [bi"1110"2]
-                test_reps = [bi"111"2]
+                test_reps = vsel([bi"1011"2], [bi"1101"2])
                 test_representatives(test_states, test_reps, ComplexF64[1], csg)
             end
         end
@@ -829,15 +920,23 @@ end
                 @testset "r = 0" begin
                     sg = sym(Rotational(0, perm_R2), dofo)
                     test_basis_result(dofo, N, sg;
-                        expected_states=[bi"0"2, bi"1"2, bi"11"2, bi"110"2, bi"111"2, bi"1111"2],
-                        expected_norms=Float64[16, 4, 4, 8, 4, 16]
+                        expected_states=vsel(
+                            [bi"0"2, bi"1000"2, bi"1001"2, bi"1011"2, bi"1100"2, bi"1111"2],
+                            [bi"0"2, bi"10"2, bi"11"2, bi"110"2, bi"1101"2, bi"1111"2]
+                        ),
+                        expected_norms=vsel(
+                            Float64[16, 4, 8, 4, 4, 16], Float64[16, 4, 4, 8, 4, 16]
+                        )
                     )
                 end
 
                 @testset "r = 1" begin
                     sg = sym(Rotational(1, perm_R2), dofo)
                     test_basis_result(dofo, N, sg;
-                        expected_states=[bi"1"2, bi"11"2, bi"111"2],
+                        expected_states=vsel(
+                            [bi"1000"2, bi"1011"2, bi"1100"2],
+                            [bi"10"2, bi"11"2, bi"1101"2]
+                        ),
                         expected_norms=Float64[4, 4, 4]
                     )
                 end
@@ -845,15 +944,21 @@ end
                 @testset "r = 2" begin
                     sg = sym(Rotational(2, perm_R2), dofo)
                     test_basis_result(dofo, N, sg;
-                        expected_states=[bi"1"2, bi"11"2, bi"110"2, bi"111"2],
-                        expected_norms=Float64[4, 4, 8, 4]
+                        expected_states=vsel(
+                            [bi"1000"2, bi"1001"2, bi"1011"2, bi"1100"2],
+                            [bi"10"2, bi"11"2, bi"110"2, bi"1101"2]
+                        ),
+                        expected_norms=vsel(Float64[4, 8, 4, 4], Float64[4, 4, 8, 4])
                     )
                 end
 
                 @testset "r = 3" begin
                     sg = sym(Rotational(3, perm_R2), dofo)
                     test_basis_result(dofo, N, sg;
-                        expected_states=[bi"1"2, bi"11"2, bi"111"2],
+                        expected_states=vsel(
+                            [bi"1000"2, bi"1011"2, bi"1100"2],
+                            [bi"10"2, bi"11"2, bi"1101"2]
+                        ),
                         expected_norms=Float64[4, 4, 4]
                     )
                 end
@@ -865,8 +970,8 @@ end
                 @testset "r = 0" begin
                     csg = sgSz ∘ sym(Rotational(0, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
-                        expected_states=[bi"11"2, bi"110"2],
-                        expected_norms=Float64[4, 8],
+                        expected_states=vsel([bi"1001"2, bi"1100"2], [bi"11"2, bi"110"2]),
+                        expected_norms=vsel(Float64[8, 4], Float64[4, 8]),
                         check_commutative=true
                     )
                 end
@@ -874,7 +979,7 @@ end
                 @testset "r = 1" begin
                     csg = sgSz ∘ sym(Rotational(1, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
-                        expected_states=[bi"11"2],
+                        expected_states=vsel([bi"1100"2], [bi"11"2]),
                         expected_norms=Float64[4],
                         check_commutative=true
                     )
@@ -883,8 +988,8 @@ end
                 @testset "r = 2" begin
                     csg = sgSz ∘ sym(Rotational(2, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
-                        expected_states=[bi"11"2, bi"110"2],
-                        expected_norms=Float64[4, 8],
+                        expected_states=vsel([bi"1001"2, bi"1100"2], [bi"11"2, bi"110"2]),
+                        expected_norms=vsel(Float64[8, 4], Float64[4, 8]),
                         check_commutative=true
                     )
                 end
@@ -892,7 +997,7 @@ end
                 @testset "r = 3" begin
                     csg = sgSz ∘ sym(Rotational(3, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
-                        expected_states=[bi"11"2],
+                        expected_states=vsel([bi"1100"2], [bi"11"2]),
                         expected_norms=Float64[4],
                         check_commutative=true
                     )
@@ -906,7 +1011,7 @@ end
                     @testset "r = $r" begin
                         csg = sgSz ∘ sym(Rotational(r, perm_R2), dofo)
                         test_basis_result(dofo, N, csg;
-                            expected_states=[bi"111"2],
+                            expected_states=vsel([bi"1011"2], [bi"1101"2]),
                             expected_norms=Float64[4],
                             check_commutative=true
                         )
@@ -925,8 +1030,13 @@ end
                 @testset "r = 0" begin
                     csg = sgSz ∘ sym(Rotational(0, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
-                        expected_states=[bi"22"3, bi"112"3, bi"121"3, bi"211"3, bi"220"3, bi"1111"3],
-                        expected_norms=Float64[4, 4, 4, 4, 8, 16],
+                        expected_states=vsel(
+                            [bi"22"3, bi"112"3, bi"121"3, bi"1111"3, bi"1120"3, bi"2002"3],
+                            [bi"112"3, bi"121"3, bi"202"3, bi"1012"3, bi"1111"3, bi"2002"3]
+                        ),
+                        expected_norms=vsel(
+                            Float64[4, 4, 4, 16, 4, 8], Float64[4, 4, 4, 4, 16, 8]
+                        ),
                         check_commutative=true
                     )
                 end
@@ -934,7 +1044,10 @@ end
                 @testset "r = 1" begin
                     csg = sgSz ∘ sym(Rotational(1, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
-                        expected_states=[bi"22"3, bi"112"3, bi"121"3, bi"211"3],
+                        expected_states=vsel(
+                            [bi"22"3, bi"112"3, bi"121"3, bi"1120"3],
+                            [bi"112"3, bi"121"3, bi"202"3, bi"1012"3]
+                        ),
                         expected_norms=Float64[4, 4, 4, 4],
                         check_commutative=true
                     )
@@ -943,7 +1056,10 @@ end
                 @testset "r = 2" begin
                     csg = sgSz ∘ sym(Rotational(2, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
-                        expected_states=[bi"22"3, bi"112"3, bi"121"3, bi"211"3, bi"220"3],
+                        expected_states=vsel(
+                            [bi"22"3, bi"112"3, bi"121"3, bi"1120"3, bi"2002"3],
+                            [bi"112"3, bi"121"3, bi"202"3, bi"1012"3, bi"2002"3]
+                        ),
                         expected_norms=Float64[4, 4, 4, 4, 8],
                         check_commutative=true
                     )
@@ -952,7 +1068,10 @@ end
                 @testset "r = 3" begin
                     csg = sgSz ∘ sym(Rotational(3, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
-                        expected_states=[bi"22"3, bi"112"3, bi"121"3, bi"211"3],
+                        expected_states=vsel(
+                            [bi"22"3, bi"112"3, bi"121"3, bi"1120"3],
+                            [bi"112"3, bi"121"3, bi"202"3, bi"1012"3]
+                        ),
                         expected_norms=Float64[4, 4, 4, 4],
                         check_commutative=true
                     )
@@ -965,8 +1084,11 @@ end
                 @testset "r = 0" begin
                     csg = sgSz ∘ sym(Rotational(0, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
-                        expected_states=[bi"222"3, bi"1122"3, bi"1221"3],
-                        expected_norms=Float64[4, 4, 8],
+                        expected_states=vsel(
+                            [bi"222"3, bi"2112"3, bi"2121"3],
+                            [bi"1221"3, bi"2022"3, bi"2121"3]
+                        ),
+                        expected_norms=vsel(Float64[4, 8, 4], Float64[8, 4, 4]),
                         check_commutative=true
                     )
                 end
@@ -974,7 +1096,7 @@ end
                 @testset "r = 1" begin
                     csg = sgSz ∘ sym(Rotational(1, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
-                        expected_states=[bi"222"3, bi"1122"3],
+                        expected_states=vsel([bi"222"3, bi"2121"3], [bi"2022"3, bi"2121"3]),
                         expected_norms=Float64[4, 4],
                         check_commutative=true
                     )
@@ -983,8 +1105,11 @@ end
                 @testset "r = 2" begin
                     csg = sgSz ∘ sym(Rotational(2, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
-                        expected_states=[bi"222"3, bi"1122"3, bi"1221"3],
-                        expected_norms=Float64[4, 4, 8],
+                        expected_states=vsel(
+                            [bi"222"3, bi"2112"3, bi"2121"3],
+                            [bi"1221"3, bi"2022"3, bi"2121"3]
+                        ),
+                        expected_norms=vsel(Float64[4, 8, 4], Float64[8, 4, 4]),
                         check_commutative=true
                     )
                 end
@@ -992,7 +1117,7 @@ end
                 @testset "r = 3" begin
                     csg = sgSz ∘ sym(Rotational(3, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
-                        expected_states=[bi"222"3, bi"1122"3],
+                        expected_states=vsel([bi"222"3, bi"2121"3], [bi"2022"3, bi"2121"3]),
                         expected_norms=Float64[4, 4],
                         check_commutative=true
                     )
@@ -1008,7 +1133,11 @@ end
                 @testset "r = 0" begin
                     sg = sym(Rotational(0, perm_R2), dofo)
                     test_basis_result(dofo, N, sg;
-                        expected_states=[bi"0"2, bi"1"2, bi"11"2, bi"111"2],
+                        expected_states=vsel114(
+                            [bi"0"2, bi"1000"2, bi"1011"2, bi"1100"2],
+                            [bi"0"2, bi"10"2, bi"11"2, bi"1101"2],
+                            [bi"0"2, bi"10"2, bi"11"2, bi"1101"2]
+                        ),
                         expected_norms=Float64[16, 4, 4, 4]
                     )
                 end
@@ -1016,15 +1145,27 @@ end
                 @testset "r = 1" begin
                     sg = sym(Rotational(1, perm_R2), dofo)
                     test_basis_result(dofo, N, sg;
-                        expected_states=[bi"1"2, bi"11"2, bi"110"2, bi"111"2],
-                        expected_norms=Float64[4, 4, 8, 4]
+                        expected_states=vsel114(
+                            [bi"1000"2, bi"1001"2, bi"1011"2, bi"1100"2],
+                            [bi"10"2, bi"11"2, bi"110"2, bi"1101"2],
+                            [bi"10"2, bi"11"2, bi"110"2, bi"1101"2]
+                        ),
+                        expected_norms=vsel114(
+                            Float64[4, 8, 4, 4],
+                            Float64[4, 4, 8, 4],
+                            Float64[4, 4, 8, 4]
+                        )
                     )
                 end
 
                 @testset "r = 2" begin
                     sg = sym(Rotational(2, perm_R2), dofo)
                     test_basis_result(dofo, N, sg;
-                        expected_states=[bi"1"2, bi"11"2, bi"111"2, bi"1111"2],
+                        expected_states=vsel114(
+                            [bi"1000"2, bi"1011"2, bi"1100"2, bi"1111"2],
+                            [bi"10"2, bi"11"2, bi"1101"2, bi"1111"2],
+                            [bi"10"2, bi"11"2, bi"1101"2, bi"1111"2]
+                        ),
                         expected_norms=Float64[4, 4, 4, 16]
                     )
                 end
@@ -1032,8 +1173,16 @@ end
                 @testset "r = 3" begin
                     sg = sym(Rotational(3, perm_R2), dofo)
                     test_basis_result(dofo, N, sg;
-                        expected_states=[bi"1"2, bi"11"2, bi"110"2, bi"111"2],
-                        expected_norms=Float64[4, 4, 8, 4]
+                        expected_states=vsel114(
+                            [bi"1000"2, bi"1001"2, bi"1011"2, bi"1100"2],
+                            [bi"10"2, bi"11"2, bi"110"2, bi"1101"2],
+                            [bi"10"2, bi"11"2, bi"110"2, bi"1101"2]
+                        ),
+                        expected_norms=vsel114(
+                            Float64[4, 8, 4, 4],
+                            Float64[4, 4, 8, 4],
+                            Float64[4, 4, 8, 4]
+                        )
                     )
                 end
             end
@@ -1044,7 +1193,7 @@ end
                 @testset "r = 0" begin
                     csg = sgpn ∘ sym(Rotational(0, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
-                        expected_states=[bi"11"2],
+                        expected_states=vsel114([bi"1100"2], [bi"11"2], [bi"11"2]),
                         expected_norms=Float64[4],
                         check_commutative=true
                     )
@@ -1053,8 +1202,16 @@ end
                 @testset "r = 1" begin
                     csg = sgpn ∘ sym(Rotational(1, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
-                        expected_states=[bi"11"2, bi"110"2],
-                        expected_norms=Float64[4, 8],
+                        expected_states=vsel114(
+                            [bi"1001"2, bi"1100"2],
+                            [bi"11"2, bi"110"2],
+                            [bi"11"2, bi"110"2]
+                        ),
+                        expected_norms=vsel114(
+                            Float64[8, 4],
+                            Float64[4, 8],
+                            Float64[4, 8]
+                        ),
                         check_commutative=true
                     )
                 end
@@ -1062,7 +1219,7 @@ end
                 @testset "r = 2" begin
                     csg = sgpn ∘ sym(Rotational(2, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
-                        expected_states=[bi"11"2],
+                        expected_states=vsel114([bi"1100"2], [bi"11"2], [bi"11"2]),
                         expected_norms=Float64[4],
                         check_commutative=true
                     )
@@ -1071,8 +1228,16 @@ end
                 @testset "r = 3" begin
                     csg = sgpn ∘ sym(Rotational(3, perm_R2), dofo)
                     test_basis_result(dofo, N, csg;
-                        expected_states=[bi"11"2, bi"110"2],
-                        expected_norms=Float64[4, 8],
+                        expected_states=vsel114(
+                            [bi"1001"2, bi"1100"2],
+                            [bi"11"2, bi"110"2],
+                            [bi"11"2, bi"110"2]
+                        ),
+                        expected_norms=vsel114(
+                            Float64[8, 4],
+                            Float64[4, 8],
+                            Float64[4, 8]
+                        ),
                         check_commutative=true
                     )
                 end
@@ -1088,8 +1253,11 @@ end
             @testset "r = 0" begin
                 csg = sgSz ∘ sym(Rotational(0, perm_R3), dofo)
                 test_basis_result(dofo, N, csg;
-                    expected_states=[bi"11111111"2, bi"101111111"2, bi"111101111"2],
-                    expected_norms=Float64[4, 4, 16],
+                    expected_states=vsel(
+                        [bi"110111111"2, bi"111101111"2, bi"111111101"2],
+                        [bi"11111111"2, bi"101111111"2, bi"111101111"2]
+                    ),
+                    expected_norms=vsel(Float64[4, 16, 4], Float64[4, 4, 16]),
                     check_commutative=true
                 )
             end
@@ -1097,7 +1265,10 @@ end
             @testset "r = $r" for r in 1:3
                 csg = sgSz ∘ sym(Rotational(r, perm_R3), dofo)
                 test_basis_result(dofo, N, csg;
-                    expected_states=[bi"11111111"2, bi"101111111"2],
+                    expected_states=vsel(
+                        [bi"110111111"2, bi"111111101"2],
+                        [bi"11111111"2, bi"101111111"2]
+                    ),
                     expected_norms=Float64[4, 4],
                     check_commutative=true
                 )
@@ -1135,8 +1306,11 @@ end
                 @testset "r = 0" begin
                     csg = sgSz ∘ sym(Rotational(0, perm_R3), dofo)
                     test_basis_result(dofo, N, csg;
-                        expected_states=[bi"122222222"3, bi"212222222"3, bi"222212222"3],
-                        expected_norms=Float64[4, 4, 16],
+                        expected_states=vsel(
+                            [bi"222122222"3, bi"222212222"3, bi"222222221"3],
+                            [bi"221222222"3, bi"222212222"3, bi"222222212"3]
+                        ),
+                        expected_norms=Float64[4, 16, 4],
                         check_commutative=true
                     )
                 end
@@ -1144,7 +1318,10 @@ end
                 @testset "r = $r" for r in 1:3
                     csg = sgSz ∘ sym(Rotational(r, perm_R3), dofo)
                     test_basis_result(dofo, N, csg;
-                        expected_states=[bi"122222222"3, bi"212222222"3],
+                        expected_states=vsel(
+                            [bi"222122222"3, bi"222222221"3],
+                            [bi"221222222"3, bi"222222212"3]
+                        ),
                         expected_norms=Float64[4, 4],
                         check_commutative=true
                     )

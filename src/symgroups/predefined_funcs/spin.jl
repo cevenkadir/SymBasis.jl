@@ -49,26 +49,27 @@ function _check_multipole(
     T_rtol<:Real
 }
     ET = _multipole_eltype(Tw)
+    BB = T(B)
 
-    D_eff = size(p.weights, 2)
-    multipole_sumₛ = zeros(ET, D_eff)
-    for id_site in 1:p.N
-        digit = read(state, Ti(id_site))
-        m_i = ET((2 * Int(digit) - (B - 1)) // 2)
-        for j in 1:D_eff
-            multipole_sumₛ[j] += p.weights[id_site, j] * m_i
-        end
-    end
-
-    # Compute isapprox(multipole_sumₛ, target_vec) without materializing target_vec.
+    # Compute isapprox(multipole_sumₛ, target_vec) without materializing either vector:
+    # the per-component multipole sum is accumulated in the scalar `a_j` (digits extracted
+    # by a sequential divrem pass per component).
     RANK = ndims(p.qₛ)
     rev_perm = ntuple(k -> RANK + 1 - k, RANK)
     norm_diff_sq = zero(ET)
     norm_a_sq = zero(ET)
     norm_b_sq = zero(ET)
     for (j, idx) in enumerate(CartesianIndices(p.qₛ))
+        a_j = zero(ET)
+        v = state.value
+        for id_site in 1:p.N
+            digit = Int(v % BB)
+            v ÷= BB
+            m_i = ET((2 * digit - (B - 1)) // 2)
+            a_j += p.weights[id_site, j] * m_i
+        end
+
         ridx = CartesianIndex(ntuple(k -> Tuple(idx)[rev_perm[k]], RANK))
-        a_j = multipole_sumₛ[j]
         b_j = ET(p.qₛ[ridx])
         norm_diff_sq += (a_j - b_j)^2
         norm_a_sq += a_j^2

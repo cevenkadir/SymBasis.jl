@@ -39,26 +39,55 @@ struct TotalSpinlessFermionicNumber{T_b<:Integer,T_N<:Integer} <: AbstractSymSpe
 end
 
 function phase_perm_fermionic(
-    p::@NamedTuple{perm::Tperm},
+    p::NamedTuple,
     state::BaseInt{T,Ti,B}
-) where {
-    T,Ti,B,Tp,Tperm<:Union{AbstractVector{<:Ti},BitPermutation{Tp,<:PermutationBackend{Tp}}}
-}
-    inv_perm = invperm(p.perm)
-    mapped_occupied_sites = Int[]
-    is_odd_parity = false
+) where {T,Ti,B}
+    # Cycles built by `sym(...)` carry the precomputed inverse permutation; fall back to
+    # computing it for user-built cycles. (`haskey` on a NamedTuple is compile-time.)
+    inv_perm = haskey(p, :invperm) ? p.invperm : invperm(p.perm)
+    return _phase_perm_fermionic(inv_perm, state)
+end
 
-    for site in eachindex(inv_perm)
-        if read(state, Ti(site)) == 1
-            mapped_site = inv_perm[site]
-            for prev_site in mapped_occupied_sites
-                is_odd_parity ⊻= (prev_site > mapped_site)
-            end
-            push!(mapped_occupied_sites, mapped_site)
-        end
+# Parity of the permutation restricted to the occupied sites, counted as inversions via a
+# bitmask of already-mapped positions — no intermediate vectors.
+function _phase_perm_fermionic(
+    inv_perm::AbstractVector{<:Integer},
+    state::BaseInt{T,Ti,2}
+) where {T,Ti}
+    v = state.value
+    seen = zero(T)
+    n_inversions = 0
+    while !iszero(v)
+        site = trailing_zeros(v) + 1
+        mapped_site = inv_perm[site]
+        n_inversions += count_ones(seen >>> mapped_site)
+        seen |= one(T) << (mapped_site - 1)
+        v &= v - one(T)
     end
 
-    return is_odd_parity ? -1 : 1
+    return isodd(n_inversions) ? -1 : 1
+end
+
+function _phase_perm_fermionic(
+    inv_perm::AbstractVector{<:Integer},
+    state::BaseInt{T,Ti,B}
+) where {T,Ti,B}
+    BB = T(B)
+    v = state.value
+    seen = zero(T)
+    n_inversions = 0
+    site = 1
+    while !iszero(v)
+        if v % BB == one(T)
+            mapped_site = inv_perm[site]
+            n_inversions += count_ones(seen >>> mapped_site)
+            seen |= one(T) << (mapped_site - 1)
+        end
+        v ÷= BB
+        site += 1
+    end
+
+    return isodd(n_inversions) ? -1 : 1
 end
 
 """

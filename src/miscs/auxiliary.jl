@@ -300,3 +300,5 @@ Compute the inverse of a bit permutation.
 function invperm(perm::BitPermutation{T,<:PermutationBackend{T}}) where {T}
     return Base.invperm(Vector(perm))
 end
+
+invperm(perm::AbstractVector{<:Integer}) = Base.invperm(perm)

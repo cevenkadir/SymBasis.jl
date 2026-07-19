@@ -407,8 +407,13 @@
             for k in 0:(length(perm1)-1)
                 transl_sym1ₛ = sym(Translational(k, perm1), dofo1)
                 @test transl_sym1ₛ.dofo == dofo1
-                @test transl_sym1ₛ.cycles == [
-                    (; perm=[1, 2, 3]), (; perm=perm1), (; perm=perm1[perm1])
+                @test [c.perm for c in transl_sym1ₛ.cycles] == [
+                    [1, 2, 3], perm1, perm1[perm1]
+                ]
+                @test [c.invperm for c in transl_sym1ₛ.cycles] == [
+                    Base.invperm([1, 2, 3]),
+                    Base.invperm(perm1),
+                    Base.invperm(perm1[perm1])
                 ]
                 @test transl_sym1ₛ.check == check_perm
                 @test transl_sym1ₛ.apply == apply_perm
@@ -448,10 +453,10 @@
             for k in 0:(length(perm3)÷2-1)
                 transl_sym3ₛ = sym(Translational(k, perm3), dofo3)
                 @test transl_sym3ₛ.dofo == dofo3
-                @test transl_sym3ₛ.cycles == [
-                    (; perm=1:length(perm3) |> collect),
-                    (; perm=perm3),
-                    (; perm=perm3[perm3]),
+                @test [c.perm for c in transl_sym3ₛ.cycles] == [
+                    1:length(perm3) |> collect,
+                    perm3,
+                    perm3[perm3],
                 ]
                 @test transl_sym3ₛ.check == check_perm
                 @test transl_sym3ₛ.apply == apply_perm
@@ -527,8 +532,8 @@
         for (i, qᵢ) in enumerate(q_nums2)
             refl_symᵢ = refl_sym2ₛ[i]
             @test refl_symᵢ.dofo == dofo2
-            @test refl_symᵢ.cycles == [
-                (; perm=1:length(perm2) |> collect), (; perm=perm2),
+            @test [c.perm for c in refl_symᵢ.cycles] == [
+                1:length(perm2) |> collect, perm2,
             ]
             @test refl_symᵢ.check == check_perm
             @test refl_symᵢ.apply == apply_perm
@@ -584,11 +589,11 @@
             for r in 0:(R1-1)
                 rot_sym1 = sym(Rotational(r, perm1), dofo1)
                 @test rot_sym1.dofo == dofo1
-                @test rot_sym1.cycles == [
-                    (; perm=1:length(perm1) |> collect),
-                    (; perm=perm1),
-                    (; perm=perm1[perm1]),
-                    (; perm=perm1[perm1[perm1]])
+                @test [c.perm for c in rot_sym1.cycles] == [
+                    1:length(perm1) |> collect,
+                    perm1,
+                    perm1[perm1],
+                    perm1[perm1[perm1]]
                 ]
                 @test rot_sym1.check == check_perm
                 @test rot_sym1.apply == apply_perm

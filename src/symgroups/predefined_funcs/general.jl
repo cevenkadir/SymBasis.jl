@@ -31,17 +31,34 @@ symmetries, this function always returns `prev_bool` unchanged.
 - `Bool`: The combined result of the previous boolean and the check (always `prev_bool`).
 """
 function check_perm(
-    p::@NamedTuple{perm::Tperm},
+    p::NamedTuple,
     state::BaseInt{T,Ti,B},
     prev_bool::Bool
-) where {
-    T,
-    Ti,
-    B,
-    Tperm<:Union{AbstractVector{<:Ti},BitPermutation{T,<:PermutationBackend{T}}}
-}
-    bool = prev_bool |> copy
-    return bool
+) where {T,Ti,B}
+    return prev_bool
+end
+
+"""
+    _perm_cycle(perm::AbstractVector{Ti}, dofo::DoFObject{B,T_s,T,Ti}) where {B,T_s,T,Ti}
+
+Build the cycle named tuple for a permutation symmetry element. Besides the (possibly
+bit-wrapped) permutation itself, the tuple carries data precomputed once per cycle so the
+hot loop stays allocation-free: the inverse permutation (needed for fermionic phases), and,
+for bases `B > 2`, the digit power table `pows[k] = B^(k-1)` used to permute digits in a
+single pass.
+"""
+function _perm_cycle(
+    perm::AbstractVector{Ti},
+    dofo::DoFObject{B,T_s,T,Ti}
+) where {B,T_s,T,Ti}
+    ip = Base.invperm(perm)
+    wrapped = perm_wrapper(perm, B)
+    if B == 2
+        return (; perm=wrapped, invperm=ip)
+    else
+        pows = T[T(B)^(k - 1) for k in eachindex(perm)]
+        return (; perm=wrapped, invperm=ip, pows=pows)
+    end
 end
 
 """
@@ -61,10 +78,41 @@ Apply the permutation `p.perm` to the given state.
 - [`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: The state after applying the permutation.
 """
 function apply_perm(
-    p::@NamedTuple{perm::Tperm},
+    p::NamedTuple,
     state::BaseInt{T,Ti,B}
-) where {T,Ti,B,Tperm<:AbstractVector{<:Ti}}
-    return permute(state, p.perm)
+) where {T,Ti,B}
+    # Cycles built by `sym(...)` for B > 2 carry the inverse permutation and a digit power
+    # table, allowing a single-pass, allocation-free permutation. (`haskey` on a NamedTuple
+    # is resolved at compile time.)
+    if haskey(p, :invperm) && haskey(p, :pows)
+        return _permute_invpow(state, p.invperm, p.pows)
+    end
+    return _apply_perm(p.perm, state)
+end
+
+function _apply_perm(
+    perm::AbstractVector{<:Integer},
+    state::BaseInt{T,Ti,B}
+) where {T,Ti,B}
+    return permute(state, perm)
+end
+
+function _permute_invpow(
+    state::BaseInt{T,Ti,B},
+    inv_perm::AbstractVector{<:Integer},
+    pows::AbstractVector{T}
+) where {T,Ti,B}
+    BB = T(B)
+    v = state.value
+    out = zero(T)
+    i = 1
+    while !iszero(v)
+        d = v % BB
+        v ÷= BB
+        iszero(d) || (out += d * pows[inv_perm[i]])
+        i += 1
+    end
+    return BaseInt{T,Ti,B}(out)
 end
 
 """
@@ -88,11 +136,11 @@ Apply the bit permutation `p.perm` to the given binary state in a more efficient
 - [`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,2}`: The binary state after applying the bit
     permutation.
 """
-function apply_perm(
-    p::@NamedTuple{perm::Tperm},
+function _apply_perm(
+    perm::BitPermutation{T,<:PermutationBackend{T}},
     state::BaseInt{T,Ti,2}
-) where {T,Ti,Tperm<:BitPermutation{T,<:PermutationBackend{T}}}
-    return BaseInt(bitpermute(state.value, p.perm); base=2, Ti=Ti)
+) where {T,Ti}
+    return BaseInt{T,Ti,2}(bitpermute(state.value, perm))
 end
 
 """
@@ -178,12 +226,26 @@ function _check_Nₛ(
     state::BaseInt{T,Ti,B},
     p::NamedTuple{names}
 ) where {T,Ti,B,names}
-    counts = zeros(Int, B)
-    for pos in 1:p.N
-        digit = read(state, Ti(pos))
-        counts[digit+1] += 1
+    BB = T(B)
+    counts = ntuple(_ -> 0, Val(B))
+    v = state.value
+    for _ in 1:p.N
+        digit = Int(v % BB)
+        counts = Base.setindex(counts, counts[digit+1] + 1, digit + 1)
+        v ÷= BB
     end
-    return all(j -> counts[j+1] == p[Symbol("N$j")], 0:(B-1))
+    return _digit_counts_match(p, counts)
+end
+
+# Compare the digit counts against the `N0`, `N1`, …, `N(B-1)` fields of `p` with the
+# field lookups resolved at compile time (a runtime `Symbol("N$j")` would intern a new
+# symbol per digit per call).
+@generated function _digit_counts_match(p::NamedTuple, counts::NTuple{B,Int}) where {B}
+    checks = [
+        :(getfield(p, $(QuoteNode(Symbol("N", j)))) == counts[$(j + 1)])
+        for j in 0:(B-1)
+    ]
+    return foldr((a, b) -> :($a && $b), checks)
 end
 
 """
@@ -294,7 +356,6 @@ function apply_flip(
 end
 # END -- check and apply functions for predefined symmetries
 
-
 # START -- predefined symmetry group wrappers for end users
 """
     AbstractSymSpec
@@ -382,10 +443,7 @@ function sym(
 
     T_sym = SymGroup(
         dofo,
-        [
-            (; perm=perm_wrapper(perm_k(ss.perm, i), length(dofo)))
-            for i in rₛ
-        ],
+        [_perm_cycle(perm_k(ss.perm, i), dofo) for i in rₛ],
         check_perm,
         apply,
         phase,
@@ -478,7 +536,7 @@ function sym(
 
     P_sym = SymGroup(
         dofo,
-        [(; perm=perm_wrapper(perm_k(ss.perm, i), length(dofo))) for i in rₛ],
+        [_perm_cycle(perm_k(ss.perm, i), dofo) for i in rₛ],
         check_perm,
         apply,
         phase,
@@ -564,7 +622,7 @@ function sym(
 
     R_sym = SymGroup(
         dofo,
-        [(; perm=perm_wrapper(perm_k(ss.perm, i), length(dofo))) for i in rₛ],
+        [_perm_cycle(perm_k(ss.perm, i), dofo) for i in rₛ],
         check_perm,
         apply,
         phase,

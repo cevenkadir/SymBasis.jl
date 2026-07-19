@@ -47,14 +47,19 @@ apply these operations, and factors associated with each symmetry cycle.
 The constructor checks that the number of cycles matches the number of factors to ensure
 consistency.
 """
-struct SymGroup{B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
+struct SymGroup{
+    B,T_s,T<:Integer,Ti<:Integer,T_f<:Number,
+    T_c<:AbstractVector{<:NamedTuple},
+    F_c<:Function,F_a<:Function,F_p<:Function,
+    T_fs<:AbstractVector{T_f}
+}
     dofo::DoFObject{B,T_s,T,Ti}
-    cycles::AbstractVector{<:NamedTuple}
-    check::Function
-    apply::Function
-    phase::Function
-    factors::AbstractVector{T_f}
-    N::Integer
+    cycles::T_c
+    check::F_c
+    apply::F_a
+    phase::F_p
+    factors::T_fs
+    N::Int
 
     function SymGroup(
         dofo::DoFObject{B,T_s,T,Ti},
@@ -66,7 +71,10 @@ struct SymGroup{B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
         N::Integer
     ) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
         @assert length(cycles) == length(factors)
-        return new{B,T_s,T,Ti,T_f}(dofo, cycles, check, apply, phase, factors, N)
+        return new{
+            B,T_s,T,Ti,T_f,
+            typeof(cycles),typeof(check),typeof(apply),typeof(phase),typeof(factors)
+        }(dofo, cycles, check, apply, phase, factors, Int(N))
     end
 end
 
@@ -97,20 +105,25 @@ A combined symmetry group formed by the composition of multiple symmetry groups 
 the same DoF-object. This structure allows for the representation of more complex symmetry
 operations by combining simpler ones.
 
+Internally the per-dimension data is stored as tuples (each cycle is a `Tuple` of named
+tuples, and `check`/`apply`/`phase` are `Tuple`s of functions) so that the per-dimension
+types stay known to the compiler in the hot loops. The constructor also accepts the legacy
+layout (array of vectors of named tuples, and vectors of functions) and converts it.
+
 # Fields
 - `dofo::`[`SymBasis.DoFObjects.DoFObject`](@ref)`{B,T_s,T,Ti}`: The DoF-object on which the
     combined symmetry group acts.
-- `cycles::AbstractArray{<:AbstractVector{<:NamedTuple}}`: An array of vectors of named
+- `cycles::AbstractArray{<:Tuple{Vararg{NamedTuple}}}`: An array of tuples of named
     tuples representing the combined symmetry cycles.
-- `check::AbstractVector{<:Function}`: A vector of functions to check the validity of each
+- `check::Tuple{Vararg{Function}}`: A tuple of functions to check the validity of each
     set of symmetry operations.
-- `apply::AbstractVector{<:Function}`: A vector of functions to apply each set of symmetry
+- `apply::Tuple{Vararg{Function}}`: A tuple of functions to apply each set of symmetry
     operations.
-- `phase::AbstractVector{<:Function}`: A vector of functions to compute phase factors for
+- `phase::Tuple{Vararg{Function}}`: A tuple of functions to compute phase factors for
     each set of symmetry operations.
 - `factors::AbstractArray{T_f}`: An array of factors associated with each combined symmetry
     cycle.
-- `N::Integer`: The total number of the DoF-objects in the system. This is used to check
+- `N::Int`: The total number of the DoF-objects in the system. This is used to check
     the validity of the symmetry operations.
 
 # Constructor Arguments
@@ -136,20 +149,27 @@ operations by combining simpler ones.
 The constructor checks that the size of cycles matches the size of factors and that the
 number of dimensions matches the number of check and apply functions to ensure consistency.
 """
-struct CombSymGroup{B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
+struct CombSymGroup{
+    B,T_s,T<:Integer,Ti<:Integer,T_f<:Number,
+    T_c<:AbstractArray{<:Tuple{Vararg{NamedTuple}}},
+    F_c<:Tuple{Vararg{Function}},
+    F_a<:Tuple{Vararg{Function}},
+    F_p<:Tuple{Vararg{Function}},
+    T_fs<:AbstractArray{T_f}
+}
     dofo::DoFObject{B,T_s,T,Ti}
-    cycles::AbstractArray{<:AbstractVector{<:NamedTuple}}
-    check::AbstractVector{<:Function}
-    apply::AbstractVector{<:Function}
-    phase::AbstractVector{<:Function}
-    factors::AbstractArray{T_f}
-    N::Integer
+    cycles::T_c
+    check::F_c
+    apply::F_a
+    phase::F_p
+    factors::T_fs
+    N::Int
     function CombSymGroup(
         dofo::DoFObject{B,T_s,T,Ti},
-        cycles::AbstractArray{<:AbstractVector{<:NamedTuple}},
-        check::AbstractVector{<:Function},
-        apply::AbstractVector{<:Function},
-        phase::AbstractVector{<:Function},
+        cycles::AbstractArray{<:Tuple{Vararg{NamedTuple}}},
+        check::Tuple{Vararg{Function}},
+        apply::Tuple{Vararg{Function}},
+        phase::Tuple{Vararg{Function}},
         factors::AbstractArray{T_f},
         N::Integer
     ) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
@@ -157,15 +177,47 @@ struct CombSymGroup{B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
         @assert ndims(cycles) == length(check)
         @assert ndims(cycles) == length(apply)
         @assert ndims(cycles) == length(phase)
-        return new{B,T_s,T,Ti,T_f}(dofo, cycles, check, apply, phase, factors, N)
+        return new{
+            B,T_s,T,Ti,T_f,
+            typeof(cycles),typeof(check),typeof(apply),typeof(phase),typeof(factors)
+        }(dofo, cycles, check, apply, phase, factors, Int(N))
     end
+end
+
+# Legacy layout: cycles as an array of vectors of NamedTuples, and check/apply/phase as
+# vectors of functions. Converted to the tuple-based layout, which keeps the per-dimension
+# types known to the compiler.
+function CombSymGroup(
+    dofo::DoFObject{B,T_s,T,Ti},
+    cycles::AbstractArray{<:AbstractVector{<:NamedTuple}},
+    check::Union{AbstractVector{<:Function},Tuple{Vararg{Function}}},
+    apply::Union{AbstractVector{<:Function},Tuple{Vararg{Function}}},
+    phase::Union{AbstractVector{<:Function},Tuple{Vararg{Function}}},
+    factors::AbstractArray{T_f},
+    N::Integer
+) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
+    return CombSymGroup(
+        dofo, map(c -> (c...,), cycles), (check...,), (apply...,), (phase...,), factors, N
+    )
 end
 
 function CombSymGroup(
     dofo::DoFObject{B,T_s,T,Ti},
-    cycles::AbstractArray{<:AbstractVector{<:NamedTuple}},
-    check::AbstractVector{<:Function},
-    apply::AbstractVector{<:Function},
+    cycles::AbstractArray{<:Tuple{Vararg{NamedTuple}}},
+    check::Union{AbstractVector{<:Function},Tuple{Vararg{Function}}},
+    apply::Union{AbstractVector{<:Function},Tuple{Vararg{Function}}},
+    phase::Union{AbstractVector{<:Function},Tuple{Vararg{Function}}},
+    factors::AbstractArray{T_f},
+    N::Integer
+) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
+    return CombSymGroup(dofo, cycles, (check...,), (apply...,), (phase...,), factors, N)
+end
+
+function CombSymGroup(
+    dofo::DoFObject{B,T_s,T,Ti},
+    cycles::AbstractArray{<:Union{AbstractVector{<:NamedTuple},Tuple{Vararg{NamedTuple}}}},
+    check::Union{AbstractVector{<:Function},Tuple{Vararg{Function}}},
+    apply::Union{AbstractVector{<:Function},Tuple{Vararg{Function}}},
     factors::AbstractArray{T_f},
     N::Integer
 ) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
@@ -174,9 +226,37 @@ function CombSymGroup(
         cycles,
         check,
         apply,
-        fill(phase_unity, length(apply)),
+        ntuple(_ -> phase_unity, length(apply)),
         factors,
         N
+    )
+end
+
+# Recursive traversal of the per-dimension function tuples of a CombSymGroup, so each
+# call site is resolved at compile time (a runtime index into a heterogeneous tuple would
+# be type-unstable in the hot loop).
+@inline _check_all(checks::Tuple{}, cycle::Tuple{}, state, ok::Bool) = ok
+@inline function _check_all(checks::Tuple, cycle::Tuple, state, ok::Bool)
+    ok || return false
+    return _check_all(
+        Base.tail(checks),
+        Base.tail(cycle),
+        state,
+        first(checks)(first(cycle), state, ok)
+    )
+end
+
+@inline _apply_phase_all(applys::Tuple{}, phases::Tuple{}, cycle::Tuple{}, state, ph) =
+    (state, ph)
+@inline function _apply_phase_all(applys::Tuple, phases::Tuple, cycle::Tuple, state, ph)
+    phᵢ = first(phases)(first(cycle), state)
+    new_state = first(applys)(first(cycle), state)
+    return _apply_phase_all(
+        Base.tail(applys),
+        Base.tail(phases),
+        Base.tail(cycle),
+        new_state,
+        ph * phᵢ
     )
 end
 
@@ -287,10 +367,10 @@ function Base.:(∘)(
     @assert sg1.N == sg2.N
     return CombSymGroup(
         sg1.dofo,
-        map(collect, Base.product(sg1.cycles, sg2.cycles)),
-        [sg1.check, sg2.check],
-        [sg1.apply, sg2.apply],
-        [sg1.phase, sg2.phase],
+        collect(Base.product(sg1.cycles, sg2.cycles)),
+        (sg1.check, sg2.check),
+        (sg1.apply, sg2.apply),
+        (sg1.phase, sg2.phase),
         map(x -> *(x...), Base.product(sg1.factors, sg2.factors)),
         sg1.N
     )
@@ -322,10 +402,10 @@ function Base.:(∘)(
     @assert csg.N == sg.N
     return CombSymGroup(
         csg.dofo,
-        map(x -> vcat(x...), Base.product(csg.cycles, sg.cycles)),
-        vcat(csg.check..., sg.check),
-        vcat(csg.apply..., sg.apply),
-        vcat(csg.phase..., sg.phase),
+        map(x -> (x[1]..., x[2]), Base.product(csg.cycles, sg.cycles)),
+        (csg.check..., sg.check),
+        (csg.apply..., sg.apply),
+        (csg.phase..., sg.phase),
         map(x -> *(x...), Base.product(csg.factors, sg.factors)),
         csg.N
     )
@@ -357,10 +437,10 @@ function Base.:(∘)(
     @assert csg.N == sg.N
     return CombSymGroup(
         csg.dofo,
-        map(x -> vcat(x...), Base.product(sg.cycles, csg.cycles)),
-        vcat(sg.check, csg.check...),
-        vcat(sg.apply, csg.apply...),
-        vcat(sg.phase, csg.phase...),
+        map(x -> (x[1], x[2]...), Base.product(sg.cycles, csg.cycles)),
+        (sg.check, csg.check...),
+        (sg.apply, csg.apply...),
+        (sg.phase, csg.phase...),
         map(x -> *(x...), Base.product(sg.factors, csg.factors)),
         csg.N
     )
@@ -393,10 +473,10 @@ function Base.:(∘)(
     @assert csg1.N == csg2.N
     return CombSymGroup(
         csg1.dofo,
-        map(x -> vcat(x...), Base.product(csg1.cycles, csg2.cycles)),
-        vcat(csg1.check..., csg2.check...),
-        vcat(csg1.apply..., csg2.apply...),
-        vcat(csg1.phase..., csg2.phase...),
+        map(x -> (x[1]..., x[2]...), Base.product(csg1.cycles, csg2.cycles)),
+        (csg1.check..., csg2.check...),
+        (csg1.apply..., csg2.apply...),
+        (csg1.phase..., csg2.phase...),
         map(x -> *(x...), Base.product(csg1.factors, csg2.factors)),
         csg1.N
     )

@@ -1,6 +1,6 @@
 
 using SymBasis.DigitBase: BaseInt, BaseIntRange, base_number_to_string
-using SymBasis.SymGroups: SymGroup, CombSymGroup
+using SymBasis.SymGroups: SymGroup, CombSymGroup, _check_all, _apply_phase_all
 using SymBasis.DoFObjects: DoFObject
 
 """
@@ -39,17 +39,22 @@ efficient representation and manipulation of states in different bases.
 The constructor checks that the length of states matches the length of norms to ensure
 consistency.
 """
-struct Basis{T,T_n<:Number}
-    states::AbstractVector{T}
-    norms::AbstractVector{T_n}
-    sg::Union{SymGroup,CombSymGroup,Nothing}
+struct Basis{
+    T,T_n<:Number,
+    T_states<:AbstractVector{T},
+    T_norms<:AbstractVector{T_n},
+    T_sg<:Union{SymGroup,CombSymGroup,Nothing}
+}
+    states::T_states
+    norms::T_norms
+    sg::T_sg
     function Basis(
         states::AbstractVector{T},
         norms::AbstractVector{T_n},
         sg::Union{SymGroup,CombSymGroup,Nothing}=nothing
     ) where {T,T_n<:Number}
         @assert length(states) == length(norms) "Length of states and norms must be equal"
-        return new{T,T_n}(states, norms, sg)
+        return new{T,T_n,typeof(states),typeof(norms),typeof(sg)}(states, norms, sg)
     end
 end
 
@@ -166,14 +171,14 @@ function basis(
 end
 
 function _basis_impl(
-    all_bints::BaseIntRange{T,Ti,B},
+    all_bints::Union{BaseIntRange{T,Ti,B},AbstractVector{BaseInt{T,Ti,B}}},
     n_cycles::Int,
     sg::Union{SymGroup{B,T_s,T,Ti,Ts},CombSymGroup{B,T_s,T,Ti,Ts}},
     F₀::Complex{T_n},
     eps_norm_type::T_n,
-    get_temp_state,
+    get_temp_state::F,
     is_sorted::Bool
-) where {T,Ti,B,T_n<:Real,T_s,Ts}
+) where {T,Ti,B,T_n<:Real,T_s,Ts,F}
     nthreads = Threads.nthreads()
 
     tasks = map(Iterators.partition(all_bints, length(all_bints) ÷ nthreads + 1)) do chunk
@@ -181,7 +186,7 @@ function _basis_impl(
             local_norms = T_n[]
             local_states = BaseInt{T,Ti,B}[]
             local_F = F₀
-            local_hashbuf = Vector{UInt}(undef, n_cycles)
+            local_valbuf = Vector{T}(undef, n_cycles)
             local_count = 0
 
             for state₀ in chunk
@@ -192,18 +197,18 @@ function _basis_impl(
                     is_valid_state, temp_state, temp_phase = get_temp_state(idx, state₀)
 
                     if is_valid_state
-                        h_temp_state = hash(temp_state)
+                        v_temp_state = temp_state.value
 
                         is_new = true
                         @inbounds for k in 1:local_count
-                            if local_hashbuf[k] == h_temp_state
+                            if local_valbuf[k] == v_temp_state
                                 is_new = false
                                 break
                             end
                         end
                         if is_new
                             local_count += 1
-                            @inbounds local_hashbuf[local_count] = h_temp_state
+                            @inbounds local_valbuf[local_count] = v_temp_state
                         end
 
                         if isless(temp_state, state₀)
@@ -332,24 +337,16 @@ function basis(
     F₀ = zero(Complex{norm_type})
     eps_norm_type = eps(norm_type)
     c = true
-    ndims_cycles = ndims(csg.cycles)
     all_bints = BaseInt(T(0); base=B, Ti=Ti):BaseInt(T(B^N - 1); base=B, Ti=Ti)
 
     get_temp_state = (idx, state₀) -> begin
-        is_valid = c
+        cycle = csg.cycles[idx]
+        is_valid = _check_all(csg.check, cycle, state₀, c)
         temp_state = state₀
         temp_phase = 1
-        cycle = csg.cycles[idx]
-        for i in 1:ndims_cycles
-            is_valid || break
-            is_valid = csg.check[i](cycle[i], state₀, is_valid)
-        end
         if is_valid
-            for i in 1:ndims_cycles
-                phaseᵢ = csg.phase[i](cycle[i], temp_state)
-                temp_state = csg.apply[i](cycle[i], temp_state)
-                temp_phase *= phaseᵢ
-            end
+            temp_state, temp_phase =
+                _apply_phase_all(csg.apply, csg.phase, cycle, state₀, 1)
         end
         (is_valid, temp_state, temp_phase)
     end
@@ -519,28 +516,15 @@ function representative(
     csg::CombSymGroup{B,T_s,T,Ti,Ts}
 ) where {T,Ti,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
     n_cycles = length(csg.cycles)
-    ndims_cycles = ndims(csg.cycles)
 
     # Initialize with first cycle
-    rep_state = state
-    rep_phase = one(Ts)
-    @inbounds for dim in 1:ndims_cycles
-        phaseᵢ = csg.phase[dim](csg.cycles[1][dim], rep_state)
-        rep_state = csg.apply[dim](csg.cycles[1][dim], rep_state)
-        rep_phase *= phaseᵢ
-    end
+    rep_state, rep_phase =
+        _apply_phase_all(csg.apply, csg.phase, csg.cycles[1], state, one(Ts))
     id_rep_state = 1
 
     @inbounds for idx in 2:n_cycles
-        cycle = csg.cycles[idx]
-        temp_state = state
-        temp_phase = one(Ts)
-
-        for dim in 1:ndims_cycles
-            phaseᵢ = csg.phase[dim](cycle[dim], temp_state)
-            temp_state = csg.apply[dim](cycle[dim], temp_state)
-            temp_phase *= phaseᵢ
-        end
+        temp_state, temp_phase =
+            _apply_phase_all(csg.apply, csg.phase, csg.cycles[idx], state, one(Ts))
 
         if isless(temp_state, rep_state)
             id_rep_state = idx

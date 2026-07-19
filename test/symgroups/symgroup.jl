@@ -48,10 +48,10 @@
 
         csg1 = CombSymGroup(dofo, cycle, checks, applies, phases, factors, N)
         @test csg1.dofo == dofo
-        @test csg1.cycles == cycle
-        @test csg1.check == checks
-        @test csg1.apply == applies
-        @test csg1.phase == phases
+        @test csg1.cycles == map(c -> (c...,), cycle)
+        @test csg1.check == (checks...,)
+        @test csg1.apply == (applies...,)
+        @test csg1.phase == (phases...,)
         @test csg1.factors == factors
         @test csg1.N == N
 
@@ -74,9 +74,9 @@
         # Backcompatible constructor without explicit phase argument.
         csg1_backcompat = CombSymGroup(dofo, cycle, checks, applies, factors, N)
         @test csg1_backcompat.dofo == dofo
-        @test csg1_backcompat.cycles == cycle
-        @test csg1_backcompat.check == checks
-        @test csg1_backcompat.apply == applies
+        @test csg1_backcompat.cycles == map(c -> (c...,), cycle)
+        @test csg1_backcompat.check == (checks...,)
+        @test csg1_backcompat.apply == (applies...,)
         @test length(csg1_backcompat.phase) == length(applies)
         @test all(f -> f(nothing, nothing) == 1, csg1_backcompat.phase)
         @test csg1_backcompat.factors == factors
@@ -93,11 +93,11 @@
 
         @testset "SymGroup ∘ SymGroup" begin
             @test csg.dofo == dofo
-            @test csg.check == [sg1.check, sg2.check]
-            @test csg.apply == [sg1.apply, sg2.apply]
-            @test csg.phase == [sg1.phase, sg2.phase]
+            @test csg.check == (sg1.check, sg2.check)
+            @test csg.apply == (sg1.apply, sg2.apply)
+            @test csg.phase == (sg1.phase, sg2.phase)
             for i in eachindex(sg1.cycles), j in eachindex(sg2.cycles)
-                @test csg.cycles[i, j] == [sg1.cycles[i], sg2.cycles[j]]
+                @test csg.cycles[i, j] == (sg1.cycles[i], sg2.cycles[j])
                 @test csg.factors[i, j] ≈ sg1.factors[i] * sg2.factors[j]
             end
 
@@ -109,14 +109,14 @@
         @testset "CombSymGroup ∘ SymGroup" begin
             csg2 = csg ∘ sg3
             @test csg2.dofo == dofo
-            @test csg2.check == vcat(csg.check..., sg3.check)
-            @test csg2.apply == vcat(csg.apply..., sg3.apply)
-            @test csg2.phase == vcat(csg.phase..., sg3.phase)
+            @test csg2.check == (csg.check..., sg3.check)
+            @test csg2.apply == (csg.apply..., sg3.apply)
+            @test csg2.phase == (csg.phase..., sg3.phase)
             for i in eachindex(sg1.cycles),
                 j in eachindex(sg2.cycles),
                 k in eachindex(sg3.cycles)
 
-                @test csg2.cycles[i, j, k] == vcat(csg.cycles[i, j], sg3.cycles[k])
+                @test csg2.cycles[i, j, k] == (csg.cycles[i, j]..., sg3.cycles[k])
                 @test csg2.factors[i, j, k] ≈ csg.factors[i, j] * sg3.factors[k]
             end
 
@@ -130,14 +130,14 @@
         @testset "SymGroup ∘ CombSymGroup" begin
             csg3 = sg3 ∘ csg
             @test csg3.dofo == dofo
-            @test csg3.check == vcat(sg3.check, csg.check...)
-            @test csg3.apply == vcat(sg3.apply, csg.apply...)
-            @test csg3.phase == vcat(sg3.phase, csg.phase...)
+            @test csg3.check == (sg3.check, csg.check...)
+            @test csg3.apply == (sg3.apply, csg.apply...)
+            @test csg3.phase == (sg3.phase, csg.phase...)
             for i in eachindex(sg3.cycles),
                 j in eachindex(sg1.cycles),
                 k in eachindex(sg2.cycles)
 
-                @test csg3.cycles[i, j, k] == vcat(sg3.cycles[i], csg.cycles[j, k])
+                @test csg3.cycles[i, j, k] == (sg3.cycles[i], csg.cycles[j, k]...)
                 @test csg3.factors[i, j, k] ≈ sg3.factors[i] * csg.factors[j, k]
             end
 
@@ -151,15 +151,15 @@
         @testset "CombSymGroup ∘ CombSymGroup" begin
             csg4 = csg ∘ csg
             @test csg4.dofo == dofo
-            @test csg4.check == vcat(csg.check..., csg.check...)
-            @test csg4.apply == vcat(csg.apply..., csg.apply...)
-            @test csg4.phase == vcat(csg.phase..., csg.phase...)
+            @test csg4.check == (csg.check..., csg.check...)
+            @test csg4.apply == (csg.apply..., csg.apply...)
+            @test csg4.phase == (csg.phase..., csg.phase...)
             for i in eachindex(sg1.cycles),
                 j in eachindex(sg2.cycles),
                 k in eachindex(sg1.cycles),
                 l in eachindex(sg2.cycles)
 
-                @test csg4.cycles[i, j, k, l] == vcat(csg.cycles[i, j], csg.cycles[k, l])
+                @test csg4.cycles[i, j, k, l] == (csg.cycles[i, j]..., csg.cycles[k, l]...)
                 @test csg4.factors[i, j, k, l] ≈ csg.factors[i, j] * csg.factors[k, l]
             end
         end

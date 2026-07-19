@@ -5,8 +5,8 @@
 #   BENCH_SWEEP=quick|large ./run_all.sh
 #
 # Assumes `python` on PATH is a Python environment with QuSpin installed (locally: activate
-# your conda env first, e.g. `conda activate quspin_env`; in CI: conda-incubator/setup-miniconda
-# + `conda install -c conda-forge quspin` before this script runs).
+# your conda/venv env first, e.g. `conda activate quspin_env`; in CI: `pip install quspin`
+# before this script runs -- QuSpin isn't on conda-forge, but ships manylinux wheels on PyPI).
 #
 # The primary comparison pins JULIA_NUM_THREADS=1 and OMP_NUM_THREADS=1 so SymBasis's
 # internally multithreaded `basis()` is compared on equal footing with QuSpin's/XDiag's

@@ -25,13 +25,11 @@ jobs:
         with:
           version: '1'
       - uses: julia-actions/cache@v2
-      - uses: conda-incubator/setup-miniconda@v3
+      - uses: actions/setup-python@v5
         with:
-          channels: conda-forge
           python-version: '3.12'
-      - name: Install QuSpin (latest, conda-forge)
-        shell: bash -el {0}
-        run: conda install -y -c conda-forge quspin
+      - name: Install QuSpin (latest, PyPI)
+        run: pip install quspin
       - name: Install Julia deps (SymBasis dev checkout + XDiag/BenchmarkTools/CairoMakie latest)
         shell: julia --color=yes --project=benchmark {0}
         run: |
@@ -39,7 +37,6 @@ jobs:
           Pkg.develop(PackageSpec(path=pwd()))
           Pkg.instantiate()
       - name: Run benchmarks
-        shell: bash -el {0}
         env:
           JULIA_NUM_THREADS: 1
           OMP_NUM_THREADS: 1

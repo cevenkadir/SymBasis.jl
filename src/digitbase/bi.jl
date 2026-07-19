@@ -6,6 +6,7 @@
         base::Integer=2,
         Ti=Int
     ) where T<:Integer
+    BaseInt{T,Ti,B}(value::Integer) where {T<:Integer,Ti<:Integer,B}
 
 A type representing an integer in base `B`, where `T` is the underlying integer type used to
 store the value, and `Ti` is the integer type used for indexing digits.
@@ -24,6 +25,11 @@ store the value, and `Ti` is the integer type used for indexing digits.
 - [`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: A new `BaseInt` instance.
 
 The constructor checks that the base is at least 2.
+
+There is also a fully static constructor, `BaseInt{T,Ti,B}(value::Integer)`, used
+internally on hot paths throughout this module. With `B` already fixed in the type domain,
+it skips the runtime `base` check and keyword handling that the general constructor
+performs, and simply converts `value` to `T`.
 """
 struct BaseInt{T<:Integer,Ti<:Integer,B}
     value::T
@@ -605,7 +611,7 @@ end
 
 """
     Base.write(
-        b::SymBasis.BaseInt{T,Ti,B},
+        b::SymBasis.DigitBase.BaseInt{T,Ti,B},
         pos::AbstractVector{Ti},
         d::AbstractVector{<:Integer}
     ) where {T,Ti,B}
@@ -669,7 +675,7 @@ end
 
 """
     Base.count(
-        b::SymBasis.BaseInt{T,Ti,B},
+        b::SymBasis.DigitBase.BaseInt{T,Ti,B},
         pos::AbstractVector{Ti},
         d::AbstractVector{<:Integer}
     ) where {T,Ti,B}

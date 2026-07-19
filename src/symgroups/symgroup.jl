@@ -25,7 +25,7 @@ apply these operations, and factors associated with each symmetry cycle.
 - `apply::Function`: A function to apply the symmetry operations.
 - `phase::Function`: A function to compute the phase of symmetry operations.
 - `factors::AbstractVector{T_f}`: A vector of factors associated with each symmetry cycle.
-- `N::Integer`: The total number of the DoF-objects in the system. This is used to check
+- `N::Int`: The total number of the DoF-objects in the system. This is used to check
     the validity of the symmetry operations.
 
 # Constructor Arguments
@@ -93,10 +93,10 @@ end
     CombSymGroup{B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
     CombSymGroup(
         dofo::DoFObject{B,T_s,T,Ti},
-        cycles::AbstractArray{<:AbstractVector{<:NamedTuple}},
-        check::AbstractVector{<:Function},
-        apply::AbstractVector{<:Function},
-        phase::AbstractVector{<:Function},
+        cycles::AbstractArray{<:Tuple{Vararg{NamedTuple}}},
+        check::Tuple{Vararg{Function}},
+        apply::Tuple{Vararg{Function}},
+        phase::Tuple{Vararg{Function}},
         factors::AbstractArray{T_f},
         N::Integer
     ) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
@@ -129,18 +129,23 @@ layout (array of vectors of named tuples, and vectors of functions) and converts
 # Constructor Arguments
 - `dofo::`[`SymBasis.DoFObjects.DoFObject`](@ref)`{B,T_s,T,Ti}`: The DoF-object on which the
     combined symmetry group acts.
-- `cycles::AbstractArray{<:AbstractVector{<:NamedTuple}}`: An array of vectors of named
+- `cycles::AbstractArray{<:Tuple{Vararg{NamedTuple}}}`: An array of tuples of named
     tuples representing the combined symmetry cycles.
-- `check::AbstractVector{<:Function}`: A vector of functions to check the validity of each
+- `check::Tuple{Vararg{Function}}`: A tuple of functions to check the validity of each
     set of symmetry operations.
-- `apply::AbstractVector{<:Function}`: A vector of functions to apply each set of symmetry
+- `apply::Tuple{Vararg{Function}}`: A tuple of functions to apply each set of symmetry
     operations.
-- `phase::AbstractVector{<:Function}`: A vector of functions to compute phase factors for
+- `phase::Tuple{Vararg{Function}}`: A tuple of functions to compute phase factors for
     each set of symmetry operations.
 - `factors::AbstractArray{T_f}`: An array of factors associated with each combined symmetry
     cycle.
 - `N::Integer`: The total number of the DoF-objects in the system. This is used to check the
     validity of the symmetry operations.
+
+A legacy outer constructor also accepts the array-of-vectors/vector-of-functions layout
+(`cycles::AbstractArray{<:AbstractVector{<:NamedTuple}}`,
+`check/apply/phase::AbstractVector{<:Function}`) and converts it to the tuple-based layout
+above.
 
 # Returns
 - `CombSymGroup{B,T_s,T,Ti,T_f}`: A new `CombSymGroup` instance initialized with the
@@ -320,7 +325,7 @@ function Base.show(io::IO, g::CombSymGroup)
     println(io, summary(g))
     _print_kv(io, "N:", g.N)
     _print_kv(io, "DoF-object:", summary(g.dofo))
-    _print_kv(io, "cycles:", "array of vectors; eltype=$(eltype(g.cycles))")
+    _print_kv(io, "cycles:", "array of tuples; eltype=$(eltype(g.cycles))")
     _print_kv(io, "factors:", "size=$(size(g.factors)), eltype=$(eltype(g.factors))")
     _print_kv(io, "check:", "$(length(g.check)) function(s)")
     _print_kv(io, "apply:", "$(length(g.apply)) function(s)")

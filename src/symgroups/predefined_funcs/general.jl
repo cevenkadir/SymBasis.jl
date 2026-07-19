@@ -6,24 +6,23 @@ using SymBasis.DigitBase: BaseInt, permute, count, flip, read
 # START -- check and apply functions for predefined symmetries
 """
     check_perm(
-        p::@NamedTuple{perm::Tperm},
+        p::NamedTuple,
         state::SymBasis.DigitBase.BaseInt{T,Ti,B},
         prev_bool::Bool
-    ) where {
-        T,
-        Ti,
-        B,
-        Tperm<:Union{
-            AbstractVector{<:Ti},
-            BitPermutations.BitPermutation{T,<:BitPermutations.PermutationBackend{T}}
-        }
-    }
+    ) where {T,Ti,B}
 
 Check if the given state is invariant under the permutation `p.perm`. Since permutations are
 symmetries, this function always returns `prev_bool` unchanged.
 
+`p` accepts any `NamedTuple` containing at least a `perm` field: besides plain
+`(; perm=...)` cycles, this includes the extended cycles built by
+[`SymBasis.SymGroups.sym`](@ref) for `Translational`/`SpatialReflection`/`Rotational`
+symmetries, which additionally carry a precomputed `invperm` (and, for bases `B > 2`, a
+digit power table `pows`) used by [`apply_perm`](@ref) and
+[`SymBasis.SymGroups.phase_perm_fermionic`](@ref).
+
 # Arguments
-- `p::@NamedTuple{perm::Tperm}`: A named tuple containing the permutation.
+- `p::NamedTuple`: A named tuple containing at least a `perm` field.
 - `state::`[`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: The state to be checked.
 - `prev_bool::Bool`: The previous boolean value to be combined with the check result.
 
@@ -63,14 +62,24 @@ end
 
 """
     apply_perm(
-        p::@NamedTuple{perm::Tperm},
+        p::NamedTuple,
         state::SymBasis.DigitBase.BaseInt{T,Ti,B}
-    ) where {T,Ti,B,Tperm<:AbstractVector{<:Ti}}
+    ) where {T,Ti,B}
 
 Apply the permutation `p.perm` to the given state.
 
+`p` accepts any `NamedTuple` containing at least a `perm` field. When `p` also carries the
+precomputed `invperm` and (for bases `B > 2`) `pows` fields produced by
+[`_perm_cycle`](@ref) — as is the case for cycles built by
+[`SymBasis.SymGroups.sym`](@ref) for `Translational`/`SpatialReflection`/`Rotational`
+symmetries — the permutation is applied via a single allocation-free digit pass instead of
+going through [`SymBasis.DigitBase.permute`](@ref). (`haskey` on a `NamedTuple` is resolved
+at compile time, so this dispatch adds no runtime branching cost.) Otherwise it falls back
+to `permute(state, p.perm)` for a plain vector `perm`, or to a specialized bit-permutation
+path (via `BitPermutations.bitpermute`) when `p.perm` is a `BitPermutation` (base 2 only).
+
 # Arguments
-- `p::@NamedTuple{perm::Tperm}`: A named tuple containing the permutation.
+- `p::NamedTuple`: A named tuple containing at least a `perm` field.
 - `state::`[`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: The state to which the
     permutation will be applied.
 
@@ -116,19 +125,20 @@ function _permute_invpow(
 end
 
 """
-    apply_perm(
-        p::@NamedTuple{perm::Tperm},
+    _apply_perm(
+        perm::BitPermutations.BitPermutation{T,<:BitPermutations.PermutationBackend{T}},
         state::SymBasis.DigitBase.BaseInt{T,Ti,2}
-    ) where {
-        T,
-        Ti,
-        Tperm<:BitPermutations.BitPermutation{T,<:BitPermutations.PermutationBackend{T}}
-    }
+    ) where {T,Ti}
 
-Apply the bit permutation `p.perm` to the given binary state in a more efficient way.
+Internal helper backing [`apply_perm`](@ref): apply the bit permutation `perm` to the given
+binary state in a more efficient way via `BitPermutations.bitpermute`. This method is
+selected when the cycle's `perm` field is a `BitPermutation` (base 2 only); it is called as
+`_apply_perm(p.perm, state)` from `apply_perm`, receiving the permutation directly rather
+than the wrapping cycle `NamedTuple`.
 
 # Arguments
-- `p::@NamedTuple{perm::Tperm}`: A named tuple containing the bit permutation.
+- `perm::BitPermutations.BitPermutation{T,<:BitPermutations.PermutationBackend{T}}`: The bit
+    permutation to apply.
 - `state::`[`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,2}`: The binary state to which the bit
     permutation will be applied.
 

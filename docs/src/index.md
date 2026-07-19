@@ -67,7 +67,7 @@ julia> basis(dofo, N, sg)
 Basis{SymBasis.DigitBase.BaseInt{UInt64, Int64, 2},Float64} with 6 states
   states: Vector{SymBasis.DigitBase.BaseInt{UInt64, Int64, 2}}
   norms : Vector{Float64}
-  symmetry group: SymGroup{2, Rational{Int64}, UInt64, Int64, Float64}
+  symmetry group: SymGroup{2, Rational{Int64}, UInt64, Int64, Float64, Vector{@NamedTuple{N0::Int64, N1::Int64, N::Int64}}, typeof(check_Nₛ), typeof(apply_Nₛ), typeof(phase_unity), Vector{Float64}}
   first 6 states/norms:
     (11)₂    (norm=1.0)
     (101)₂   (norm=1.0)

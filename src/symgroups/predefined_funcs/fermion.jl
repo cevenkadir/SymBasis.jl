@@ -38,6 +38,36 @@ struct TotalSpinlessFermionicNumber{T_b<:Integer,T_N<:Integer} <: AbstractSymSpe
     end
 end
 
+"""
+    phase_perm_fermionic(
+        p::NamedTuple,
+        state::SymBasis.DigitBase.BaseInt{T,Ti,B}
+    ) where {T,Ti,B}
+
+Compute the fermionic sign (`1` or `-1`) that arises from applying the permutation `p.perm`
+to the occupied sites of `state`, i.e. the parity of the permutation restricted to the
+subset of sites where `state` has a nonzero digit.
+
+`p` accepts any `NamedTuple` containing at least a `perm` field. When `p` also carries the
+precomputed `invperm` field — as produced for cycles built by
+[`SymBasis.SymGroups.sym`](@ref) for `Translational`/`SpatialReflection`/`Rotational`
+symmetries applied to spinless fermions — that inverse permutation is used directly;
+otherwise it is computed on the fly via [`SymBasis.Miscs.invperm`](@ref).
+
+The sign itself is obtained by counting inversions of the occupied-site permutation with a
+bitmask sweep over already-mapped positions (`count_ones` on a shifted mask), rather than
+by materializing an intermediate list of mapped sites. Base 2 uses a dedicated fast path
+that iterates set bits of `state.value` directly (`trailing_zeros`, clearing the lowest set
+bit each step); other bases use a sequential digit-by-digit `divrem` pass.
+
+# Arguments
+- `p::NamedTuple`: A named tuple containing at least a `perm` field.
+- `state::`[`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: The state whose occupied sites
+    define the permutation parity to compute.
+
+# Returns
+- `Int`: `1` for an even permutation of the occupied sites, `-1` for an odd one.
+"""
 function phase_perm_fermionic(
     p::NamedTuple,
     state::BaseInt{T,Ti,B}

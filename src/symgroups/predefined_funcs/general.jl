@@ -356,6 +356,112 @@ function apply_flip(
 end
 # END -- check and apply functions for predefined symmetries
 
+
+# START -- candidate-state enumeration for sector-restricted checks
+"""
+    _candidate_states(check, cycles, ::Type{BaseInt{T,Ti,B}}, N) where {T,Ti,B}
+
+Return a sorted `Vector` of all states that can pass `check` for at least one cycle in
+`cycles`, or `nothing` when the check does not admit direct enumeration. Used by
+`SymBasis.Bases.basis` to skip the full `B^N` scan: any state outside the returned
+superset fails `check` for every cycle and therefore never enters the basis, so replacing
+the full range by this set leaves the result unchanged.
+"""
+_candidate_states(check, cycles, ::Type{BaseInt{T,Ti,B}}, N) where {T,Ti,B} = nothing
+
+function _candidate_states(
+    ::typeof(check_Nₛ), cycles, ::Type{BaseInt{T,Ti,B}}, N
+) where {T,Ti,B}
+    return _sector_states_from_counts(cycles, BaseInt{T,Ti,B}, Int(N))
+end
+
+function _candidate_states(
+    ::typeof(check_flip), cycles, ::Type{BaseInt{T,Ti,B}}, N
+) where {T,Ti,B}
+    return _sector_states_from_counts(cycles, BaseInt{T,Ti,B}, Int(N))
+end
+
+function _sector_states_from_counts(
+    cycles, ::Type{BaseInt{T,Ti,B}}, N::Int
+) where {T,Ti,B}
+    # Bit tricks below assume the digit string fits strictly inside T.
+    N * ceil(Int, log2(B)) < 8 * sizeof(T) || return nothing
+
+    # Unique digit-count signatures (N0, …, N(B-1)) among the cycles; distinct signatures
+    # define disjoint sectors.
+    sigs = Set{NTuple{B,Int}}()
+    for p in cycles
+        push!(sigs, ntuple(j -> Int(getfield(p, Symbol("N", j - 1))), Val(B)))
+    end
+
+    out = BaseInt{T,Ti,B}[]
+    for sig in sigs
+        sum(sig) == N || continue # no N-digit state can match such a signature
+        if B == 2
+            _append_fixed_popcount_states!(out, BaseInt{T,Ti,2}, N, sig[2])
+        else
+            _append_fixed_counts_states!(out, BaseInt{T,Ti,B}, N, sig)
+        end
+    end
+    return sort!(out)
+end
+
+# All N-bit values with exactly k ones, via Gosper's hack.
+function _append_fixed_popcount_states!(
+    out::Vector{BaseInt{T,Ti,2}}, ::Type{BaseInt{T,Ti,2}}, N::Int, k::Int
+) where {T,Ti}
+    if k == 0
+        push!(out, BaseInt{T,Ti,2}(zero(T)))
+        return out
+    end
+    (0 < k <= N) || return out
+
+    limit = one(T) << N
+    v = (one(T) << k) - one(T)
+    while v < limit
+        push!(out, BaseInt{T,Ti,2}(v))
+        c = v & (-v)
+        r = v + c
+        v = (((r ⊻ v) >> 2) ÷ c) | r
+    end
+    return out
+end
+
+# All N-digit base-B values whose digit multiset matches `counts` (multiset permutations).
+function _append_fixed_counts_states!(
+    out::Vector{BaseInt{T,Ti,B}}, ::Type{BaseInt{T,Ti,B}}, N::Int, counts::NTuple{B2,Int}
+) where {T,Ti,B,B2}
+    all(>=(0), counts) || return out
+    pows = T[T(B)^(p - 1) for p in 1:N]
+    remaining = collect(counts)
+    _fixed_counts_rec!(out, remaining, pows, N, 1, zero(T))
+    return out
+end
+
+function _fixed_counts_rec!(
+    out::Vector{BaseInt{T,Ti,B}},
+    remaining::Vector{Int},
+    pows::Vector{T},
+    N::Int,
+    pos::Int,
+    val::T
+) where {T,Ti,B}
+    if pos > N
+        push!(out, BaseInt{T,Ti,B}(val))
+        return nothing
+    end
+    @inbounds for d in 0:(B-1)
+        if remaining[d+1] > 0
+            remaining[d+1] -= 1
+            _fixed_counts_rec!(out, remaining, pows, N, pos + 1, val + T(d) * pows[pos])
+            remaining[d+1] += 1
+        end
+    end
+    return nothing
+end
+# END -- candidate-state enumeration for sector-restricted checks
+
+
 # START -- predefined symmetry group wrappers for end users
 """
     AbstractSymSpec

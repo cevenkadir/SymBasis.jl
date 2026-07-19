@@ -1,6 +1,7 @@
 
 using SymBasis.DigitBase: BaseInt, BaseIntRange, base_number_to_string
-using SymBasis.SymGroups: SymGroup, CombSymGroup, _check_all, _apply_phase_all
+using SymBasis.SymGroups: SymGroup, CombSymGroup, _check_all, _apply_phase_all,
+    _candidate_states
 using SymBasis.DoFObjects: DoFObject
 
 """
@@ -232,8 +233,8 @@ function _basis_impl(
     end
 
     results = fetch.(tasks)
-    states = vcat((r[1] for r in results)...)
-    norms = vcat((r[2] for r in results)...)
+    states = isempty(results) ? BaseInt{T,Ti,B}[] : vcat((r[1] for r in results)...)
+    norms = isempty(results) ? T_n[] : vcat((r[2] for r in results)...)
 
     if is_sorted
         sorted_indices = sortperm(states)
@@ -279,7 +280,10 @@ function basis(
     F₀ = zero(Complex{norm_type})
     eps_norm_type = eps(norm_type)
     c = true
-    all_bints = BaseInt(T(0); base=B, Ti=Ti):BaseInt(T(B^N - 1); base=B, Ti=Ti)
+    candidates = _candidate_states(sg.check, sg.cycles, BaseInt{T,Ti,B}, N)
+    all_bints = candidates === nothing ?
+                (BaseInt(T(0); base=B, Ti=Ti):BaseInt(T(B^N - 1); base=B, Ti=Ti)) :
+                candidates
 
     get_temp_state = (idx, state₀) -> begin
         cycleᵢ = sg.cycles[idx]
@@ -337,7 +341,22 @@ function basis(
     F₀ = zero(Complex{norm_type})
     eps_norm_type = eps(norm_type)
     c = true
-    all_bints = BaseInt(T(0); base=B, Ti=Ti):BaseInt(T(B^N - 1); base=B, Ti=Ti)
+
+    # Use the smallest directly-enumerable sector among the dimensions (if any); the
+    # remaining dimensions' checks still run on every candidate, so any superset of the
+    # valid states gives an identical basis.
+    candidates = nothing
+    for i in 1:ndims(csg.cycles)
+        candᵢ = _candidate_states(
+            csg.check[i], (cycle[i] for cycle in csg.cycles), BaseInt{T,Ti,B}, N
+        )
+        if candᵢ !== nothing && (candidates === nothing || length(candᵢ) < length(candidates))
+            candidates = candᵢ
+        end
+    end
+    all_bints = candidates === nothing ?
+                (BaseInt(T(0); base=B, Ti=Ti):BaseInt(T(B^N - 1); base=B, Ti=Ti)) :
+                candidates
 
     get_temp_state = (idx, state₀) -> begin
         cycle = csg.cycles[idx]

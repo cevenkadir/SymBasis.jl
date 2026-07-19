@@ -79,16 +79,16 @@ ba = basis(dofo, N, csg)</code></pre><pre class="documenter-example-output"><cod
   norms : Vector{Float64}
   symmetry group: CombSymGroup{2, Symbol, UInt64, Int64, ComplexF64}
   first 10 states/norms:
-    (0)₂        (norm=1936.0)
-    (1)₂        (norm=88.0)
-    (101)₂      (norm=88.0)
-    (1001)₂     (norm=88.0)
-    (10001)₂    (norm=88.0)
-    (10101)₂    (norm=88.0)
-    (100001)₂   (norm=88.0)
-    (100101)₂   (norm=44.0)
-    (1000001)₂  (norm=88.0)
-    (1000101)₂  (norm=44.0)
+    (0)₂             (norm=1936.0)
+    (1000001)₂       (norm=88.0)
+    (10101010)₂      (norm=88.0)
+    (1000010000)₂    (norm=88.0)
+    (1001010001)₂    (norm=44.0)
+    (10010010000)₂   (norm=88.0)
+    (100001000001)₂  (norm=44.0)
+    (100010101010)₂  (norm=44.0)
+    (100100001000)₂  (norm=44.0)
+    (101000010000)₂  (norm=44.0)
     ⋮
 </code></pre><p>The resulting basis contains only the blockade-respecting states in the <span>$k = 0$</span>, <span>$p = +1$</span> symmetry sector.</p><h2 id="Building-the-PXP-Hamiltonian"><a class="docs-heading-anchor" href="#Building-the-PXP-Hamiltonian">Building the PXP Hamiltonian</a><a id="Building-the-PXP-Hamiltonian-1"></a><a class="docs-heading-anchor-permalink" href="#Building-the-PXP-Hamiltonian" title="Permalink"></a></h2><p>The Hamiltonian matrix is assembled in the symmetry-resolved basis. For each representative state <span>$\ket{s_n}$</span>, we flip site <span>$i+1$</span> whenever sites <span>$i$</span> and <span>$i+2$</span> are both in the ground state <span>$\ket{g}$</span>, find the representative of the resulting state, and accumulate the matrix element with the appropriate normalization factor:</p><pre><code class="language-julia hljs">using SparseArrays
 
@@ -133,26 +133,26 @@ end
 
 # construct the sparse Hamiltonian matrix
 h = sparse(I_vec, J_vec, V_vec, hilbert_dim, hilbert_dim)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1022×1022 SparseArrays.SparseMatrixCSC{Float64, Int64} with 11090 stored entries:
-⎡⣿⣿⡾⣾⣦⣸⣦⡄⣲⣦⡀⠀⢰⣤⣀⠀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⎤
-⎢⣺⣯⢱⣶⣈⣙⣺⡿⣖⡒⡿⣧⣄⣒⡛⣦⡄⠀⠄⡛⢶⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⎥
-⎢⣈⣻⣆⢸⣿⣿⣀⣀⣀⣉⡛⣻⣷⣉⡉⣛⣛⣦⡀⠉⠉⠙⢶⡆⠀⠠⠀⠳⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⎥
-⎢⠈⠿⣾⡾⠀⢸⣿⣿⡇⠀⠀⠤⠀⠉⠙⠻⢮⣺⣧⠉⠙⠛⠧⢿⣄⣀⡀⠓⠳⣦⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⎥
-⎢⠸⣾⢸⠹⡄⢸⠉⠉⣿⣿⣿⣷⣷⠒⠶⠒⠐⠐⠋⢷⣦⡴⣀⢤⣨⢭⠀⣤⣀⡈⣉⠀⠀⠀⠀⠀⠀⠀⠀⠀⎥
-⎢⠀⠈⠿⣯⣿⣨⠀⡄⢿⣿⣿⣿⡿⠀⠀⠉⠠⠤⣀⠀⠀⠉⠛⠶⣽⡾⣇⠈⠩⠾⠾⢧⣀⢀⠸⡄⠀⠀⠀⠀⎥
-⎢⠐⣶⢠⢹⡝⢻⡄⠀⢹⠛⠛⠋⢻⣶⣶⢴⣴⣬⣆⠤⢤⡄⣬⢁⣀⢉⠛⠊⠀⠀⠀⠀⠛⠃⠀⠘⠂⠀⠀⠀⎥
-⎢⠀⠘⠻⣬⣧⢨⣷⡀⢸⠃⡄⠀⢘⣟⣿⣿⣿⣿⣿⠈⠉⠠⠤⢀⣀⠐⠀⠙⢾⣿⢘⡗⣓⣆⢠⣄⡀⠀⠀⠀⎥
-⎢⠀⠀⠀⠉⠻⣼⣪⣳⢐⠀⠀⡆⡐⣿⣿⣿⣿⢟⡍⠁⠀⠀⠊⠑⠒⢀⣀⠐⠐⠊⠙⠿⣞⣽⡄⢋⢧⣄⠀⠀⎥
-⎢⠀⠠⣤⠡⡄⠈⡍⠛⢯⣄⠀⠘⠈⡝⡛⠛⠇⠉⠿⣧⣨⡥⢤⡤⣴⣫⡍⣀⡀⠈⠉⠈⠓⠙⠳⠁⠁⠛⠇⠀⎥
-⎢⠀⠀⠸⠷⣇⠀⣷⠀⢈⡿⡄⠀⠀⠷⠃⡀⠀⠀⠆⡾⣿⣿⣵⣺⢞⡣⣻⠄⢸⣿⡿⠹⠗⠶⢀⣀⠀⠀⠀⠀⎥
-⎢⠀⠀⠀⠀⠸⠷⣭⣇⠀⣜⢻⡄⠆⢛⠀⢃⢎⠀⠀⡷⣱⣻⣿⣿⣷⣿⠿⠤⠀⡀⣀⣥⣖⢚⠀⡹⣿⡿⠆⠀⎥
-⎢⠀⠀⠀⠀⠀⡀⠀⢹⡆⣞⣳⡿⡄⢘⢀⠘⠘⢀⡴⣻⠾⡱⣽⣿⣻⣾⣒⠀⡀⣀⠂⡈⠁⣐⡆⠁⠙⠷⣷⡇⎥
-⎢⠀⠀⠀⠀⢤⡀⢤⠈⠀⣤⡉⠙⡻⠀⣄⠀⢀⠘⠃⢩⠛⠞⠛⡇⠘⠘⠿⣧⡤⠤⢅⣀⣼⣢⡊⠘⠈⠉⠻⠢⎥
-⎢⠀⠀⠀⠀⠀⠉⠹⣦⡀⠸⣣⡆⠀⠀⣾⣷⡰⠀⡀⠈⣶⣶⠀⠠⠀⢨⠀⡏⣿⣿⣳⣾⣮⢟⣟⡖⠤⣄⡀⠀⎥
-⎢⠀⠀⠀⠀⠀⠀⠀⠙⠃⠘⠾⣇⠀⠀⢶⠴⣷⡄⡃⠀⣟⡋⠄⣼⡈⠠⠁⢱⣹⣾⢻⣶⡿⣞⡻⠄⢴⣿⡛⡀⎥
-⎢⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢘⠿⠀⠹⢼⣞⣽⣝⠀⢹⡅⣸⢙⢁⢠⠲⣻⣮⢟⣻⢯⠿⣧⣇⣸⣘⣛⣳⡷⎥
-⎢⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠒⠦⣀⠀⠀⢶⡤⢉⠝⠂⠀⢰⣄⡠⠌⠉⣊⠈⢻⠽⠛⠎⣉⣹⢻⣶⣶⣼⣿⠙⎥
-⎢⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠈⠉⢷⣥⠀⠀⠀⣿⡿⢷⡄⡆⠀⠀⢧⣴⣷⣶⢸⣘⣿⡿⣯⣽⣦⎥
-⎣⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠁⠀⠀⠈⠁⠽⠿⠻⡂⠀⠈⠛⠨⢽⡾⣟⠛⠳⣿⣟⠙⎦</code></pre><h2 id="Diagonalizing-and-computing-overlaps-with-the-\\mathbb{Z}_2-period-2-density-wave-initial-state"><a class="docs-heading-anchor" href="#Diagonalizing-and-computing-overlaps-with-the-\\mathbb{Z}_2-period-2-density-wave-initial-state">Diagonalizing and computing overlaps with the <span>$\mathbb{Z}_2$</span> period-2 density-wave initial state</a><a id="Diagonalizing-and-computing-overlaps-with-the-\\mathbb{Z}_2-period-2-density-wave-initial-state-1"></a><a class="docs-heading-anchor-permalink" href="#Diagonalizing-and-computing-overlaps-with-the-\\mathbb{Z}_2-period-2-density-wave-initial-state" title="Permalink"></a></h2><p>We diagonalize the Hamiltonian and compute the overlap of each eigenstate with the <span>$\mathbb{Z}_2$</span> period-2 density-wave initial state <span>$\ket{r g r g \cdots}$</span>:</p><pre><code class="language-julia hljs">using LinearAlgebra
+⎡⣿⣿⣿⣿⣾⣿⣶⣮⣿⣖⢽⡷⢿⢷⢧⡾⣢⢴⣳⣺⣦⣶⣆⣲⣢⠐⣰⡼⠀⡲⣿⠯⢶⣴⠰⣲⢼⡤⢮⡆⎤
+⎢⣿⣿⣿⣿⣿⣙⢿⣿⣛⡟⢽⡿⣿⣯⣿⣕⡛⡿⡽⣼⣷⢾⡧⢽⣾⠛⢾⠽⠲⢃⣻⡧⡽⢰⡳⢿⣾⡷⡇⡍⎥
+⎢⣾⣿⣟⢻⣻⣾⣿⣟⣶⢿⣿⣽⡿⣿⣿⡏⡟⣼⡿⣹⣿⣯⡏⡙⡝⣺⣺⣽⡎⠒⢭⣦⣜⣙⢹⣾⣾⠟⠿⠅⎥
+⎢⡸⣿⣿⣷⣿⢿⣺⣾⣿⢌⣹⣯⣻⢿⢯⣍⣧⣿⣶⡿⣿⣻⡿⠿⣿⢤⢾⣼⡮⠅⣺⢽⣾⣿⣿⣷⢽⢿⣾⣀⎥
+⎢⢻⢿⣿⠼⣼⣟⡛⢟⢿⢗⡯⢿⣽⢿⣿⣷⣳⠲⢮⣙⣞⣿⣯⣝⡯⢹⣝⢵⣿⣠⣻⣛⣧⣿⠙⢯⢼⡯⡣⢆⎥
+⎢⢷⡷⣷⡷⣟⣿⡷⣾⣯⣏⣵⣿⣾⢟⣭⡍⣍⣻⣿⣹⢾⡖⠿⣿⣻⠣⣒⣿⣶⡜⢾⣷⣟⣧⢯⣽⣶⣗⡖⡳⎥
+⎢⢿⣗⡿⣿⣿⣯⣿⣞⣷⣟⣾⢟⣯⣿⡿⣳⡋⣿⢯⠯⣿⣶⣧⣽⣯⣻⣻⢯⣿⢎⠿⣟⣽⢗⣻⣊⣍⣮⢭⠁⎥
+⎢⣩⡷⢟⢿⡿⠿⡏⢷⢿⣿⡇⠿⢿⣫⣾⣿⡟⡽⣻⢺⢯⣟⣿⣞⣯⡻⣵⡿⣾⣎⠾⣭⣽⣧⣭⣥⢿⡗⢯⡦⎥
+⎢⢈⣞⣿⡬⣛⣭⣭⣿⢹⡚⣧⣹⣯⣬⣟⡭⣿⣿⣿⣯⣛⣺⣽⡸⣿⢷⣿⢷⠷⣫⡾⣝⣯⣹⣿⣷⢷⣿⠶⡷⎥
+⎢⣹⣺⣓⣯⣟⣫⣼⡿⣎⢳⣟⣻⡯⡗⣻⣚⡿⣿⣯⣻⣱⠢⣟⢮⢳⣹⣯⣮⠷⣾⣿⢾⣟⢿⣿⢓⣯⣿⡿⣼⎥
+⎢⢨⣿⣹⣟⡿⣿⣿⣻⣾⣽⢺⠷⢻⣿⣯⢷⣻⣸⠱⡚⣯⣿⣿⡽⣾⢿⢹⣿⣾⢵⢻⢿⣿⣾⡖⣿⣼⣇⣷⠆⎥
+⎢⢨⣹⣍⣏⣏⠩⣿⡏⣏⢿⣿⣧⣍⣿⣻⢿⣓⡻⡻⣝⣟⡿⢿⢗⣿⡮⣞⣼⣭⣻⣑⣽⣟⣗⣖⡿⢿⡳⣟⠅⎥
+⎢⢈⠚⣾⠛⣳⣩⠛⣟⣏⣋⠿⡚⣯⣻⣯⡻⢿⣟⣝⣲⣾⣟⡻⡿⢿⢗⣷⠇⣭⣷⢯⣼⢛⣻⡽⣽⢟⣏⣱⣂⎥
+⎢⣐⡾⣞⡗⣞⣾⣚⣷⢗⣝⣼⣼⡿⣞⣵⡿⢿⣟⡫⣿⣷⣶⣚⣽⠽⠟⢿⣷⢿⣷⡸⣾⣽⣺⣟⣻⣷⡻⡋⡇⎥
+⎢⢠⡠⠼⢂⢪⠉⠎⠏⠛⣻⣘⠿⡻⢟⡺⢿⡽⣣⣹⣧⢞⣟⣧⣻⢧⣿⢿⣷⣯⣿⣥⡎⡳⢼⡯⢽⢻⣿⢯⣏⎥
+⎢⡿⡟⠿⡾⠣⣷⣞⣞⣿⢺⢾⣷⣿⢧⡞⣧⣞⢯⣻⣟⣿⣖⣕⣼⣋⣷⣲⣮⡡⠿⢵⢗⣽⢺⣾⣹⣿⣣⡍⣯⎥
+⎢⢘⣷⢓⣋⣖⢹⣾⣿⣭⣿⠿⣽⢷⢟⠷⣿⣏⣻⣿⣝⣻⣿⢿⢽⣿⣰⣳⣻⣙⣎⣳⣛⣺⣾⣿⣷⢿⣷⣿⣝⎥
+⎢⢰⣢⣽⣎⣳⣶⢿⣿⡷⣄⣏⣷⡻⢺⠇⣿⢿⣿⢿⢛⣼⣭⣼⡽⣗⣯⣿⣹⣏⣏⣞⣻⢿⣿⢿⣷⣪⣭⣺⡋⎥
+⎢⠒⡷⢾⡿⣾⠟⣷⣗⡶⡷⢼⢿⡣⣽⢿⠷⣽⣷⣯⣿⠶⢿⢿⡳⡿⢵⣽⡻⣿⣶⠿⣻⢿⣷⡎⣾⣻⣾⣯⠟⎥
+⎣⠪⠷⡍⠭⠟⠇⠚⢻⠩⢎⢼⡩⠇⠓⠫⡷⢼⡧⣛⣯⠹⠟⠟⠝⠱⢺⠯⠬⡯⢷⡧⣭⣟⢿⡾⠺⣯⠟⡿⣫⎦</code></pre><h2 id="Diagonalizing-and-computing-overlaps-with-the-\\mathbb{Z}_2-period-2-density-wave-initial-state"><a class="docs-heading-anchor" href="#Diagonalizing-and-computing-overlaps-with-the-\\mathbb{Z}_2-period-2-density-wave-initial-state">Diagonalizing and computing overlaps with the <span>$\mathbb{Z}_2$</span> period-2 density-wave initial state</a><a id="Diagonalizing-and-computing-overlaps-with-the-\\mathbb{Z}_2-period-2-density-wave-initial-state-1"></a><a class="docs-heading-anchor-permalink" href="#Diagonalizing-and-computing-overlaps-with-the-\\mathbb{Z}_2-period-2-density-wave-initial-state" title="Permalink"></a></h2><p>We diagonalize the Hamiltonian and compute the overlap of each eigenstate with the <span>$\mathbb{Z}_2$</span> period-2 density-wave initial state <span>$\ket{r g r g \cdots}$</span>:</p><pre><code class="language-julia hljs">using LinearAlgebra
 
 # diagonalize the Hamiltonian
 egn = h |&gt; collect |&gt; eigen
@@ -172,26 +172,26 @@ Z_2_vec[m_Z_2_state] = 1.0
 
 # compute the overlap of each eigenstate with the Z_2 state
 overlap = abs2.([Z_2_vec ⋅ egn.vectors[:, i] for i in 1:hilbert_dim]) .|&gt; log10</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1022-element Vector{Float64}:
- -5.478955712437532
- -3.498586751623752
- -4.455121774555068
- -5.185717022743467
- -6.5514424685860115
- -6.839330388736276
- -2.298533847608698
- -6.315063764002777
+ -5.4789557124375365
+ -3.498586751623751
+ -4.455121774555074
+ -5.185717022743468
+ -6.551442468586001
+ -6.839330388736356
+ -2.2985338476086965
+ -6.315063764002723
  -2.913692309875442
- -3.8780240717613688
+ -3.8780240717613728
   ⋮
- -2.9136923098754393
- -6.315063764002765
- -2.298533847608698
- -6.839330388736279
- -6.551442468586017
- -5.185717022743465
- -4.4551217745550655
+ -2.91369230987544
+ -6.31506376400277
+ -2.2985338476086974
+ -6.839330388736265
+ -6.551442468585978
+ -5.18571702274347
+ -4.455121774555075
  -3.498586751623752
- -5.478955712437532</code></pre><h2 id="Plotting-the-spectrum"><a class="docs-heading-anchor" href="#Plotting-the-spectrum">Plotting the spectrum</a><a id="Plotting-the-spectrum-1"></a><a class="docs-heading-anchor-permalink" href="#Plotting-the-spectrum" title="Permalink"></a></h2><p>The scar states become visible as a regular tower of eigenstates with anomalously large overlap (close to <span>$\log_{10}|\langle\mathbb{Z}_2|E_n\rangle|^2 = 0$</span>) spread across the entire energy spectrum:</p><pre><code class="language-julia hljs">using CairoMakie
+ -5.478955712437535</code></pre><h2 id="Plotting-the-spectrum"><a class="docs-heading-anchor" href="#Plotting-the-spectrum">Plotting the spectrum</a><a id="Plotting-the-spectrum-1"></a><a class="docs-heading-anchor-permalink" href="#Plotting-the-spectrum" title="Permalink"></a></h2><p>The scar states become visible as a regular tower of eigenstates with anomalously large overlap (close to <span>$\log_{10}|\langle\mathbb{Z}_2|E_n\rangle|^2 = 0$</span>) spread across the entire energy spectrum:</p><pre><code class="language-julia hljs">using CairoMakie
 
 fig = Figure()
 ax = Axis(
@@ -201,4 +201,4 @@ ax = Axis(
 )
 scatter!(ax, egn.values ./ N, overlap)
 ylims!(ax, -10, 0)
-fig</code></pre><img src="2d2e5aa5.svg" alt="Example block output"/><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-Turner_2018"><a class="tag is-link" href="#citeref-Turner_2018">Turner_2018</a>C. J. Turner, A. A. Michailidis, D. A. Abanin, M. Serbyn, and Z. Papić, <em>Weak ergodicity breaking from quantum many-body scars</em>, <a href="https://doi.org/10.1038/s41567-018-0137-5">Nature Phys. <strong>14</strong>, 745 (2018)</a>.</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../spins/">« Quantum mechanical spins</a><a class="docs-footer-nextpage" href="../1d_bhm_phase_diagram/">Phase diagram of the Bose-Hubbard chain »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Sunday 19 July 2026 12:32">Sunday 19 July 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+fig</code></pre><img src="2d2e5aa5.svg" alt="Example block output"/><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-Turner_2018"><a class="tag is-link" href="#citeref-Turner_2018">Turner_2018</a>C. J. Turner, A. A. Michailidis, D. A. Abanin, M. Serbyn, and Z. Papić, <em>Weak ergodicity breaking from quantum many-body scars</em>, <a href="https://doi.org/10.1038/s41567-018-0137-5">Nature Phys. <strong>14</strong>, 745 (2018)</a>.</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../spins/">« Quantum mechanical spins</a><a class="docs-footer-nextpage" href="../1d_bhm_phase_diagram/">Phase diagram of the Bose-Hubbard chain »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Sunday 19 July 2026 12:52">Sunday 19 July 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

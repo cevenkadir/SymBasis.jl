@@ -186,7 +186,6 @@ function _basis_impl(
 
             for state₀ in chunk
                 local_F = F₀
-                h_state₀ = hash(state₀)
                 local_count = 0
 
                 @inbounds for idx in 1:n_cycles
@@ -207,10 +206,10 @@ function _basis_impl(
                             @inbounds local_hashbuf[local_count] = h_temp_state
                         end
 
-                        if h_temp_state < h_state₀
+                        if isless(temp_state, state₀)
                             local_F = F₀
                             break
-                        elseif h_temp_state == h_state₀
+                        elseif temp_state == state₀
                             local_F += sg.factors[idx] * temp_phase
                         end
                     end
@@ -479,18 +478,15 @@ function representative(
     id_rep_state = first(eachindex(sg.cycles))
     rep_phase = sg.phase(sg.cycles[id_rep_state], state)
     rep_state = sg.apply(sg.cycles[id_rep_state], state)
-    h_rep_state = hash(rep_state)
 
     @inbounds for idx in 2:n_cycles
         temp_phase = sg.phase(sg.cycles[idx], state)
         temp_state = sg.apply(sg.cycles[idx], state)
-        h_temp_state = hash(temp_state)
 
-        if h_temp_state < h_rep_state
+        if isless(temp_state, rep_state)
             id_rep_state = idx
             rep_state = temp_state
             rep_phase = temp_phase
-            h_rep_state = h_temp_state
         end
     end
 
@@ -533,7 +529,6 @@ function representative(
         rep_state = csg.apply[dim](csg.cycles[1][dim], rep_state)
         rep_phase *= phaseᵢ
     end
-    h_rep_state = hash(rep_state)
     id_rep_state = 1
 
     @inbounds for idx in 2:n_cycles
@@ -547,13 +542,10 @@ function representative(
             temp_phase *= phaseᵢ
         end
 
-        h_temp_state = hash(temp_state)
-
-        if h_temp_state < h_rep_state
+        if isless(temp_state, rep_state)
             id_rep_state = idx
             rep_state = temp_state
             rep_phase = temp_phase
-            h_rep_state = h_temp_state
         end
     end
 

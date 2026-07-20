@@ -80,7 +80,11 @@ function plot_construction(name::AbstractString, label::AbstractString)
     for (data, lbl, color) in series
         data === nothing && continue
         Ns, means, stds = data
-        errorbars!(ax, Ns, means, stds; color=color, whiskerwidth=6)
+        # Asymmetric error bars: the lower whisker is clamped to stay strictly positive (log
+        # scale can't represent mean - std <= 0, which does happen -- these are fast, noisy
+        # calls, sometimes with std >= mean). The upper whisker is unaffected.
+        lo = min.(stds, 0.999 .* means)
+        errorbars!(ax, Ns, means, lo, stds; color=color, whiskerwidth=6)
         scatterlines!(ax, Ns, means; label=lbl, color=color, marker=:circle)
     end
     axislegend(ax; position=:lt)

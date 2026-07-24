@@ -44,7 +44,11 @@ Build the cycle named tuple for a permutation symmetry element. Besides the (pos
 bit-wrapped) permutation itself, the tuple carries data precomputed once per cycle so the
 hot loop stays allocation-free: the inverse permutation (needed for fermionic phases), and,
 for bases `B > 2`, the digit power table `pows[k] = B^(k-1)` used to permute digits in a
-single pass.
+single pass. For a `:SpinfulFermion` DoF-object, the cycle additionally carries a per-digit
+occupation-parity lookup `parity[d+1] = isodd(length(dofo.ldof[d+1]))`, used by
+[`phase_perm_fermionic`](@ref) to compute the Jordan-Wigner sign (a digit holding an even
+number of fermions, e.g. a doubly-occupied site, never contributes a sign under a site
+permutation).
 """
 function _perm_cycle(
     perm::AbstractVector{Ti},
@@ -52,7 +56,15 @@ function _perm_cycle(
 ) where {B,T_s,T,Ti}
     ip = Base.invperm(perm)
     wrapped = perm_wrapper(perm, B)
-    if B == 2
+    if dofo.type == :SpinfulFermion
+        parity = ntuple(d -> isodd(length(dofo.ldof[d])), B)
+        if B == 2
+            return (; perm=wrapped, invperm=ip, parity=parity)
+        else
+            pows = T[T(B)^(k - 1) for k in eachindex(perm)]
+            return (; perm=wrapped, invperm=ip, pows=pows, parity=parity)
+        end
+    elseif B == 2
         return (; perm=wrapped, invperm=ip)
     else
         pows = T[T(B)^(k - 1) for k in eachindex(perm)]
@@ -552,10 +564,10 @@ function sym(
 
     rₛ = 0:(R-1)
 
-    is_spinless_fermion = dofo.type == :SpinlessFermion
+    is_fermionic = dofo.type == :SpinlessFermion || dofo.type == :SpinfulFermion
 
-    apply = is_spinless_fermion ? apply_perm_fermionic : apply_perm
-    phase = is_spinless_fermion ? phase_perm_fermionic : phase_unity
+    apply = is_fermionic ? apply_perm_fermionic : apply_perm
+    phase = is_fermionic ? phase_perm_fermionic : phase_unity
 
     T_sym = SymGroup(
         dofo,
@@ -645,10 +657,10 @@ function sym(
 
     rₛ = 0:(R-1)
 
-    is_spinless_fermion = dofo.type == :SpinlessFermion
+    is_fermionic = dofo.type == :SpinlessFermion || dofo.type == :SpinfulFermion
 
-    apply = is_spinless_fermion ? apply_perm_fermionic : apply_perm
-    phase = is_spinless_fermion ? phase_perm_fermionic : phase_unity
+    apply = is_fermionic ? apply_perm_fermionic : apply_perm
+    phase = is_fermionic ? phase_perm_fermionic : phase_unity
 
     P_sym = SymGroup(
         dofo,
@@ -731,10 +743,10 @@ function sym(
 
     rₛ = 0:(R-1)
 
-    is_spinless_fermion = dofo.type == :SpinlessFermion
+    is_fermionic = dofo.type == :SpinlessFermion || dofo.type == :SpinfulFermion
 
-    apply = is_spinless_fermion ? apply_perm_fermionic : apply_perm
-    phase = is_spinless_fermion ? phase_perm_fermionic : phase_unity
+    apply = is_fermionic ? apply_perm_fermionic : apply_perm
+    phase = is_fermionic ? phase_perm_fermionic : phase_unity
 
     R_sym = SymGroup(
         dofo,

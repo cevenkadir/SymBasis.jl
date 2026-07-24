@@ -29,8 +29,8 @@ export bint
 using .DoFObjects: AbstractDoFSpec
 export AbstractDoFSpec
 
-using .DoFObjects: Spin, Boson, SpinlessFermion
-export Spin, Boson, SpinlessFermion
+using .DoFObjects: Spin, Boson, SpinlessFermion, SpinfulFermion
+export Spin, Boson, SpinlessFermion, SpinfulFermion
 
 using .DoFObjects: dof_object
 export dof_object
@@ -74,6 +74,9 @@ export ParticleNumberConservation, TotalBosonicNumber
 
 using .SymGroups: TotalSpinlessFermionicNumber
 export TotalSpinlessFermionicNumber
+
+using .SymGroups: TotalSpinfulFermionicNumber, FermionicSpinInversion
+export TotalSpinfulFermionicNumber, FermionicSpinInversion
 
 using .SymGroups: phase_perm_fermionic
 export phase_perm_fermionic

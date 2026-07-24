@@ -6,7 +6,7 @@ export bint
 
 include("predefined_funcs.jl")
 export AbstractDoFSpec
-export Spin, Boson, SpinlessFermion
+export Spin, Boson, SpinlessFermion, SpinfulFermion
 export dof_object
 
 end

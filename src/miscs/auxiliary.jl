@@ -152,6 +152,72 @@ function combos_boson_sum(
     return combos_dof_sum(ldof, target, n)
 end
 
+"""
+    combos_dof_sum_weighted(
+        weight_lists::NTuple{K,<:AbstractVector{<:Integer}},
+        targets::NTuple{K,<:Integer},
+        n::T_n
+    ) where {K,T_n<:Int}
+
+Generate all per-digit occupation-count vectors `(N0, N1, …, N(n_ldof-1))` for `n` sites (one
+count per local digit value `0, …, n_ldof-1`) such that `sum(Nj) == n` and, for every
+`k = 1, …, K`, `sum(Nj * weight_lists[k][j+1] for j) == targets[k]`.
+
+Unlike [`combos_dof_sum`](@ref), this enumerates directly over per-digit *positions* rather
+than reconstructing counts from a flat list of values, so it stays correct when the weight
+vector(s) contain repeated values — as happens, e.g., for `SpinfulFermion`, where distinct
+digits can carry the same total particle count (or the same spin-up/spin-down count).
+
+# Arguments
+- `weight_lists::NTuple{K,<:AbstractVector{<:Integer}}`: `K` weight vectors, each of length
+    `n_ldof` (the number of local digit values), giving the contribution of each digit value
+    to the `k`-th conserved quantity.
+- `targets::NTuple{K,<:Integer}`: The target value for each of the `K` conserved quantities.
+- `n::T_n`: The number of sites.
+
+# Returns
+- `Vector`: A vector of named tuples, each with fields `N0, …, N(n_ldof-1), N` (matching the
+    shape expected by [`check_Nₛ`](@ref)/[`apply_Nₛ`](@ref)).
+"""
+function combos_dof_sum_weighted(
+    weight_lists::NTuple{K,<:AbstractVector{<:Integer}},
+    targets::NTuple{K,<:Integer},
+    n::T_n
+) where {K,T_n<:Int}
+    n_ldof = length(weight_lists[1])
+    @assert all(==(n_ldof), length.(weight_lists))
+
+    names = NTuple{n_ldof,Symbol}(Symbol("N$j") for j in 0:(n_ldof-1))
+    NT = NamedTuple{names,NTuple{n_ldof,T_n}}
+    names_last = (names..., Symbol("N"))
+    NT_last = NamedTuple{names_last,NTuple{n_ldof + 1,T_n}}
+
+    res = Vector{NT_last}()
+    counts = zeros(T_n, n_ldof)
+    targetsI = Int.(targets)
+
+    function rec(i::Int, remaining::Int, sums::NTuple{K,Int})
+        if i == n_ldof
+            c = remaining
+            new_sums = ntuple(k -> sums[k] + Int(weight_lists[k][i]) * c, K)
+            if new_sums == targetsI
+                counts[i] = c
+                nt = merge(NT(ntuple(j -> counts[j], n_ldof)), (; N=n))
+                push!(res, nt)
+            end
+            return
+        end
+
+        for c in 0:remaining
+            counts[i] = c
+            rec(i + 1, remaining - c, ntuple(k -> sums[k] + Int(weight_lists[k][i]) * c, K))
+        end
+    end
+
+    rec(1, Int(n), ntuple(_ -> 0, K))
+    return res
+end
+
 # Generic helper: builds named-tuple results from a raw list of per-site configs.
 function _configs_to_namedtuples(
     ldof::AbstractVector,

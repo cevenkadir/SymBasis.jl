@@ -22,6 +22,7 @@ export ParticleNumberConservation, TotalBosonicNumber
 
 include("predefined_funcs/fermion.jl")
 export TotalSpinlessFermionicNumber
+export TotalSpinfulFermionicNumber, FermionicSpinInversion
 export phase_perm_fermionic
 
 end

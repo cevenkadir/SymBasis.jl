@@ -180,6 +180,39 @@ function dof_object(::SpinlessFermion{T,Ti}) where {T,Ti}
     return DoFObject(:SpinlessFermion, ldof; T=T, Ti=Ti)
 end
 
+struct SpinfulFermion{Ts<:Rational,Tsf<:Unsigned,T,Ti} <: AbstractDoFSpec{T,Ti}
+    s::Ts
+    max_occupancy::Tsf
+
+    function SpinfulFermion(s::Ts, max_occupancy::Tsf; T::Type=UInt, Ti::Type=Int) where {Ts,Tsf}
+        @assert numerator(s) > 0
+        @assert denominator(s) == 1 || denominator(s) == 2
+
+        return new{Ts,Tsf,T,Ti}(s, max_occupancy)
+    end
+end
+
+function SpinfulFermion(s, max_occupancy::Signed; kwargs...)
+    m = max_occupancy
+    Tsf = m ≤ typemax(UInt8) ? UInt8 :
+          m ≤ typemax(UInt16) ? UInt16 :
+          m ≤ typemax(UInt32) ? UInt32 :
+          m ≤ typemax(UInt64) ? UInt64 : UInt128
+    return SpinfulFermion(s, Tsf(max_occupancy); kwargs...)
+end
+
+function dof_object(type::SpinfulFermion{Ts,Tsf,T,Ti}) where {Ts,Tsf,T,Ti}
+    ms = -type.s:type.s |> Vector
+    ldof = Tuple(sort!(
+        [[x for (i, x) in pairs(ms) if (b >> (i - 1)) & 1 == 1]
+         for b in 0:(1<<length(ms))-1
+         if count_ones(b) <= type.max_occupancy],
+        by=v -> (length(v), Tuple(v))
+    ))
+
+    return DoFObject(:SpinfulFermion, ldof; T=T, Ti=Ti)
+end
+
 @deprecate dof_object(
     sym::Symbol, args...;
     kwargs...

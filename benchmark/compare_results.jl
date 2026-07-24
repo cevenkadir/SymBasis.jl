@@ -145,8 +145,12 @@ function main()
         println(io, "nothing # hide")
         println(io, "```")
         println(io)
-        for (name, label) in
-            (("spin", "Spin-1/2"), ("fermion", "Spinless fermion"), ("boson", "Boson (d=3)"))
+        for (name, label) in (
+            ("spin", "Spin-1/2"),
+            ("fermion", "Spinless fermion"),
+            ("spinful_fermion", "Spinful fermion"),
+            ("boson", "Boson (d=3)"),
+        )
             construction_table(io, name, label)
             representative_table(io, name, label)
         end

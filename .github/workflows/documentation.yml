@@ -48,6 +48,7 @@ jobs:
         run: |
           julia --project=benchmark benchmark/spin_basis.jl
           julia --project=benchmark benchmark/fermion_basis.jl
+          julia --project=benchmark benchmark/spinful_fermion_basis.jl
           julia --project=benchmark benchmark/boson_basis.jl
           python benchmark/quspin_bench.py
           julia --project=benchmark benchmark/compare_results.jl

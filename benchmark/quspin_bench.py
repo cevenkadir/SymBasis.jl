@@ -20,9 +20,11 @@ import numpy as np
 from quspin.basis import (
     spin_basis_1d,
     spinless_fermion_basis_1d,
+    spinful_fermion_basis_1d,
     boson_basis_1d,
     spin_basis_general,
     spinless_fermion_basis_general,
+    spinful_fermion_basis_general,
     boson_basis_general,
 )
 
@@ -43,6 +45,8 @@ def sweep_sizes(kind):
         return (16, 18, 20, 22, 24) if sweep == "large" else (8, 10, 12, 14, 16)
     elif kind == "boson":
         return (10, 12, 14) if sweep == "large" else (6, 8, 10, 12)
+    elif kind == "spinful_fermion":
+        return (10, 12, 14) if sweep == "large" else (4, 6, 8, 10, 12)
     raise ValueError(f"unknown sweep kind {kind}")
 
 
@@ -129,6 +133,35 @@ def bench_fermion():
     )
 
 
+def bench_spinful_fermion():
+    Ns = sweep_sizes("spinful_fermion")
+    rows = []
+    last_N = None
+    for N in Ns:
+        for config in CONFIGS:
+            n = N // 2
+            basis, mean_t, std_t = benchmark_stats(
+                lambda: spinful_fermion_basis_1d(N, Nf=(n, n), **blocks_1d(config))
+            )
+            print(f"spinful fermion N={N} {CONFIG_LABELS[config]}: dim={basis.Ns}  QuSpin={mean_t}±{std_t}s")
+            rows.append((N, CONFIG_LABELS[config], basis.Ns, mean_t, std_t))
+            if config == "u1_t_p":
+                last_N = N
+    write_csv(
+        os.path.join(RESULTS_DIR, "spinful_fermion_construction_quspin.csv"),
+        ["N", "config", "dim", "quspin_mean_seconds", "quspin_std_seconds"],
+        rows,
+    )
+    n = last_N // 2
+    representative_bench(
+        "spinful_fermion",
+        spinful_fermion_basis_general,
+        dict(Nf=(n, n)),
+        last_N,
+        local_dim=4,
+    )
+
+
 def bench_boson():
     Ns = sweep_sizes("boson")
     rows = []
@@ -176,4 +209,5 @@ def representative_bench(name, general_cls, pcon_kwargs, N, local_dim=2, nsample
 if __name__ == "__main__":
     bench_spin()
     bench_fermion()
+    bench_spinful_fermion()
     bench_boson()

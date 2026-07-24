@@ -29,10 +29,13 @@ julia --project="$HERE" "$HERE/spin_basis.jl"
 echo "-- SymBasis + XDiag.jl (spinless fermion) --"
 julia --project="$HERE" "$HERE/fermion_basis.jl"
 
+echo "-- SymBasis + XDiag.jl (spinful fermion) --"
+julia --project="$HERE" "$HERE/spinful_fermion_basis.jl"
+
 echo "-- SymBasis + XDiag.jl (boson) --"
 julia --project="$HERE" "$HERE/boson_basis.jl"
 
-echo "-- QuSpin (spin, fermion, boson) --"
+echo "-- QuSpin (spin, fermion, spinful fermion, boson) --"
 if command -v python >/dev/null 2>&1 && python -c "import quspin" >/dev/null 2>&1; then
     python "$HERE/quspin_bench.py"
 else

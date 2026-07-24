@@ -16,7 +16,7 @@ end
     sweep_sizes(kind::Symbol)
 
 Return the `N` values to sweep over for the current `BENCH_SWEEP` environment variable
-(`"quick"` (default) or `"large"`). `kind` is `:spin_fermion` or `:boson`.
+(`"quick"` (default) or `"large"`). `kind` is `:spin_fermion`, `:boson`, or `:spinful_fermion`.
 """
 function sweep_sizes(kind::Symbol)
     sweep = get(ENV, "BENCH_SWEEP", "quick")
@@ -24,6 +24,12 @@ function sweep_sizes(kind::Symbol)
         return sweep == "large" ? (16, 18, 20, 22, 24) : (8, 10, 12, 14, 16)
     elseif kind == :boson
         return sweep == "large" ? (10, 12, 14) : (6, 8, 10, 12)
+    elseif kind == :spinful_fermion
+        # SpinfulFermion's local dimension is 4 (vs 2 for spin/spinless-fermion, 3 for boson),
+        # so the Hilbert space grows much faster with N -- a smaller range than the other
+        # kinds is needed to keep runtime comparable (N=14 alone already takes ~5s for a
+        # single U1-sector construction).
+        return sweep == "large" ? (10, 12, 14) : (4, 6, 8, 10, 12)
     else
         throw(ArgumentError("unknown sweep kind $kind"))
     end

@@ -67,4 +67,46 @@
         @test dofo2.ldof == (0, 1)
         @test typeof(dofo2) == DoFObject{2,Int64,UInt32,Int32}
     end
+
+    @testset "SpinfulFermion construction (UInt auto-sizing)" begin
+        # max_occupancy=3 ≤ 255 → UInt8
+        sf1 = SpinfulFermion(1 // 2, 3)
+        @test typeof(sf1) == SpinfulFermion{Rational{Int64},UInt8,UInt64,Int64}
+        @test sf1.max_occupancy === UInt8(3)
+
+        # max_occupancy=256 > 255 → UInt16
+        sf2 = SpinfulFermion(1 // 2, 256)
+        @test typeof(sf2) == SpinfulFermion{Rational{Int64},UInt16,UInt64,Int64}
+        @test sf2.max_occupancy === UInt16(256)
+
+        # custom T and Ti
+        sf3 = SpinfulFermion(1 // 2, 3; T=UInt32, Ti=Int32)
+        @test typeof(sf3) == SpinfulFermion{Rational{Int64},UInt8,UInt32,Int32}
+        @test sf3.max_occupancy === UInt8(3)
+    end
+
+    @testset "dof_object of :SpinfulFermion for DoFObject" begin
+        # spin-1/2, max_occupancy=2: doublons allowed, B=4
+        dofo1 = dof_object(SpinfulFermion(1 // 2, 2))
+        @test dofo1.type == :SpinfulFermion
+        @test dofo1.ldof == (
+            Rational{Int64}[], Rational{Int64}[-1//2], Rational{Int64}[1//2],
+            Rational{Int64}[-1//2, 1//2]
+        )
+        @test typeof(dofo1) == DoFObject{4,Vector{Rational{Int64}},UInt64,Int64}
+
+        # spin-1/2, max_occupancy=1: doublons forbidden, B=3
+        dofo2 = dof_object(SpinfulFermion(1 // 2, 1))
+        @test dofo2.type == :SpinfulFermion
+        @test dofo2.ldof == (
+            Rational{Int64}[], Rational{Int64}[-1//2], Rational{Int64}[1//2]
+        )
+        @test typeof(dofo2) == DoFObject{3,Vector{Rational{Int64}},UInt64,Int64}
+
+        # custom T and Ti
+        dofo3 = dof_object(SpinfulFermion(1 // 2, 2; T=UInt32, Ti=Int32))
+        @test dofo3.type == :SpinfulFermion
+        @test dofo3.ldof == dofo1.ldof
+        @test typeof(dofo3) == DoFObject{4,Vector{Rational{Int64}},UInt32,Int32}
+    end
 end

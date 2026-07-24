@@ -488,6 +488,29 @@
             @test phase == -1
         end
 
+        @testset "SpinfulFermion" begin
+            dofo5 = dof_object(SpinfulFermion(1 // 2, 2)) # B=4
+            perm5 = [2, 1]
+            transl_sym5 = sym(Translational(1, perm5), dofo5)
+
+            @test transl_sym5.dofo == dofo5
+            # B=4 (not 2): cycles carry a plain perm vector (not BitPermutation), plus a
+            # per-digit occupation-parity lookup for the fermionic phase.
+            @test [c.perm for c in transl_sym5.cycles] == [[1, 2], perm5]
+            @test all(c.parity == (false, true, true, false) for c in transl_sym5.cycles)
+            @test transl_sym5.check == check_perm
+            @test transl_sym5.phase == phase_perm_fermionic
+            @test transl_sym5.factors ≈ [cispi(-2 * r / length(perm5)) for r in 0:(length(perm5)-1)]
+
+            # site1 = down-only (digit1), site2 = up-only (digit2); swapping them is an odd
+            # permutation of 2 occupied (odd-parity) digits, so the phase is -1.
+            state = bi"12"4
+            transformed_state = transl_sym5.apply(transl_sym5.cycles[2], state)
+            phase = transl_sym5.phase(transl_sym5.cycles[2], state)
+            @test transformed_state == bi"21"4
+            @test phase == -1
+        end
+
     end
 
     @testset "SpatialReflection constructor" begin
@@ -564,6 +587,30 @@
             @test phase == -1
         end
 
+        @testset "SpinfulFermion" begin
+            dofo4 = dof_object(SpinfulFermion(1 // 2, 2)) # B=4
+            perm4 = [2, 1]
+
+            for p in [-1, 1]
+                refl_sym4 = sym(SpatialReflection(p, perm4), dofo4)
+                @test refl_sym4.dofo == dofo4
+                @test [c.perm for c in refl_sym4.cycles] == [[1, 2], perm4]
+                @test all(c.parity == (false, true, true, false) for c in refl_sym4.cycles)
+                @test refl_sym4.check == check_perm
+                @test refl_sym4.phase == phase_perm_fermionic
+                @test refl_sym4.factors ≈ [p^0, p^1]
+            end
+
+            # site1 = down-only (digit1), site2 = up-only (digit2); reflecting swaps them,
+            # an odd permutation of 2 occupied (odd-parity) digits, so the phase is -1.
+            refl_sym4 = sym(SpatialReflection(1, perm4), dofo4)
+            state = bi"12"4
+            transformed_state = refl_sym4.apply(refl_sym4.cycles[2], state)
+            phase = refl_sym4.phase(refl_sym4.cycles[2], state)
+            @test transformed_state == bi"21"4
+            @test phase == -1
+        end
+
     end
 
     @testset "Rotational constructor" begin
@@ -627,6 +674,26 @@
                     cispi(-2 * i * r / R2)
                     for i in 0:(R2-1)
                 ]
+            end
+        end
+
+        @testset "SpinfulFermion" begin
+            dofo3 = dof_object(SpinfulFermion(1 // 2, 2)) # B=4
+            perm3 = [3, 6, 9, 2, 5, 8, 1, 4, 7] # 90 degrees rotation for 3x3 square lattice
+            R3 = 4
+            for r in 0:(R3-1)
+                rot_sym3 = sym(Rotational(r, perm3), dofo3)
+                @test rot_sym3.dofo == dofo3
+                @test [c.perm for c in rot_sym3.cycles] == [
+                    1:length(perm3) |> collect,
+                    perm3,
+                    perm3[perm3],
+                    perm3[perm3[perm3]]
+                ]
+                @test all(c.parity == (false, true, true, false) for c in rot_sym3.cycles)
+                @test rot_sym3.check == check_perm
+                @test rot_sym3.phase == phase_perm_fermionic
+                @test rot_sym3.factors ≈ [cispi(-2 * i * r / R3) for i in 0:(R3-1)]
             end
         end
     end
@@ -755,5 +822,103 @@
 
         # The spinless fermion number symmetry is only valid on :SpinlessFermion dofo.
         @test_throws AssertionError sym(TotalSpinlessFermionicNumber(1, 2), dof_object(Boson(1)))
+    end
+
+    @testset "TotalSpinfulFermionicNumber constructor" begin
+        pnf1 = TotalSpinfulFermionicNumber(1, 1, 2)
+        @test pnf1.n_up == 1
+        @test pnf1.n_down == 1
+        @test pnf1.N == 2
+
+        pnf2 = TotalSpinfulFermionicNumber(0, 2, 3)
+        @test pnf2.n_up == 0
+        @test pnf2.n_down == 2
+        @test pnf2.N == 3
+
+        pnf3 = TotalSpinfulFermionicNumber(Int8(1), Int8(0), Int32(3))
+        @test pnf3.n_up == 1
+        @test pnf3.n_down == 0
+        @test pnf3.N == 3
+
+        @test_throws AssertionError TotalSpinfulFermionicNumber(-1, 0, 2)
+        @test_throws AssertionError TotalSpinfulFermionicNumber(0, -1, 2)
+        @test_throws AssertionError TotalSpinfulFermionicNumber(2, 2, 3)
+    end
+
+    @testset "sym of TotalSpinfulFermionicNumber" begin
+        dofo1 = dof_object(SpinfulFermion(1 // 2, 2))
+
+        # N=2, n_up=1, n_down=1: two digit-count cycles ("down+up" and "empty+doublon")
+        N_sym1 = sym(TotalSpinfulFermionicNumber(1, 1, 2), dofo1)
+        @test N_sym1.dofo == dofo1
+        @test N_sym1.check == check_Nₛ
+        @test N_sym1.apply == apply_Nₛ
+        @test N_sym1.cycles == [
+            (; N0=0, N1=1, N2=1, N3=0, N=2),
+            (; N0=1, N1=0, N2=0, N3=1, N=2),
+        ]
+        @test length(N_sym1.factors) == length(N_sym1.cycles)
+        @test all(isone, N_sym1.factors)
+
+        # N=3, n_up=1, n_down=0: only one digit-count cycle (2 empties, 1 up-only)
+        N_sym2 = sym(TotalSpinfulFermionicNumber(1, 0, 3), dofo1)
+        @test N_sym2.dofo == dofo1
+        @test N_sym2.check == check_Nₛ
+        @test N_sym2.apply == apply_Nₛ
+        @test all(c.N == 3 for c in N_sym2.cycles)
+        @test length(N_sym2.factors) == length(N_sym2.cycles)
+        @test all(isone, N_sym2.factors)
+
+        # Only valid on a :SpinfulFermion dofo.
+        @test_throws AssertionError sym(TotalSpinfulFermionicNumber(1, 1, 2), dof_object(SpinlessFermion()))
+
+        # Only valid on a spin-1/2 SpinfulFermion (exactly 2 distinct projections).
+        dofo_spin1 = dof_object(SpinfulFermion(1 // 1, 2))
+        @test_throws AssertionError sym(TotalSpinfulFermionicNumber(1, 1, 2), dofo_spin1)
+    end
+
+    @testset "FermionicSpinInversion constructor" begin
+        z1 = FermionicSpinInversion(1, 4)
+        @test z1.z == 1
+        @test z1.N == 4
+
+        z2 = FermionicSpinInversion(-1, 6)
+        @test z2.z == -1
+        @test z2.N == 6
+
+        # Invalid parity quantum number should throw
+        @test_throws AssertionError FermionicSpinInversion(0, 4)
+        @test_throws AssertionError FermionicSpinInversion(2, 4)
+    end
+
+    @testset "sym of FermionicSpinInversion" begin
+        dofo1 = dof_object(SpinfulFermion(1 // 2, 2))
+        sites1 = collect(1:2)
+        # r=0: identity relabel/sign_lut. r=1: swap down(digit1)/up(digit2), doublon(digit3)
+        # picks up a -1 sign (binomial(2,2)=1 is odd), empty/singly-occupied do not.
+        cycle1 = [
+            (; relabel=(0, 1, 2, 3), sign_lut=(1, 1, 1, 1), sites=sites1),
+            (; relabel=(0, 2, 1, 3), sign_lut=(1, 1, 1, -1), sites=sites1),
+        ]
+        for z in [1, -1]
+            Z_sym1 = sym(FermionicSpinInversion(z, 2), dofo1)
+            @test Z_sym1.dofo == dofo1
+            @test Z_sym1.cycles == cycle1
+            @test Z_sym1.check == check_perm
+            @test Z_sym1.factors == [z^0, z^1]
+        end
+
+        # Concrete apply+phase check: site1=doublon (digit3), site2=down-only (digit1).
+        # Under the swap relabel, the doublon stays a doublon (relabel[4]=3) while the
+        # down-only site becomes up-only (relabel[2]=2); the doublon alone contributes the
+        # sign, so the total phase is sign_lut[4] * sign_lut[2] = (-1) * 1 = -1.
+        Z_sym1 = sym(FermionicSpinInversion(1, 2), dofo1)
+        state = bi"13"4
+        cyc = Z_sym1.cycles[2]
+        @test Z_sym1.apply(cyc, state) == bi"23"4
+        @test Z_sym1.phase(cyc, state) == -1
+
+        # Only valid on a :SpinfulFermion dofo.
+        @test_throws AssertionError sym(FermionicSpinInversion(1, 2), dof_object(Boson(1)))
     end
 end

@@ -442,6 +442,134 @@ end
         end
     end
 
+    @testset "basis without any symmetry (SpinfulFermion)" begin
+        # spin-1/2, max_occupancy=2 -> B=4 (digit0=empty, digit1=down, digit2=up, digit3=doublon)
+        N1 = 1
+        dofo1 = dof_object(SpinfulFermion(1 // 2, 2))
+        test_basis_result(dofo1, N1;
+            expected_states=[bi"0"4, bi"1"4, bi"2"4, bi"3"4],
+            expected_norms=ones(Float64, 4^N1)
+        )
+
+        N2 = 2
+        test_basis_result(dofo1, N2;
+            expected_states=[
+                bi"0"4, bi"1"4, bi"2"4, bi"3"4, bi"10"4, bi"11"4, bi"12"4, bi"13"4,
+                bi"20"4, bi"21"4, bi"22"4, bi"23"4, bi"30"4, bi"31"4, bi"32"4, bi"33"4
+            ],
+            expected_norms=ones(Float64, 4^N2)
+        )
+    end
+
+    @testset "basis with TotalSpinfulFermionicNumber" begin
+        # N=2, n_up=1, n_down=1: the 4 ways to place one up- and one down-fermion on 2
+        # sites -- either on the same site (a doublon, other site empty) or on different
+        # sites (one up-only, one down-only), in either order.
+        N = 2
+        dofo = dof_object(SpinfulFermion(1 // 2, 2))
+        sg = sym(TotalSpinfulFermionicNumber(1, 1, N), dofo)
+        test_basis_result(dofo, N, sg;
+            expected_states=[bi"3"4, bi"12"4, bi"21"4, bi"30"4],
+            expected_norms=ones(Float64, 4)
+        )
+    end
+
+    @testset "basis with spinful-fermion translation" begin
+        N = 4
+        dofo = dof_object(SpinfulFermion(1 // 2, 2))
+        perm = [2, 3, 4, 1] # cyclic translation
+        nud_sg = sym(TotalSpinfulFermionicNumber(1, 1, N), dofo)
+
+        @testset "n_up=1, n_down=1, k=0" begin
+            # Every representative here belongs to a generic (trivial-stabilizer) orbit of
+            # size 4, so -- as for a single particle on a ring -- each contributes the same
+            # norm (=4, the full translation order) to every momentum sector; summing the
+            # dimension over k=0..3 reproduces the full n_up=1,n_down=1 dimension (4*4=16).
+            csg = nud_sg ∘ sym(Translational(0, perm), dofo)
+            test_basis_result(dofo, N, csg;
+                expected_states=[bi"3"4, bi"12"4, bi"21"4, bi"102"4],
+                expected_norms=Float64[4, 4, 4, 4],
+                check_commutative=true
+            )
+        end
+
+        @testset "n_up=1, n_down=1, k=1" begin
+            csg = nud_sg ∘ sym(Translational(1, perm), dofo)
+            test_basis_result(dofo, N, csg;
+                expected_states=[bi"3"4, bi"12"4, bi"21"4, bi"102"4],
+                expected_norms=Float64[4, 4, 4, 4],
+                check_commutative=true
+            )
+
+            # A doublon (digit3, sign-free under permutation -- see the "SpinfulFermion"
+            # nested testset in "sym of Translational") translated by r=1,2,3 sites picks up
+            # only the momentum phase cispi(-2*1*r/4), no fermionic sign.
+            test_states = [bi"3"4, bi"30"4, bi"300"4, bi"3000"4]
+            test_reps = [bi"3"4, bi"3"4, bi"3"4, bi"3"4]
+            test_factors = ComplexF64[1, -1im, -1, 1im]
+            test_representatives(test_states, test_reps, test_factors, csg)
+        end
+    end
+
+    @testset "basis with spinful-fermion spatial reflection" begin
+        N = 4
+        dofo = dof_object(SpinfulFermion(1 // 2, 2))
+        perm = [4, 3, 2, 1] # reflection
+        nud_sg = sym(TotalSpinfulFermionicNumber(1, 1, N), dofo)
+
+        @testset "n_up=1, n_down=1, R = 1" begin
+            csg = nud_sg ∘ sym(SpatialReflection(1, perm), dofo)
+            test_basis_result(dofo, N, csg;
+                expected_states=[
+                    bi"3"4, bi"12"4, bi"21"4, bi"30"4, bi"102"4, bi"120"4, bi"201"4, bi"1002"4
+                ],
+                expected_norms=Float64[2, 2, 2, 2, 2, 2, 2, 2],
+                check_commutative=true
+            )
+        end
+
+        @testset "n_up=1, n_down=1, R = -1" begin
+            csg = nud_sg ∘ sym(SpatialReflection(-1, perm), dofo)
+            test_basis_result(dofo, N, csg;
+                expected_states=[
+                    bi"3"4, bi"12"4, bi"21"4, bi"30"4, bi"102"4, bi"120"4, bi"201"4, bi"1002"4
+                ],
+                expected_norms=Float64[2, 2, 2, 2, 2, 2, 2, 2],
+                check_commutative=true
+            )
+        end
+    end
+
+    @testset "basis with spinful-fermion spin inversion (FermionicSpinInversion)" begin
+        # FermionicSpinInversion is only a meaningful (non-degenerate) symmetry when
+        # n_up == n_down (it maps a (N_up,N_down) sector to (N_down,N_up)).
+        N = 2
+        dofo = dof_object(SpinfulFermion(1 // 2, 2))
+        nud_sg = sym(TotalSpinfulFermionicNumber(1, 1, N), dofo)
+
+        @testset "z = 1" begin
+            # The two doublon-containing states (site1=doublon/site2=empty and vice versa)
+            # are each individually invariant under the up/down relabel, but pick up the
+            # doublon's own -1 sign_lut factor -- so they only survive in the z=-1 sector.
+            # Only the genuine 2-element orbit {bi"12"4, bi"21"4} survives at z=1.
+            csg = nud_sg ∘ sym(FermionicSpinInversion(1, N), dofo)
+            test_basis_result(dofo, N, csg;
+                expected_states=[bi"12"4],
+                expected_norms=Float64[2],
+                check_commutative=true
+            )
+        end
+
+        @testset "z = -1" begin
+            csg = nud_sg ∘ sym(FermionicSpinInversion(-1, N), dofo)
+            test_basis_result(dofo, N, csg;
+                expected_states=[bi"3"4, bi"12"4, bi"30"4],
+                expected_norms=Float64[4, 2, 4],
+                check_commutative=true
+            )
+        end
+    end
+
     @testset "basis with one symmetry" begin
         @testset "spin-1/2 with Sz symmetry" begin
             N = 3
@@ -1079,6 +1207,27 @@ end
             end
         end
 
+        @testset "2x2 spinful fermion with Rotational symmetry" begin
+            N = 4
+            dofo = dof_object(SpinfulFermion(1 // 2, 2))
+
+            @testset "n_up=1, n_down=1 and Rotational" begin
+                sgpn = sym(TotalSpinfulFermionicNumber(1, 1, N), dofo)
+                # Generic (trivial-stabilizer) orbits: every r sector gets the same 4
+                # representatives with the same norm, exactly as for pure translation above.
+                for r in 0:3
+                    @testset "r = $r" begin
+                        csg = sgpn ∘ sym(Rotational(r, perm_R2), dofo)
+                        test_basis_result(dofo, N, csg;
+                            expected_states=[bi"3"4, bi"12"4, bi"21"4, bi"120"4],
+                            expected_norms=Float64[4, 4, 4, 4],
+                            check_commutative=true
+                        )
+                    end
+                end
+            end
+        end
+
         @testset "3x3 spin-1/2 with Rotational symmetry" begin
             N = 9
             dofo = dof_object(Spin(1 // 2))
@@ -1389,6 +1538,73 @@ end
                 ss_qm10_w2 = SpinMultipole(-10 // 1, w2, N; rank=2)
                 b_empty = basis(dofo, N, sg_sz ∘ sym(ss_qm10_w2, dofo); is_sorted=true)
                 @test isempty(b_empty.states)
+            end
+        end
+    end
+
+    @testset "basis with 2D SpinfulFermion lattice symmetries" begin
+        # 3x3 square lattice (avoids the length-2-periodic-axis degeneracy where
+        # translation-by-1 and reflection coincide as the same permutation), sites labeled
+        # column-major via CartesianIndices/LinearIndices, mirroring test/fhm_2d.jl's
+        # lattice_perms and test/spinless_fermions_2d.jl.
+        Lx, Ly = 3, 3
+        N = Lx * Ly
+        dofo = dof_object(SpinfulFermion(1 // 2, 2))
+
+        lin = LinearIndices((Lx, Ly))
+        cart = CartesianIndices((Lx, Ly))
+        Tx_perm = lin[[CartesianIndex(mod1(r[1] + 1, Lx), r[2]) for r in cart][:]]
+        Ty_perm = lin[[CartesianIndex(r[1], mod1(r[2] + 1, Ly)) for r in cart][:]]
+        Px_perm = lin[[CartesianIndex(Lx - r[1] + 1, r[2]) for r in cart][:]]
+        Py_perm = lin[[CartesianIndex(r[1], Ly - r[2] + 1) for r in cart][:]]
+        @test Tx_perm != Px_perm && Ty_perm != Py_perm # genuinely independent generators here
+
+        nud_sg = sym(TotalSpinfulFermionicNumber(1, 1, N), dofo)
+        Tx_sg = sym(Translational(0, Tx_perm), dofo)
+        Ty_sg = sym(Translational(0, Ty_perm), dofo)
+
+        @testset "translation only (kx=0, ky=0)" begin
+            csg = nud_sg ∘ Tx_sg ∘ Ty_sg
+            test_basis_result(dofo, N, csg;
+                expected_states=[
+                    bi"3"4, bi"12"4, bi"21"4, bi"1002"4, bi"1020"4, bi"1200"4,
+                    bi"2001"4, bi"2010"4, bi"2100"4
+                ],
+                expected_norms=Float64[9, 9, 9, 9, 9, 9, 9, 9, 9],
+                check_commutative=true
+            )
+        end
+
+        @testset "+ reflection-x, reflection-y (px=1, py=1)" begin
+            csg = nud_sg ∘ Tx_sg ∘ Ty_sg ∘
+                  sym(SpatialReflection(1, Px_perm), dofo) ∘
+                  sym(SpatialReflection(1, Py_perm), dofo)
+            test_basis_result(dofo, N, csg;
+                expected_states=[bi"3"4, bi"12"4, bi"1002"4, bi"1020"4],
+                expected_norms=Float64[144, 72, 72, 36],
+                check_commutative=true
+            )
+        end
+
+        @testset "+ fermionic spin inversion (sblock)" begin
+            csgTP = nud_sg ∘ Tx_sg ∘ Ty_sg ∘
+                    sym(SpatialReflection(1, Px_perm), dofo) ∘
+                    sym(SpatialReflection(1, Py_perm), dofo)
+
+            @testset "z = 1 (empty sector)" begin
+                csg = csgTP ∘ sym(FermionicSpinInversion(1, N), dofo)
+                b = basis(dofo, N, csg; is_sorted=true)
+                @test is_commutative(b, csg)
+                @test isempty(b.states)
+            end
+
+            @testset "z = -1" begin
+                csg = csgTP ∘ sym(FermionicSpinInversion(-1, N), dofo)
+                test_basis_result(dofo, N, csg;
+                    expected_states=[bi"3"4, bi"12"4, bi"1002"4, bi"1020"4],
+                    expected_norms=Float64[576, 288, 288, 144],
+                    check_commutative=true
+                )
             end
         end
     end

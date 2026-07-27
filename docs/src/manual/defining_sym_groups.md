@@ -233,6 +233,79 @@ N_f = 3 # total fermion number quantum number
 sg = sym(TotalSpinlessFermionicNumber(N_f, N), dofo)
 ```
 
+#### Spinful fermions
+
+##### Spin-resolved particle number conservation
+Spin-resolved particle number conservation for spinful fermions is a symmetry where the
+system is invariant under the spin-up and spin-down number operators $\hat{N}_\uparrow$ and
+$\hat{N}_\downarrow$ independently. In a system with $N$ sites, they act on a state
+$\vert a(N_\uparrow, N_\downarrow) \rangle$ as follows:
+```math
+\hat{N}_\sigma \ket{a(N_\uparrow, N_\downarrow)} = \sum_{i=1}^N \hat{n}_{i\sigma} \ket{a(N_\uparrow, N_\downarrow)} = N_\sigma \ket{a(N_\uparrow, N_\downarrow)}\,, \quad \sigma \in \{\uparrow, \downarrow\}\,,
+```
+where $\hat{n}_{i\sigma} = \hat{c}_{i\sigma}^\dagger \hat{c}_{i\sigma}$ is the local fermionic
+occupation number operator for spin projection $\sigma$ at site $i$, and $N_\uparrow$,
+$N_\downarrow$ are the total spin-up and spin-down fermion number quantum numbers.
+
+You can define a spin-resolved particle number conservation symmetry group for a system with
+a certain number of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function and the
+[`TotalSpinfulFermionicNumber`](@ref SymBasis.SymGroups.TotalSpinfulFermionicNumber) type as
+follows:
+```@example
+using SymBasis
+
+dofo = dof_object(SpinfulFermion(1 // 2, 2)) # spin-1/2 spinful fermion, at most 2 fermions/site
+
+N = 4 # number of sites
+N_up = 2 # total spin-up fermion number quantum number
+N_down = 1 # total spin-down fermion number quantum number
+
+sg = sym(TotalSpinfulFermionicNumber(N_up, N_down, N), dofo)
+```
+
+!!! note
+    `TotalSpinfulFermionicNumber` requires a spin-1/2 `SpinfulFermion` DoF-object (exactly 2
+    distinct spin projections).
+
+##### Spin-inversion symmetry
+Spin-inversion symmetry for spinful fermions is a symmetry where the system is invariant
+under simultaneously exchanging the spin-up and spin-down fermions at every site. The
+spin-inversion operator $\hat{P}_z$ acts as
+```math
+\hat{P}_z \hat{c}_{i\uparrow}^\dagger \hat{P}_z^{-1} = \hat{c}_{i\downarrow}^\dagger\,, \qquad \hat{P}_z \hat{c}_{i\downarrow}^\dagger \hat{P}_z^{-1} = \hat{c}_{i\uparrow}^\dagger\,,
+```
+for every site $i$ (QuSpin's `sblock`). In a system with $N$ sites, the representative state
+$\vert a(z) \rangle$ is constructed as follows:
+```math
+\vert a(z) \rangle = \frac{1}{\sqrt{N_a}} \sum_{r=0}^{1} z^r \hat{P}_z^r \vert a \rangle\,,
+```
+where $N_a$ is the normalization factor and $z$ is the parity quantum number. The
+spin-inversion operator acts on $\vert a(z) \rangle$ as follows:
+```math
+\hat{P}_z \vert a(z) \rangle = z \vert a(z) \rangle\,.
+```
+You can define a fermionic spin-inversion symmetry group for a system with a certain number
+of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function and the
+[`FermionicSpinInversion`](@ref SymBasis.SymGroups.FermionicSpinInversion) type as follows:
+```@example
+using SymBasis
+
+dofo = dof_object(SpinfulFermion(1 // 2, 2)) # spin-1/2 spinful fermion, at most 2 fermions/site
+N = 4 # number of sites
+z = -1 # parity number
+
+sg = sym(FermionicSpinInversion(z, N), dofo)
+```
+
+!!! note
+    With the ascending-spin-projection intra-site operator ordering used throughout this
+    package, a doubly-occupied site picks up an additional `-1` sign under this exchange
+    (reversing the order of its two creation operators); empty and singly-occupied sites are
+    sign-free. This symmetry maps a state with `(N_up, N_down)` to one with `(N_down, N_up)`,
+    so composed with
+    [`TotalSpinfulFermionicNumber`](@ref SymBasis.SymGroups.TotalSpinfulFermionicNumber), it is
+    a meaningful symmetry only when `N_up == N_down`.
+
 ## Custom symmetry groups
 In addition to the predefined symmetry groups, you can also define your own custom symmetry groups by specifying the appropriate parameters when constructing the symmetry group via the [`SymGroup`](@ref SymBasis.SymGroups.SymGroup) constructor from the [`SymBasis.SymGroups`](@ref symgroups-api) submodule.
 

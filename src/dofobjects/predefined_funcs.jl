@@ -180,6 +180,32 @@ function dof_object(::SpinlessFermion{T,Ti}) where {T,Ti}
     return DoFObject(:SpinlessFermion, ldof; T=T, Ti=Ti)
 end
 
+"""
+    SpinfulFermion{Ts<:Rational,Tsf<:Unsigned,T,Ti} <: SymBasis.DoFObjects.AbstractDoFSpec{T,Ti}
+
+A concrete type representing a spinful fermionic degree of freedom specification. The spin
+value `s` is a rational number that can be either an integer or a half-integer (same
+convention as [`SymBasis.DoFObjects.Spin`](@ref)), and `max_occupancy` bounds the number of
+fermions allowed to simultaneously occupy a single site.
+
+# Fields
+- `s::Ts`: The spin value, which must be a positive rational number with a denominator of 1
+    or 2.
+- `max_occupancy::Tsf`: The maximum number of fermions allowed per site.
+
+# Constructor Arguments
+- `s::Ts`: The spin value, which must be a positive rational number with a denominator of 1
+    or 2.
+- `max_occupancy::Tsf`: The maximum number of fermions allowed per site.
+
+# Constructor Keyword Arguments
+- `T::Type=UInt`: The underlying integer type for storage (default is `UInt`).
+- `Ti::Type=Int`: The integer type used for indexing (default is `Int`).
+
+# Returns
+- `SpinfulFermion{Ts,Tsf,T,Ti}`: A new `SpinfulFermion` instance representing the specified
+    spinful fermionic degree of freedom.
+"""
 struct SpinfulFermion{Ts<:Rational,Tsf<:Unsigned,T,Ti} <: AbstractDoFSpec{T,Ti}
     s::Ts
     max_occupancy::Tsf
@@ -192,6 +218,24 @@ struct SpinfulFermion{Ts<:Rational,Tsf<:Unsigned,T,Ti} <: AbstractDoFSpec{T,Ti}
     end
 end
 
+"""
+    SpinfulFermion(s, max_occupancy::Signed; kwargs...)
+
+A convenience constructor for creating a `SpinfulFermion` instance with the maximum occupancy
+given as a plain `Signed` integer. The constructor automatically determines the appropriate
+unsigned integer type for storage based on the provided value.
+
+# Arguments
+- `s`: The spin value, which must be a positive rational number with a denominator of 1 or 2.
+- `max_occupancy::Signed`: The maximum number of fermions allowed per site.
+
+# Keyword Arguments
+- `kwargs...`: Additional keyword arguments to be passed to the `SpinfulFermion` constructor.
+
+# Returns
+- `SpinfulFermion`: A new `SpinfulFermion` instance representing the specified spinful
+    fermionic degree of freedom.
+"""
 function SpinfulFermion(s, max_occupancy::Signed; kwargs...)
     m = max_occupancy
     Tsf = m ≤ typemax(UInt8) ? UInt8 :
@@ -201,6 +245,24 @@ function SpinfulFermion(s, max_occupancy::Signed; kwargs...)
     return SpinfulFermion(s, Tsf(max_occupancy); kwargs...)
 end
 
+"""
+    dof_object(type::SpinfulFermion{Ts,Tsf,T,Ti}) where {Ts,Tsf,T,Ti}
+
+Constructs a `DoFObject` based on the provided [`SymBasis.DoFObjects.SpinfulFermion`](@ref)
+specification. Each local digit encodes a *subset* of the occupied spin projections
+`-s, ..., s` at a site (an empty subset means an unoccupied site), restricted to subsets of
+size at most `max_occupancy`. Digits are ordered first by occupation count and then
+lexicographically by projection value, e.g. for a spin-1/2 site with `max_occupancy = 2` the
+four local digits are, in order: unoccupied, spin-down, spin-up, doubly occupied.
+
+# Arguments
+- `type::SpinfulFermion{Ts,Tsf,T,Ti}`: A [`SymBasis.DoFObjects.SpinfulFermion`](@ref)
+    specification that defines the spin value, maximum occupancy, and associated types.
+
+# Returns
+- [`SymBasis.DoFObjects.DoFObject`](@ref): A DoF-object representing the degrees of freedom
+    for the specified spinful fermionic system.
+"""
 function dof_object(type::SpinfulFermion{Ts,Tsf,T,Ti}) where {Ts,Tsf,T,Ti}
     ms = -type.s:type.s |> Vector
     ldof = Tuple(sort!(

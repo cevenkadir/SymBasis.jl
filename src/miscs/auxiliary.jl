@@ -177,7 +177,7 @@ digits can carry the same total particle count (or the same spin-up/spin-down co
 
 # Returns
 - `Vector`: A vector of named tuples, each with fields `N0, …, N(n_ldof-1), N` (matching the
-    shape expected by [`check_Nₛ`](@ref)/[`apply_Nₛ`](@ref)).
+    shape expected by [`SymBasis.SymGroups.check_Nₛ`](@ref)/[`SymBasis.SymGroups.apply_Nₛ`](@ref)).
 """
 function combos_dof_sum_weighted(
     weight_lists::NTuple{K,<:AbstractVector{<:Integer}},

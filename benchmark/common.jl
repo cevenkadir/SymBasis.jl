@@ -5,7 +5,12 @@ using Statistics: mean, std
 
 export benchmark_stats, write_csv, results_dir, sweep_sizes
 
-const RESULTS_DIR = joinpath(@__DIR__, "results")
+# CI writes the canonical, tracked results directly; local runs default to a gitignored
+# scratch subdirectory so they never collide with the bot's commits to benchmark/results/*.csv
+# on the next `git pull`.
+const RESULTS_DIR = get(ENV, "CI", "false") == "true" ?
+    joinpath(@__DIR__, "results") :
+    joinpath(@__DIR__, "results", "local")
 
 function results_dir()
     mkpath(RESULTS_DIR)

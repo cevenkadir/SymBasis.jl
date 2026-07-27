@@ -8,8 +8,15 @@
 
 using Printf
 
-const RESULTS = joinpath(@__DIR__, "results")
-const DOCS_PAGE = joinpath(@__DIR__, "..", "docs", "src", "benchmarks.md")
+include(joinpath(@__DIR__, "common.jl"))
+using .BenchCommon: results_dir
+
+const RESULTS = results_dir()
+# CI overwrites the real docs page; local runs write the preview markdown into the same
+# gitignored scratch directory as the CSVs instead, so they never touch the tracked page.
+const DOCS_PAGE = get(ENV, "CI", "false") == "true" ?
+    joinpath(@__DIR__, "..", "docs", "src", "benchmarks.md") :
+    joinpath(RESULTS, "benchmarks.md")
 
 function read_csv(path::AbstractString)
     isfile(path) || return nothing

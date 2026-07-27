@@ -28,6 +28,11 @@ Manifest.toml
 /docs/build/
 
 
+# Local (non-CI) benchmark scratch output -- CI writes the canonical results directly into
+# benchmark/results/; local runs default here so they never collide with the bot's commits to
+# benchmark/results/*.csv + docs/src/benchmarks.md on the next `git pull`.
+/benchmark/results/local/
+
 # VSCode
 .vscode/
 

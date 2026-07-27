@@ -29,7 +29,14 @@ from quspin.basis import (
 )
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-RESULTS_DIR = os.path.join(HERE, "results")
+# CI writes the canonical, tracked results directly; local runs default to a gitignored
+# scratch subdirectory so they never collide with the bot's commits to benchmark/results/*.csv
+# on the next `git pull`.
+RESULTS_DIR = (
+    os.path.join(HERE, "results")
+    if os.environ.get("CI") == "true"
+    else os.path.join(HERE, "results", "local")
+)
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
 MAX_OCCUPANCY = 2

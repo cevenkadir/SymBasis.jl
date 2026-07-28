@@ -233,6 +233,8 @@ N_f = 3 # total fermion number quantum number
 sg = sym(TotalSpinlessFermionicNumber(N_f, N), dofo)
 ```
 
+See the [t-V chain vs. Bethe-Hulthén example](@ref "Spinless-fermion t-V chain vs. the exact Bethe-Hulthén solution") for a worked use of this symmetry group.
+
 #### Spinful fermions
 
 ##### Spin-resolved particle number conservation
@@ -266,6 +268,8 @@ sg = sym(TotalSpinfulFermionicNumber(N_up, N_down, N), dofo)
 !!! note
     `TotalSpinfulFermionicNumber` requires a spin-1/2 `SpinfulFermion` DoF-object (exactly 2
     distinct spin projections).
+
+See the [Fermi-Hubbard chain vs. Lieb-Wu example](@ref "Fermi-Hubbard chain vs. the exact Lieb-Wu solution") for a worked use of this symmetry group.
 
 ##### Spin-inversion symmetry
 Spin-inversion symmetry for spinful fermions is a symmetry where the system is invariant

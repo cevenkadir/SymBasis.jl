@@ -25,6 +25,13 @@ SymBasis.jl provides predefined symmetry groups for commonly used symmetries, in
 
 In the upcoming versions, we plan to add more predefined symmetries for spinful fermions.
 
+## Examples
+- [Quantum mechanical spins](examples/spins.md)
+- [Quantum many-body scars in the PXP chain](examples/pxp.md)
+- [Phase diagram of the Bose-Hubbard chain](examples/1d_bhm_phase_diagram.md)
+- [Fermi-Hubbard chain vs. the exact Lieb-Wu solution](examples/fhm_lieb_wu.md)
+- [Spinless-fermion t-V chain vs. the exact Bethe-Hulthén solution](examples/tv_chain_bethe_hulthen.md)
+
 ## Quick installation
 **Requirements**: Julia 1.11 or later.
 

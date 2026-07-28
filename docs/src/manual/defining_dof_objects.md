@@ -37,7 +37,7 @@ Define a spinless fermion DoF-object using the [`dof_object`](@ref SymBasis.DoFO
 using SymBasis
 dofo = dof_object(SpinlessFermion())
 ```
-This creates a local two-state DoF-object with occupations `(0, 1)`, suitable for specifying symmetries and generating fermionic bases.
+This creates a local two-state DoF-object with occupations `(0, 1)`, suitable for specifying symmetries and generating fermionic bases. See the [t-V chain vs. Bethe-Hulthén example](@ref "Spinless-fermion t-V chain vs. the exact Bethe-Hulthén solution") for a worked use of this DoF-object.
 
 #### Spinful fermions
 Define a spinful fermion DoF-object using the [`dof_object`](@ref SymBasis.DoFObjects.dof_object) function and the [`SpinfulFermion`](@ref SymBasis.DoFObjects.SpinfulFermion) type from the [`SymBasis.DoFObjects`](@ref dofobjects-api) submodule:
@@ -47,7 +47,7 @@ s = 1 // 2 # spin quantum number
 max_occupancy = 2 # maximum number of fermions per site
 dofo = dof_object(SpinfulFermion(s, max_occupancy))
 ```
-This creates a local four-state DoF-object per site — empty, spin-down, spin-up, and doubly occupied — suitable for specifying symmetries and generating spinful-fermionic bases (e.g. for the Fermi-Hubbard model).
+This creates a local four-state DoF-object per site — empty, spin-down, spin-up, and doubly occupied — suitable for specifying symmetries and generating spinful-fermionic bases (e.g. for the Fermi-Hubbard model). See the [Fermi-Hubbard chain vs. Lieb-Wu example](@ref "Fermi-Hubbard chain vs. the exact Lieb-Wu solution") for a worked use of this DoF-object.
 
 ## Custom DoF-objects
 In addition to the predefined DoF-objects, you can also define your own custom DoF-objects for other types of systems. For example, if you want to define a DoF-object for a system containing flag emojis of countries, you can do so by defining a tuple of the flag emojis and then using the [`DoFObject`](@ref SymBasis.DoFObjects.DoFObject) constructor from the [`SymBasis.DoFObjects`](@ref dofobjects-api) submodule as follows:

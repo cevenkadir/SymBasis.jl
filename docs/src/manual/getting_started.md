@@ -33,3 +33,5 @@ Once you have defined the DoF-object and the symmetry group(s), you can generate
 
 !!! warning 
     The [`basis`](@ref SymBasis.Bases.basis) function will return the correct basis states and their normalization factors, as long as the specified symmetries commute with each other in that basis. If the symmetries do not commute, the function will not throw an error. That is, the function does not check for the commutation of symmetries, and it is the user's responsibility to ensure that the specified symmetries commute with each other in the basis. This can be done by using the [`is_commutative`](@ref SymBasis.Bases.is_commutative) function from the [`SymBasis.Bases`](@ref bases-api) submodule to check for the commutation of symmetries after generating the basis.
+
+For complete, physics-motivated worked examples that put these concepts together end to end, see the Examples section in the sidebar.

@@ -140,6 +140,17 @@ end
 h = sparse(I_vec, J_vec, V_vec, hilbert_dim, hilbert_dim)
 ```
 
+Or more compactly, we can use the [OperatorAlgebra.jl](https://github.com/h-mnzlr/OperatorAlgebra.jl) package to construct the Hamiltonian:
+```@example pxp
+using OperatorAlgebra
+
+H = sum(
+    Op(OCC_HOLE, mod1(i - 1, N)) *
+    Op(PAULI_X, i) *
+    Op(OCC_HOLE, mod1(i + 1, N)) for i in 1:N)
+h = sparse(H, ba)
+```
+
 ## Diagonalizing and computing overlaps with the $\mathbb{Z}_2$ period-2 density-wave initial state
 
 We diagonalize the Hamiltonian and compute the overlap of each eigenstate with the $\mathbb{Z}_2$ period-2 density-wave initial state $\ket{r g r g \cdots}$:

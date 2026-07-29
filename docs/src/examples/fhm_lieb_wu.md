@@ -1,29 +1,20 @@
 # Fermi-Hubbard chain vs. the exact Lieb-Wu solution
 
-The one-dimensional Fermi-Hubbard model describes spin-\(\tfrac12\) fermions hopping on a
-chain with an on-site interaction between opposite spins:
+The one-dimensional Fermi-Hubbard model describes spin-1/2 fermions hopping on a chain with an on-site interaction between opposite spins:
 ```math
 \hat{H} = -t \sum_{i=1}^{N} \sum_{\sigma}
 \left( \hat{c}_{i,\sigma}^{\dagger} \hat{c}_{i+1,\sigma} + \text{h.c.} \right)
-+ U \sum_{i=1}^{N} \hat{n}_{i,\uparrow} \hat{n}_{i,\downarrow},
++ U \sum_{i=1}^{N} \hat{n}_{i,\uparrow} \hat{n}_{i,\downarrow}\,,
 ```
-with periodic boundary conditions, \(\hat{c}_{N+1,\sigma} \equiv \hat{c}_{1,\sigma}\). Unlike
-most interacting lattice models, this one is exactly solvable in 1D by the Bethe ansatz: Lieb
-and Wu[^Lieb_1968] derived a closed-form integral for the half-filled ground-state energy per
-site in the thermodynamic limit,
+with periodic boundary conditions, $\hat{c}_{N+1,\sigma} \equiv \hat{c}_{1,\sigma}$. Unlike most interacting lattice models, this one is exactly solvable in 1D by the Bethe ansatz: Lieb and Wu[^Lieb_1968] derived a closed-form integral for the half-filled ground-state energy per site in the thermodynamic limit,
 ```math
-\frac{E_0}{N} = -4 \int_0^\infty \frac{dw}{w} \frac{J_0(w) J_1(w)}{1 + \exp(wU/2t)},
+\frac{E_0}{N} = -4 \int_0^\infty \frac{dw}{w} \frac{J_0(w) J_1(w)}{1 + \exp(wU/2t)}\,,
 ```
-where \(J_0, J_1\) are Bessel functions of the first kind. In this example we build the
-symmetry-resolved half-filled Hubbard Hamiltonian for a few chain lengths \(N\) and check that
-the finite-size ground-state energy per site converges toward this exact value as \(N\) grows.
+where $J_0$, $J_1$ are Bessel functions of the first kind. In this example we build the symmetry-resolved half-filled Hubbard Hamiltonian for a few chain lengths $N$ and check that the finite-size ground-state energy per site converges toward this exact value as $N$ grows.
 
 ## Defining the spinful-fermion DoF-object and the Hamiltonian
 
-Each site holds two fermionic flavors, spin-up and spin-down, so we use the predefined
-[`SpinfulFermion`](@ref SymBasis.DoFObjects.SpinfulFermion) DoF-object with `max_occupancy = 2`
-(both flavors may be occupied at once). SymBasis packs a site's occupation into a single digit
-\(d \in \{0,1,2,3\}\), encoded as 2 bits: bit 0 for spin-down, bit 1 for spin-up.
+Each site holds two fermionic flavors, spin-up and spin-down, so we use the predefined [`SpinfulFermion`](@ref SymBasis.DoFObjects.SpinfulFermion) DoF-object with `max_occupancy = 2` (both flavors may be occupied at once). SymBasis packs a site's occupation into a single digit $d \in \{0,1,2,3\}$, encoded as 2 bits: bit 0 for spin-down, bit 1 for spin-up.
 
 ```@example fhm_lieb_wu
 using SymBasis
@@ -31,8 +22,8 @@ using LinearAlgebra, SparseArrays
 
 dofo = dof_object(SpinfulFermion(1 // 2, 2))
 
-has(d, flavor) = isodd(d >> flavor)  # flavor: 0 = down, 1 = up
-parity(d) = isodd(count_ones(d))     # fermion parity of a site's occupation
+has(d, flavor) = isodd(d >> flavor) # flavor: 0 = down, 1 = up
+parity(d) = isodd(count_ones(d)) # fermion parity of a site's occupation
 
 # apply c_flavor (create=false) or c†_flavor (create=true) to digit d; `nothing` if
 # Pauli-blocked. "up" picks up a sign if "down" (the lower-index flavor) is occupied.
@@ -43,9 +34,7 @@ function apply_flavor(d, flavor, create)
 end
 ```
 
-We assemble the Hamiltonian by looping over nearest-neighbor bonds and both spin flavors,
-picking up the fermionic sign from the Jordan-Wigner string:
-
+We assemble the Hamiltonian by looping over nearest-neighbor bonds and both spin flavors, picking up the fermionic sign from the Jordan-Wigner string:
 ```@example fhm_lieb_wu
 function hop!(I, J, V, b, ba, sₙ, n, Nₙ, site_from, site_to, flavor, t)
     res = apply_flavor(read(sₙ, site_from), flavor, false)
@@ -65,7 +54,6 @@ function hop!(I, J, V, b, ba, sₙ, n, Nₙ, site_from, site_to, flavor, t)
     m = b[rep_s]
     fac = -t * sign_from * sign_to * (jw ? -1 : 1) * sqrt(ba.norms[m] / Nₙ) * rep_fac
     push!(I, m); push!(J, n); push!(V, fac)
-    return nothing
 end
 
 function build_hamiltonian(N, ba; t=1.0, U=0.0)
@@ -97,14 +85,7 @@ end
 
 ## Symmetry-resolved basis
 
-We fix the numbers of up- and down-spin fermions to be equal (half filling,
-\(N_\uparrow = N_\downarrow = N/2\)) with
-[`TotalSpinfulFermionicNumber`](@ref SymBasis.SymGroups.TotalSpinfulFermionicNumber), and
-resolve lattice translation with [`Translational`](@ref SymBasis.SymGroups.Translational).
-Because the Hamiltonian is real and time-reversal symmetric, and the repulsive Hubbard model on
-a bipartite lattice has a unique, non-degenerate ground state at half filling (Lieb's
-theorem[^Lieb_1989]), the ground state's momentum must satisfy \(K \equiv -K \pmod{N}\), i.e.
-\(K \in \{0, N/2\}\) for even \(N\) — so only those two translation sectors are ever needed.
+We fix the numbers of up- and down-spin fermions to be equal (half filling $N_\uparrow = N_\downarrow = N/2$) with [`TotalSpinfulFermionicNumber`](@ref SymBasis.SymGroups.TotalSpinfulFermionicNumber), and resolve lattice translation with [`Translational`](@ref SymBasis.SymGroups.Translational). Because the Hamiltonian is real and time-reversal symmetric, and the repulsive Hubbard model on a bipartite lattice has a unique, non-degenerate ground state at half filling (Lieb's theorem[^Lieb_1989]), the ground state's momentum must satisfy $K \equiv -K \pmod{N}$, i.e. $K \in \{0, N/2\}$ for even $N$ — so only those two translation sectors are ever needed.
 
 ```@example fhm_lieb_wu
 function half_filled_sector(N, K)
@@ -129,10 +110,7 @@ function lieb_wu_e0_per_site(U; t=1.0)
 end
 ```
 
-For each chain length and interaction strength we diagonalize both allowed momentum sectors and
-keep the lower of the two ground energies, using `Arpack`'s Lanczos solver with a dense
-fallback for the smallest sectors:
-
+For each chain length and interaction strength we diagonalize both allowed momentum sectors and keep the lower of the two ground energies, using `Arpack.jl`'s Lanczos solver with a dense fallback for the smallest sectors:
 ```@example fhm_lieb_wu
 using Arpack
 
@@ -165,9 +143,9 @@ CairoMakie.activate!(type = "svg") # hide
 
 with_theme(theme_latexfonts()) do # hide
 fig = Figure()
-ax = Axis(fig[1, 1]; xlabel=L"N", ylabel=L"E_0/N", title="Half-filled Hubbard chain vs. Lieb-Wu")
+ax = Axis(fig[1, 1]; xlabel=L"1/N", ylabel=L"E_0/N", title="Half-filled Hubbard chain vs. Lieb-Wu")
 for (i, U) in enumerate(Us)
-    scatterlines!(ax, collect(Ls), [e0_per_site[(L, U)] for L in Ls]; color=Cycled(i), label=L"U/t=%$(U)")
+    scatterlines!(ax, 1 ./ collect(Ls), [e0_per_site[(L, U)] for L in Ls]; color=Cycled(i), label=L"U/t=%$(U)")
     hlines!(ax, [lieb_wu_e0_per_site(U)]; color=Cycled(i), linestyle=:dash)
 end
 axislegend(ax; position=:rb)
@@ -175,13 +153,7 @@ fig
 end # hide
 ```
 
-Solid points connected by lines are the finite-size ground-state energies per site; dashed
-horizontal lines are the corresponding Lieb-Wu thermodynamic-limit values. As \(N\) grows, the
-finite-size energies visibly approach their Lieb-Wu limits. See `test/fhm_lieb_wu.jl` in the
-package repository for a more exhaustive validation of this construction, including an exact,
-assertion-checked cross-check against the free-fermion (\(U=0\)) limit and the momentum-sector
-dimensions. For the analogous construction with spinless fermions, see the
-[t-V chain vs. Bethe-Hulthén example](@ref "Spinless-fermion t-V chain vs. the exact Bethe-Hulthén solution").
+Solid points connected by lines are the finite-size ground-state energies per site; dashed horizontal lines are the corresponding Lieb-Wu thermodynamic-limit values. As $N$ grows, the finite-size energies visibly approach their Lieb-Wu limits. See `test/fhm_lieb_wu.jl` in the package repository for a more exhaustive validation of this construction, including an exact, assertion-checked cross-check against the free-fermion ($U=0$) limit and the momentum-sector dimensions. For the analogous construction with spinless fermions, see the [t-V chain vs. Bethe-Hulthén example](@ref "Spinless-fermion t-V chain vs. the exact Bethe-Hulthén solution").
 
 [^Lieb_1968]: E. H. Lieb and F. Y. Wu, *Absence of Mott Transition in an Exact Solution of the Short-Range, One-Band Model in One Dimension*, [Phys. Rev. Lett. **20**, 1445 (1968)](https://doi.org/10.1103/PhysRevLett.20.1445).
 [^Lieb_1989]: E. H. Lieb, *Two Theorems on the Hubbard Model*, [Phys. Rev. Lett. **62**, 1201 (1989)](https://doi.org/10.1103/PhysRevLett.62.1201).

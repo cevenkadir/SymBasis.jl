@@ -1,32 +1,19 @@
 # Spinless-fermion t-V chain vs. the exact Bethe-Hulthén solution
 
-The one-dimensional spinless-fermion t-V chain describes fermions hopping on a ring with a
-nearest-neighbor density-density interaction:
+The one-dimensional spinless-fermion t-V chain describes fermions hopping on a ring with a nearest-neighbor density-density interaction:
 ```math
 \hat{H} = -t \sum_{i=1}^{N} \left( \hat{c}_i^{\dagger} \hat{c}_{i+1} + \text{h.c.} \right)
 + V \sum_{i=1}^{N} \hat{n}_i \hat{n}_{i+1},
 ```
-with periodic boundary conditions, \(\hat{c}_{N+1} \equiv \hat{c}_1\). Unlike the Hubbard chain,
-this model has no fermionic Bethe-ansatz solution directly — but it maps *exactly*, via the
-Jordan-Wigner transformation, onto the spin-1/2 XXZ chain. At half filling
-(\(N_f = N/2\)) and at the isotropic point \(V = 2t\), this mapping (worked out in the header
-comment of `test/tv_chain_bethe_hulthen.jl`) gives
+with periodic boundary conditions, $\hat{c}_{N+1} \equiv \hat{c}_1$. Unlike the Hubbard chain, this model has no fermionic Bethe-ansatz solution directly — but it maps *exactly*, via the Jordan-Wigner transformation, onto the spin-1/2 XXZ chain. At half filling ($N_f = N/2$) and at the isotropic point $V = 2t$, this mapping gives
 ```math
 \frac{E_0}{N} \xrightarrow{N\to\infty} 2t\left(\frac{1}{4} - \ln 2\right) + \frac{V}{4},
 ```
-where \(\tfrac14-\ln 2\) is the classic Bethe (1931)[^Bethe_1931] / Hulthén (1938)[^Hulthen_1938]
-ground-state energy per site of the isotropic Heisenberg chain. In this example we build the
-symmetry-resolved half-filled t-V Hamiltonian for a few chain lengths \(N\) and check that the
-finite-size ground-state energy per site converges toward this exact value as \(N\) grows.
+where $\tfrac14-\ln 2$ is the classic Bethe (1931)[^Bethe_1931] / Hulthén (1938)[^Hulthen_1938] ground-state energy per site of the isotropic Heisenberg chain. In this example we build the symmetry-resolved half-filled t-V Hamiltonian for a few chain lengths $N$ and check that the finite-size ground-state energy per site converges toward this exact value as $N$ grows.
 
 ## Defining the spinless-fermion DoF-object and the Hamiltonian
 
-A [`SpinlessFermion`](@ref SymBasis.DoFObjects.SpinlessFermion) site's digit *is* its occupation
-number (0 or 1), so no bit tricks are needed here (unlike the spinful Hubbard case). We assemble
-the Hamiltonian using the Jordan-Wigner sign convention `dec`/`inc` + `cispi(sum(read(...)))`,
-the same idiom already used for spinless fermions elsewhere in the package
-(`test/spinless_fermions.jl`):
-
+A [`SpinlessFermion`](@ref SymBasis.DoFObjects.SpinlessFermion) site's digit *is* its occupation number (0 or 1), so no bit tricks are needed here (unlike the spinful Hubbard case). We assemble the Hamiltonian using the Jordan-Wigner sign convention `dec`/`inc` + `cispi(sum(read(...)))`, the same idiom already used for spinless fermions elsewhere in the package (`test/spinless_fermions.jl`):
 ```@example tv_chain
 using SymBasis
 using LinearAlgebra, SparseArrays
@@ -72,13 +59,7 @@ end
 
 ## Symmetry-resolved basis
 
-We fix the particle number to half filling (\(N_f = N/2\)) with
-[`TotalSpinlessFermionicNumber`](@ref SymBasis.SymGroups.TotalSpinlessFermionicNumber), and
-further resolve lattice translation with [`Translational`](@ref SymBasis.SymGroups.Translational).
-Unlike the Hubbard/Lieb-Wu chain, there's no shortcut here to just two momentum sectors: the
-half-filled ring's ground state can sit in a non-obvious pair of momentum sectors (a consequence
-of how the periodic Jordan-Wigner string interacts with the particle-number parity), so every
-sector \(K=0,\ldots,N-1\) needs to be checked.
+We fix the particle number to half filling ($N_f = N/2$) with [`TotalSpinlessFermionicNumber`](@ref SymBasis.SymGroups.TotalSpinlessFermionicNumber), and further resolve lattice translation with [`Translational`](@ref SymBasis.SymGroups.Translational). Unlike the Hubbard/Lieb-Wu chain, there's no shortcut here to just two momentum sectors: the half-filled ring's ground state can sit in a non-obvious pair of momentum sectors (a consequence of how the periodic Jordan-Wigner string interacts with the particle-number parity), so every sector $K=0,\ldots,N-1$ needs to be checked.
 
 ```@example tv_chain
 function half_filled_sector(N, K)
@@ -98,9 +79,7 @@ length(ba.states)
 bethe_hulthen_e0_per_site(t, V) = 2t * (1 / 4 - log(2)) + V / 4
 ```
 
-For each chain length we diagonalize every momentum sector at the isotropic point \(V=2t\) and
-keep the lowest ground energy, using `Arpack`'s Lanczos solver with a dense fallback for the
-smallest sectors:
+For each chain length we diagonalize every momentum sector at the isotropic point $V=2t$ and keep the lowest ground energy, using `Arpack.jl`'s Lanczos solver with a dense fallback for the smallest sectors:
 
 ```@example tv_chain
 using Arpack
@@ -133,21 +112,14 @@ CairoMakie.activate!(type = "svg") # hide
 
 with_theme(theme_latexfonts()) do # hide
 fig = Figure()
-ax = Axis(fig[1, 1]; xlabel=L"N", ylabel=L"E_0/N", title="Half-filled t-V chain vs. Bethe-Hulthén")
-scatterlines!(ax, collect(Ls), [e0_per_site[L] for L in Ls])
+ax = Axis(fig[1, 1]; xlabel=L"1/N", ylabel=L"E_0/N", title="Half-filled t-V chain vs. Bethe-Hulthén")
+scatterlines!(ax, 1 ./ collect(Ls), [e0_per_site[L] for L in Ls])
 hlines!(ax, [bethe_hulthen_e0_per_site(t, V)]; color=:black, linestyle=:dash)
 fig
 end # hide
 ```
 
-The solid points connected by a line are the finite-size ground-state energies per site; the
-dashed horizontal line is the Bethe-Hulthén thermodynamic-limit value. Convergence here is
-visibly slower than in the [Hubbard/Lieb-Wu example](@ref "Fermi-Hubbard chain vs. the exact Lieb-Wu solution"),
-since the isotropic Heisenberg point has a marginally-irrelevant operator that produces
-logarithmic (not just power-law) finite-size corrections. See `test/tv_chain_bethe_hulthen.jl`
-in the package repository for a more exhaustive validation of this construction, including an
-exact, assertion-checked cross-check against the free-fermion (\(V=0\)) limit and the
-momentum-sector dimensions.
+The solid points connected by a line are the finite-size ground-state energies per site; the dashed horizontal line is the Bethe-Hulthén thermodynamic-limit value. Convergence here is visibly slower than in the [Hubbard/Lieb-Wu example](@ref "Fermi-Hubbard chain vs. the exact Lieb-Wu solution"), since the isotropic Heisenberg point has a marginally-irrelevant operator that produces logarithmic (not just power-law) finite-size corrections. See `test/tv_chain_bethe_hulthen.jl` in the package repository for a more exhaustive validation of this construction, including an exact, assertion-checked cross-check against the free-fermion ($V=0$) limit and the momentum-sector dimensions.
 
 [^Bethe_1931]: H. Bethe, *Zur Theorie der Metalle*, [Z. Phys. **71**, 205 (1931)](https://doi.org/10.1007/BF01341708).
 [^Hulthen_1938]: L. Hulthén, *Über das Austauschproblem eines Kristalles*, Ark. Mat. Astron. Fys. **26A**, No. 11 (1938).

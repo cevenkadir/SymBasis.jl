@@ -523,7 +523,8 @@ Read the digit at position `pos` in the base-`B` representation of the integer `
 - `pos::Ti`: The position of the digit to read (1-based indexing).
 
 # Returns
-- `Int`: The digit at the specified position.
+- `T`: The digit at the specified position, as the same integer type used to store `b`'s
+    value.
 """
 function Base.read(b::BaseInt{T,Ti,B}, pos::Ti) where {T,Ti,B}
     pos >= 1 || throw(ArgumentError("position must be ≥ 1 (1‑based indexing)"))
@@ -546,7 +547,8 @@ optimized specialization for base-2, using bitwise shifts.
 - `pos::Ti`: The position of the bit to read (1-based indexing).
 
 # Returns
-- The bit at the specified position.
+- `T`: The bit at the specified position, as the same integer type used to store `b`'s
+    value.
 """
 function Base.read(b::BaseInt{T,Ti,2}, pos::Ti) where {T,Ti}
     pos >= 1 || throw(ArgumentError("position must be ≥ 1 (1‑based indexing)"))
@@ -565,7 +567,8 @@ Read the digits at the specified positions in the base-`B` representation of the
 - `pos::AbstractVector{Ti}`: The positions of the digits to read (1-based indexing).
 
 # Returns
-- `Vector{Int}`: The digits at the specified positions.
+- `Vector{T}`: The digits at the specified positions, as the same integer type used to
+    store `b`'s value.
 """
 function Base.read(b::BaseInt{T,Ti,B}, pos::AbstractVector{Ti}) where {T,Ti,B}
     return map(pos) do posᵢ

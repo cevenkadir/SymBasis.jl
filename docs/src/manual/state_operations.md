@@ -182,6 +182,9 @@ posₛ = [1, 3] # Query positions 1 and 3
 read(state, posₛ) # Returns [1, 2]
 ```
 
+!!! warning
+    `read` returns the digit as the same (unsigned, by default `UInt`) integer type used to store the state's value, not `Int`. Mixing it directly into signed arithmetic can silently underflow instead of erroring, e.g. `1 - 2*read(state, pos)` wraps around to a huge positive number instead of giving `-1` or `1`. Wrap the result in `Int(...)` first whenever you need signed arithmetic on it, e.g. `1 - 2*Int(read(state, pos))`.
+
 ### Counting digit occurrences
 
 The `count` function tallies how many times specific digit value(s) appear in given positions, useful for computing conserved quantities like total magnetization or particle number.

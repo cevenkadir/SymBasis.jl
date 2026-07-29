@@ -27,6 +27,7 @@ makedocs(;
             "Basis construction" => "manual/basis_construction.md",
             "Determining representative states" => "manual/representative_states.md",
             "State operations" => "manual/state_operations.md",
+            "Operator construction" => "manual/operator_construction.md",
         ],
         "Examples" => [
             "Quantum mechanical spins" => "examples/spins.md",

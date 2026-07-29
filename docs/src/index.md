@@ -9,7 +9,7 @@ The [SymBasis.jl](https://github.com/cevenkadir/SymBasis.jl) is a Julia package 
 ## Key features
 - **Easy-to-use interface**: Users can generate bases with symmetries without needing to understand the underlying algorithms.
 - **Custom base positional numbering**: Users can specify the base positional numbering for the basis states and alter these (integer) numbers.
-- **Any discrete degrees of freedom**: Users can define DoF-objects for any discrete degrees of freedom, such as spins, fermions, bosons, or even custom objects like flag emojis of countries.
+- **Any discrete degrees of freedom**: Users can define DoF-objects for any discrete degrees of freedom, such as spins, bosons, spinless and spinful fermions, or even custom objects like flag emojis of countries.
 - **Support for multiple symmetries**: Users can generate bases that conserve multiple symmetries.
 - **Custom symmetries**: Users can define their own symmetries and generate the corresponding basis.
 
@@ -18,12 +18,24 @@ SymBasis.jl provides predefined symmetry groups for commonly used symmetries, in
 - Total magnetization (for quantum mechanical spins)
 - Spin inversion (for quantum mechanical spins)
 - Spin-multipole conservation (for quantum mechanical spins)
-- Particle number conservation (for bosons and spinless fermions)
+- Total particle number (for bosons)
+- Total particle number (for spinless fermions)
+- Spin-resolved particle number (for spinful fermions)
+- Fermionic spin inversion (for spinful fermions)
 - Spatial reflection symmetry
 - Translational symmetry
 - Rotational symmetry of space
 
-In the upcoming versions, we plan to add more predefined symmetries for spinful fermions.
+## Manual
+- [Getting started](manual/getting_started.md)
+- [Defining DoF-object(s)](manual/defining_dof_objects.md)
+- [Defining symmetry group(s)](manual/defining_sym_groups.md)
+- [Basis construction](manual/basis_construction.md)
+- [Determining representative states](manual/representative_states.md)
+- [State operations](manual/state_operations.md)
+- [Operator construction](manual/operator_construction.md)
+
+Performance comparisons against other packages are collected on the [benchmarks page](benchmarks.md).
 
 ## Examples
 - [Quantum mechanical spins](examples/spins.md)

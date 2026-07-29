@@ -110,9 +110,11 @@ for (id_t, t) in enumerate(tₛ)
                     # off-diagonal hopping terms
                     for xᵢ in 1:N
                         xᵢ₊₁ = mod1(xᵢ + 1, N)
+                        n_xᵢ = read(sₙ, xᵢ)
+                        n_xᵢ₊₁ = read(sₙ, xᵢ₊₁)
                         
-                        # annihilate at xᵢ₊₁, create at xᵢ
-                        if read(sₙ, xᵢ₊₁) > 0
+                        # annihilate at xᵢ₊₁, create at xᵢ: b†ᵢbᵢ₊₁|…,n_xᵢ,n_xᵢ₊₁,…⟩ = √(n_xᵢ+1)√n_xᵢ₊₁|…,n_xᵢ+1,n_xᵢ₊₁-1,…⟩
+                        if n_xᵢ₊₁ > 0 && n_xᵢ < n_max
                             temp_s₁ = dec(sₙ, xᵢ₊₁)
                             temp_s₁ = inc(temp_s₁, xᵢ)
                             rep_s₁, rep_fac₁ = representative(temp_s₁, ba)
@@ -120,15 +122,16 @@ for (id_t, t) in enumerate(tₛ)
                             if haskey(b, rep_s₁)
                                 m = b[rep_s₁]
                                 Nₘ = ba.norms[m]
-                                all_fac = -t * sqrt(Nₘ / Nₙ) * rep_fac₁
+                                ladder_fac₁ = sqrt(n_xᵢ + 1) * sqrt(n_xᵢ₊₁)
+                                all_fac = -t * ladder_fac₁ * sqrt(Nₘ / Nₙ) * rep_fac₁
                                 push!(I_vec, m)
                                 push!(J_vec, n)
                                 push!(V_vec, all_fac)
                             end
                         end
                         
-                        # annihilate at xᵢ, create at xᵢ₊₁
-                        if read(sₙ, xᵢ) > 0
+                        # annihilate at xᵢ, create at xᵢ₊₁: b†ᵢ₊₁bᵢ|…,n_xᵢ,n_xᵢ₊₁,…⟩ = √n_xᵢ√(n_xᵢ₊₁+1)|…,n_xᵢ-1,n_xᵢ₊₁+1,…⟩
+                        if n_xᵢ > 0 && n_xᵢ₊₁ < n_max
                             temp_s₂ = dec(sₙ, xᵢ)
                             temp_s₂ = inc(temp_s₂, xᵢ₊₁)
                             rep_s₂, rep_fac₂ = representative(temp_s₂, ba)
@@ -136,7 +139,8 @@ for (id_t, t) in enumerate(tₛ)
                             if haskey(b, rep_s₂)
                                 m = b[rep_s₂]
                                 Nₘ = ba.norms[m]
-                                all_fac = -t * sqrt(Nₘ / Nₙ) * rep_fac₂
+                                ladder_fac₂ = sqrt(n_xᵢ) * sqrt(n_xᵢ₊₁ + 1)
+                                all_fac = -t * ladder_fac₂ * sqrt(Nₘ / Nₙ) * rep_fac₂
                                 push!(I_vec, m)
                                 push!(J_vec, n)
                                 push!(V_vec, all_fac)
@@ -169,6 +173,41 @@ for (id_t, t) in enumerate(tₛ)
 end
 ```
 
+### Building the Hamiltonian with OperatorAlgebra.jl
+
+The Hamiltonian above can also be assembled more compactly with [OperatorAlgebra.jl](https://github.com/h-mnzlr/OperatorAlgebra.jl), which builds an operator expression from single-site `Op`s and lets SymBasis project it onto the symmetry-resolved basis via `sparse(H, ba)` (see the [PXP example](@ref "Quantum many-body scars in the PXP chain") for the spin-operator version of this approach). OperatorAlgebra.jl only ships spin-1/2 operator constants such as `PAULI_X`, so for bosons we build the ladder-operator matrices ourselves on the local $(n_\mathrm{max}+1)$-dimensional Fock space $\{|0\rangle,\ldots,|n_\mathrm{max}\rangle\}$. Since `Boson(n_max)` states store the occupation number directly as the digit value (as used via `read(sₙ, xᵢ)` above), a hand-built `Op(mat, site)` works out of the box:
+
+```@example bhm
+using OperatorAlgebra
+
+b_mat   = diagm(1 => sqrt.(1:n_max))                       # annihilation: b|n⟩ = √n|n-1⟩
+bd_mat  = b_mat'                                            # creation: b†|n⟩ = √(n+1)|n+1⟩
+nn1_mat = Diagonal((0:n_max) .* (-1:n_max-1)) |> Matrix     # n̂(n̂-1)
+```
+
+For a representative sector, e.g. $N$ sites at unit filling ($n = N$) with momentum $k=0$ and parity $p=+1$, the basis and Hamiltonian are then
+
+```@example bhm
+N_demo, n_demo, t_demo = last(Nₛ), last(Nₛ), last(tₛ)
+
+dofo = dof_object(Boson(n_max))
+pn_sg = sym(TotalBosonicNumber(n_demo, N_demo), dofo)
+T_sg  = sym(Translational(0, mod1.((1:N_demo) .+ 1, N_demo)), dofo)
+P_sg  = sym(SpatialReflection(1, mod1.(N_demo .- (1:N_demo) .+ 1, N_demo)), dofo)
+csg = pn_sg ∘ T_sg ∘ P_sg
+ba = basis(dofo, N_demo, csg)
+
+H = sum(
+    -t_demo * (Op(bd_mat, i) * Op(b_mat, mod1(i + 1, N_demo)) +
+               Op(b_mat, i)  * Op(bd_mat, mod1(i + 1, N_demo)))
+    for i in 1:N_demo
+) + sum(0.5 * U * Op(nn1_mat, i) for i in 1:N_demo)
+
+h_opalg = sparse(H, ba; check_hermitian=false)
+h_opalg = (h_opalg + h_opalg') / 2
+```
+
+As with the manual construction above, the normalization factors $\sqrt{N_m/N_n}$ are only Hermitian up to floating-point round-off, so we disable `sparse`'s built-in exact-equality Hermiticity check and symmetrize explicitly. Up to that round-off, `h_opalg` reproduces the same matrix as the manual `I_vec`/`J_vec`/`V_vec` construction above, and can be substituted directly for it inside the sweep over $(t, N, n, k, p)$ if the more declarative `OperatorAlgebra` style is preferred.
 
 ### Extracting the phase boundaries
 

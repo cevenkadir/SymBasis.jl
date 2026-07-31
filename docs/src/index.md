@@ -39,6 +39,7 @@ Performance comparisons against other packages are collected on the [benchmarks 
 
 ## Examples
 - [Quantum mechanical spins](examples/spins.md)
+- [Level statistics as a completeness test](examples/level_statistics.md)
 - [Quantum many-body scars in the PXP chain](examples/pxp.md)
 - [Phase diagram of the Bose-Hubbard chain](examples/1d_bhm_phase_diagram.md)
 - [Fermi-Hubbard chain vs. the exact Lieb-Wu solution](examples/fhm_lieb_wu.md)

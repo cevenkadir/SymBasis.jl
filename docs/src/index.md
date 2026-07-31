@@ -84,8 +84,8 @@ SymGroup{2,Rational{Int64},UInt64,Int64,Float64} with 1 cycle(s)
 
 # generate the basis
 julia> basis(dofo, N, sg)
-Basis{SymBasis.DigitBase.BaseInt{UInt64, Int64, 2},Float64} with 6 states
-  states: Vector{SymBasis.DigitBase.BaseInt{UInt64, Int64, 2}}
+Basis{BaseInt{UInt64, Int64, 2},Float64} with 6 states
+  states: Vector{BaseInt{UInt64, Int64, 2}}
   norms : Vector{Float64}
   symmetry group: SymGroup{2, Rational{Int64}, UInt64, Int64, Float64, Vector{@NamedTuple{N0::Int64, N1::Int64, N::Int64}}, typeof(check_Nₛ), typeof(apply_Nₛ), typeof(phase_unity), Vector{Float64}}
   first 6 states/norms:
@@ -97,6 +97,9 @@ Basis{SymBasis.DigitBase.BaseInt{UInt64, Int64, 2},Float64} with 6 states
     (1100)₂  (norm=1.0)
 ```
 
+## Important notice
+This project is still under active development. While it includes an extensive test suite and is developed with high scientific rigor, you should always benchmark your own code. Please report any issues you encounter via the [GitHub issue tracker](https://github.com/cevenkadir/SymBasis.jl/issues/new).
+
 ## Supporting and citing
 This package was developed for academic purposes. If you find SymBasis.jl useful and use it in your research, please consider citing it as follows:
 ```bibtex
@@ -104,7 +107,7 @@ This package was developed for academic purposes. If you find SymBasis.jl useful
   title={{SymBasis}.jl: {A} generator of basis with symmetries for {Julia}},
   author={Kadir Çeven},
   year={2026},
-  url={https://github.com/cevenkadir/SymBasis.jl}
+  url={https://github.com/cevenkadir/SymBasis.jl},
   version={v0.1.7}
 }
 ```

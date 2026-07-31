@@ -16,7 +16,7 @@ SymBasis.jl is a Julia package for determining the bases conserving the symmetri
 ## Key features
 - **Easy-to-use interface**: Users can generate bases with symmetries without needing to understand the underlying algorithms.
 - **Custom base positional numbering**: Users can specify the base positional numbering for the basis states and alter these (integer) numbers.
-- **Any discrete degrees of freedom**: Users can define DoF-objects for any discrete degrees of freedom, such as spins, fermions, bosons, or even custom objects like flag emojis of countries.
+- **Any discrete degrees of freedom**: Users can define DoF-objects for any discrete degrees of freedom, such as spins, bosons, spinless and spinful fermions, or even custom objects like flag emojis of countries.
 - **Support for multiple symmetries**: Users can generate bases that conserve multiple symmetries.
 - **Custom symmetries**: Users can define their own symmetries and generate the corresponding basis.
 
@@ -25,12 +25,13 @@ SymBasis.jl provides predefined symmetry groups for commonly used symmetries, in
 - Total magnetization (for quantum mechanical spins)
 - Spin inversion (for quantum mechanical spins)
 - Spin-multipole conservation (for quantum mechanical spins)
-- Particle number conservation (for bosons and spinless fermions)
+- Total particle number (for bosons)
+- Total particle number (for spinless fermions)
+- Spin-resolved particle number (for spinful fermions)
+- Fermionic spin inversion (for spinful fermions)
 - Spatial reflection symmetry
 - Translational symmetry
 - Rotational symmetry of space
-
-In the upcoming versions, we plan to add more predefined symmetries for spinful fermions.
 
 ## Installation
 **Requirements**: Julia 1.11 or later.
@@ -47,15 +48,29 @@ julia> import Pkg; Pkg.add("SymBasis")
 ## Documentation
 For detailed information on using this package, check out the [stable documentation](https://cevenkadir.github.io/SymBasis.jl/stable/).
 
-## Important notice
-This project is still under active development. While it includes an extensive test suite and is developed with high scientific rigor, you should always benchmark your own code. Please report any issues you encounter via the [GitHub issue tracker](https://github.com/cevenkadir/SymBasis.jl/issues/new).
+## Manual
+- [Getting started](https://cevenkadir.github.io/SymBasis.jl/stable/manual/getting_started/)
+- [Defining DoF-object(s)](https://cevenkadir.github.io/SymBasis.jl/stable/manual/defining_dof_objects/)
+- [Defining symmetry group(s)](https://cevenkadir.github.io/SymBasis.jl/stable/manual/defining_sym_groups/)
+- [Basis construction](https://cevenkadir.github.io/SymBasis.jl/stable/manual/basis_construction/)
+- [Determining representative states](https://cevenkadir.github.io/SymBasis.jl/stable/manual/representative_states/)
+- [State operations](https://cevenkadir.github.io/SymBasis.jl/stable/manual/state_operations/)
+- [Operator construction](https://cevenkadir.github.io/SymBasis.jl/stable/manual/operator_construction/)
+
+Performance comparisons against other packages are collected on the [benchmarks page](https://cevenkadir.github.io/SymBasis.jl/stable/benchmarks/).
+
+## Examples
+- [Quantum mechanical spins](https://cevenkadir.github.io/SymBasis.jl/stable/examples/spins/)
+- [Level statistics as a completeness test](https://cevenkadir.github.io/SymBasis.jl/stable/examples/level_statistics/)
+- [Quantum many-body scars in the PXP chain](https://cevenkadir.github.io/SymBasis.jl/stable/examples/pxp/)
+- [Phase diagram of the Bose-Hubbard chain](https://cevenkadir.github.io/SymBasis.jl/stable/examples/1d_bhm_phase_diagram/)
+- [Fermi-Hubbard chain vs. the exact Lieb-Wu solution](https://cevenkadir.github.io/SymBasis.jl/stable/examples/fhm_lieb_wu/)
+- [Spinless-fermion t-V chain vs. the exact Bethe-Hulthén solution](https://cevenkadir.github.io/SymBasis.jl/stable/examples/tv_chain_bethe_hulthen/)
 
 ## Quick example
 You can determine the basis with zero total magnetization for a spin-1/2 system with 4 sites as follows:
 ```julia
-julia> using SymBasis.DoFObjects
-julia> using SymBasis.SymGroups
-julia> using SymBasis.Bases
+julia> using SymBasis
 
 julia> N = 4; # number of sites
 julia> Sz = 0; # total magnetization
@@ -79,10 +94,10 @@ SymGroup{2,Rational{Int64},UInt64,Int64,Float64} with 1 cycle(s)
 
 # generate the basis
 julia> basis(dofo, N, sg)
-Basis{SymBasis.DigitBase.BaseInt{UInt64, Int64, 2},Float64} with 6 states
-  states: Vector{SymBasis.DigitBase.BaseInt{UInt64, Int64, 2}}
+Basis{BaseInt{UInt64, Int64, 2},Float64} with 6 states
+  states: Vector{BaseInt{UInt64, Int64, 2}}
   norms : Vector{Float64}
-  symmetry group: SymGroup{2, Rational{Int64}, UInt64, Int64, Float64}
+  symmetry group: SymGroup{2, Rational{Int64}, UInt64, Int64, Float64, Vector{@NamedTuple{N0::Int64, N1::Int64, N::Int64}}, typeof(check_Nₛ), typeof(apply_Nₛ), typeof(phase_unity), Vector{Float64}}
   first 6 states/norms:
     (11)₂    (norm=1.0)
     (101)₂   (norm=1.0)
@@ -91,6 +106,9 @@ Basis{SymBasis.DigitBase.BaseInt{UInt64, Int64, 2},Float64} with 6 states
     (1010)₂  (norm=1.0)
     (1100)₂  (norm=1.0)
 ```
+
+## Important notice
+This project is still under active development. While it includes an extensive test suite and is developed with high scientific rigor, you should always benchmark your own code. Please report any issues you encounter via the [GitHub issue tracker](https://github.com/cevenkadir/SymBasis.jl/issues/new).
 
 ## Citation
 If you use this package in your work, 

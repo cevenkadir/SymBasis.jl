@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Level statistics as a completeness test · SymBasis.jl</title><meta name="title" content="Level statistics as a completeness test · SymBasis.jl"/><meta property="og:title" content="Level statistics as a completeness test · SymBasis.jl"/><meta property="twitter:title" content="Level statistics as a completeness test · SymBasis.jl"/><meta name="description" content="Documentation for SymBasis.jl."/><meta property="og:description" content="Documentation for SymBasis.jl."/><meta property="twitter:description" content="Documentation for SymBasis.jl."/><meta property="og:url" content="https://cevenkadir.github.io/SymBasis.jl/examples/level_statistics/"/><meta property="twitter:url" content="https://cevenkadir.github.io/SymBasis.jl/examples/level_statistics/"/><link rel="canonical" href="https://cevenkadir.github.io/SymBasis.jl/examples/level_statistics/"/><script async src="https://www.googletagmanager.com/gtag/js?id=G-X8Z32YNZ42"></script><script>  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-X8Z32YNZ42', {'page_path': location.pathname + location.search + location.hash});
+</script><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../assets/favicon.ico" rel="icon" type="image/x-icon"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img class="docs-light-only" src="../../assets/logo.svg" alt="SymBasis.jl logo"/><img class="docs-dark-only" src="../../assets/logo-dark.svg" alt="SymBasis.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">SymBasis.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Manual</span><ul><li><a class="tocitem" href="../../manual/getting_started/">Getting started</a></li><li><a class="tocitem" href="../../manual/defining_dof_objects/">Defining DoF-object(s)</a></li><li><a class="tocitem" href="../../manual/defining_sym_groups/">Defining symmetry group(s)</a></li><li><a class="tocitem" href="../../manual/basis_construction/">Basis construction</a></li><li><a class="tocitem" href="../../manual/representative_states/">Determining representative states</a></li><li><a class="tocitem" href="../../manual/state_operations/">State operations</a></li><li><a class="tocitem" href="../../manual/operator_construction/">Operator construction</a></li></ul></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../spins/">Quantum mechanical spins</a></li><li class="is-active"><a class="tocitem" href>Level statistics as a completeness test</a><ul class="internal"><li><a class="tocitem" href="#Why-a-dimension-count-cannot-detect-this"><span>Why a dimension count cannot detect this</span></a></li><li><a class="tocitem" href="#The-observable"><span>The observable</span></a></li><li><a class="tocitem" href="#Models-and-machinery"><span>Models and machinery</span></a></li><li><a class="tocitem" href="#Which-symmetries-are-good-in-which-sector"><span>Which symmetries are good in which sector</span></a></li><li><a class="tocitem" href="#Check-0-—-Model-C,-disorder,-U(1)-only"><span>Check 0 — Model C, disorder, U(1) only</span></a></li><li><a class="tocitem" href="#Check-2-—-the-deliberate-failure-test"><span>Check 2 — the deliberate-failure test</span></a></li><li><a class="tocitem" href="#Check-1-—-Model-B,-fully-resolved"><span>Check 1 — Model B, fully resolved</span></a></li><li><a class="tocitem" href="#Check-3-—-Model-A,-integrable-control"><span>Check 3 — Model A, integrable control</span></a></li><li><a class="tocitem" href="#Check-4-—-every-sector"><span>Check 4 — every sector</span></a></li><li><a class="tocitem" href="#Check-5-—-the-full-distribution"><span>Check 5 — the full distribution</span></a></li><li><a class="tocitem" href="#Where-to-use-this"><span>Where to use this</span></a></li></ul></li><li><a class="tocitem" href="../pxp/">Quantum many-body scars in the PXP chain</a></li><li><a class="tocitem" href="../1d_bhm_phase_diagram/">Phase diagram of the Bose-Hubbard chain</a></li><li><a class="tocitem" href="../fhm_lieb_wu/">Fermi-Hubbard chain vs. the exact Lieb-Wu solution</a></li><li><a class="tocitem" href="../tv_chain_bethe_hulthen/">Spinless-fermion t-V chain vs. the exact Bethe-Hulthén solution</a></li></ul></li><li><a class="tocitem" href="../../benchmarks/">Benchmarks</a></li><li><span class="tocitem">API Reference</span><ul><li><a class="tocitem" href="../../api/digitbase/">DigitBase</a></li><li><a class="tocitem" href="../../api/dofobjects/">DoFObjects</a></li><li><a class="tocitem" href="../../api/miscs/">Miscs</a></li><li><a class="tocitem" href="../../api/symgroups/">SymGroups</a></li><li><a class="tocitem" href="../../api/bases/">Bases</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Level statistics as a completeness test</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Level statistics as a completeness test</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/cevenkadir/SymBasis.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/cevenkadir/SymBasis.jl/blob/main/docs/src/examples/level_statistics.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Level-statistics-as-a-completeness-test-for-symmetry-resolution"><a class="docs-heading-anchor" href="#Level-statistics-as-a-completeness-test-for-symmetry-resolution">Level statistics as a completeness test for symmetry resolution</a><a id="Level-statistics-as-a-completeness-test-for-symmetry-resolution-1"></a><a class="docs-heading-anchor-permalink" href="#Level-statistics-as-a-completeness-test-for-symmetry-resolution" title="Permalink"></a></h1><p>Every other check in this documentation asks whether an <em>implemented</em> symmetry is implemented <strong>correctly</strong>: energies match a Bethe-ansatz value, dimensions match a known count, a reconstructed wavefunction matches a reference. This page asks a different and harder question — whether the set of symmetries you resolved is <strong>complete</strong>, that is, whether a symmetry you never implemented at all is still lurking inside your &quot;fully resolved&quot; block.</p><p>The mechanism is that superposing two or more statistically independent spectra destroys level repulsion and pushes the level statistics toward Poisson. So if you diagonalize a <em>chaotic</em> model in a supposedly irreducible sector and the level-spacing ratio comes out noticeably below the random-matrix value, that is direct evidence of a residual unresolved symmetry: two or more blocks have silently merged.</p><ul><li><a href="#Level-statistics-as-a-completeness-test-for-symmetry-resolution">Level statistics as a completeness test for symmetry resolution</a></li><li class="no-marker"><ul><li><a href="#Why-a-dimension-count-cannot-detect-this">Why a dimension count cannot detect this</a></li><li><a href="#The-observable">The observable</a></li><li><a href="#Models-and-machinery">Models and machinery</a></li><li><a href="#Which-symmetries-are-good-in-which-sector">Which symmetries are good in which sector</a></li><li><a href="#Check-0-—-Model-C,-disorder,-U(1)-only">Check 0 — Model C, disorder, U(1) only</a></li><li><a href="#Check-2-—-the-deliberate-failure-test">Check 2 — the deliberate-failure test</a></li><li><a href="#Check-1-—-Model-B,-fully-resolved">Check 1 — Model B, fully resolved</a></li><li><a href="#Check-3-—-Model-A,-integrable-control">Check 3 — Model A, integrable control</a></li><li><a href="#Check-4-—-every-sector">Check 4 — every sector</a></li><li><a href="#Check-5-—-the-full-distribution">Check 5 — the full distribution</a></li><li><a href="#Where-to-use-this">Where to use this</a></li></ul></li></ul><h2 id="Why-a-dimension-count-cannot-detect-this"><a class="docs-heading-anchor" href="#Why-a-dimension-count-cannot-detect-this">Why a dimension count cannot detect this</a><a id="Why-a-dimension-count-cannot-detect-this-1"></a><a class="docs-heading-anchor-permalink" href="#Why-a-dimension-count-cannot-detect-this" title="Permalink"></a></h2><p>The obvious check on a symmetry decomposition is that the sector dimensions add up. Let us do that first, and see it succeed:</p><pre><code class="language-julia hljs">using SymBasis
+using LinearAlgebra, SparseArrays, Statistics, Random, Printf
+
+dofo = dof_object(Spin(1 // 2))
+
+L_dim = 8
+tot_dim = 0
+for k in 0:(L_dim-1), z in (1, -1)
+    csg = sym(TotalMagnetization(0, L_dim), dofo) ∘
+          sym(Translational(k, mod1.((1:L_dim) .+ 1, L_dim)), dofo) ∘
+          sym(SpinInversion(z, L_dim), dofo)
+    global tot_dim += length(basis(dofo, L_dim, csg).states)
+end
+
+@printf(&quot;Σ over all (k, z) sectors = %d\nbinomial(%d, %d)            = %d\n&quot;,
+    tot_dim, L_dim, L_dim ÷ 2, binomial(L_dim, L_dim ÷ 2))
+@assert tot_dim == binomial(L_dim, L_dim ÷ 2)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Σ over all (k, z) sectors = 70
+binomial(8, 4)            = 70</code></pre><p>The momentum and spin-inversion sectors partition the <span>$S^z = 0$</span> space exactly. And this tells us <strong>nothing at all</strong> about whether each block is irreducible: dimensions add up correctly whether or not two independent blocks happen to be sitting inside one of them. That is the gap this page fills.</p><h2 id="The-observable"><a class="docs-heading-anchor" href="#The-observable">The observable</a><a id="The-observable-1"></a><a class="docs-heading-anchor-permalink" href="#The-observable" title="Permalink"></a></h2><p>For a sorted spectrum <span>$\{E_n\}$</span> inside a <em>single</em> symmetry sector, take gaps <span>$s_n = E_{n+1} - E_n$</span> and form the ratio</p><p class="math-container">\[r_n = \frac{\min(s_n, s_{n-1})}{\max(s_n, s_{n-1})} \in [0, 1].\]</p><p>The virtue that made Oganesyan and Huse introduce it<sup class="footnote-reference"><a id="citeref-Oganesyan_2007" href="#footnote-Oganesyan_2007" class="footnote-ref">[Oganesyan_2007]</a><span class="footnote-preview" id="fn-Oganesyan_2007"></span></sup> is that <span>$r_n$</span> is insensitive to the local density of states, so <strong>no unfolding is required</strong> — which removes the single largest source of methodological error in older level-statistics studies.</p><p>The reference values need care, because two sets circulate in the literature and they differ by about 1%:</p><table><tr><th style="text-align: left">ensemble</th><th style="text-align: left">large-matrix limit (used here)</th><th style="text-align: left">Wigner-like surmise (not used)</th></tr><tr><td style="text-align: left">Poisson (integrable)</td><td style="text-align: left"><span>$2\ln 2 - 1 = 0.38629$</span> (exact)</td><td style="text-align: left">—</td></tr><tr><td style="text-align: left">GOE (chaotic, time-reversal symmetric)</td><td style="text-align: left"><span>$0.5307$</span></td><td style="text-align: left"><span>$4 - 2\sqrt3 = 0.53590$</span></td></tr><tr><td style="text-align: left">GUE (chaotic, no time reversal)</td><td style="text-align: left"><span>$0.5996$</span></td><td style="text-align: left"><span>$0.60266$</span></td></tr></table><div class="admonition is-info" id="Which-column-to-compare-against-a346d2f69735676b"><header class="admonition-header">Which column to compare against<a class="admonition-anchor" href="#Which-column-to-compare-against-a346d2f69735676b" title="Permalink"></a></header><div class="admonition-body"><p>For many-body spectra with large sector dimensions the convention is the <strong>large-matrix-limit</strong> column, and that is what this page uses. The surmise values come from <span>$3\times3$</span> matrices. Quoting the wrong one shifts every number by about <span>$0.005$</span>, which looks exactly like a subtle bug.</p></div></div><pre><code class="language-julia hljs">const POISSON = 2 * log(2) - 1
+const GOE = 0.5307
+const GUE = 0.5996
+
+function r_values(E; trim=0.25, degtol=1e-9)
+    Es = sort(real(E))
+    n = length(Es)
+    Es = Es[(floor(Int, n * trim)+1):ceil(Int, n * (1-trim))] # middle 50%
+    s = diff(Es)
+    n_deg = count(&lt;(degtol), s)
+    rs = [min(s[i], s[i-1]) / max(s[i], s[i-1])
+          for i in 2:length(s) if max(s[i], s[i-1]) &gt; 0]
+    return rs, n_deg
+end
+
+mean_r(rs) = (mean(rs), std(rs) / sqrt(length(rs)))</code></pre><p>Two details in there are not cosmetic.</p><p><strong>The edges are trimmed</strong> to the middle 50% of each spectrum, because the density of states varies far too rapidly near the spectral edges.</p><p><strong>Degeneracies are counted, not filtered.</strong> A leftover exact degeneracy gives <span>$s = 0$</span> and hence <span>$r = 0$</span>, which drags <span>$\langle r \rangle$</span> down and mimics precisely the pathology being hunted. Silently dropping such pairs would hide the evidence, so <code>r_values</code> returns the count and every caller checks it. If exact degeneracies appear inside what should be an irreducible block, that is itself the signal — and it is worth chasing, as the <a href="#Check-3-—-Model-A,-integrable-control">integrable control</a> below demonstrates.</p><p>Finally, every number on this page is quoted with its uncertainty. The standard error on <span>$\langle r \rangle$</span> from <span>$N$</span> ratios is <span>$\sigma_r/\sqrt{N}$</span> with <span>$\sigma_r \approx 0.25$</span>, so a sector of <span>$1000$</span> levels gives about <span>$\pm 0.008$</span>. Do not over-interpret a deviation of <span>$0.005$</span>; do investigate a deviation of <span>$0.05$</span>.</p><h2 id="Models-and-machinery"><a class="docs-heading-anchor" href="#Models-and-machinery">Models and machinery</a><a id="Models-and-machinery-1"></a><a class="docs-heading-anchor-permalink" href="#Models-and-machinery" title="Permalink"></a></h2><p>One builder covers all three models — a list of <code>(distance, J, Δ)</code> couplings plus an optional field, assembled with the recipe from the <a href="../../manual/operator_construction/#Operator-construction">operator construction</a> page:</p><pre><code class="language-julia hljs">function build_chain(L, ba; couplings=((1, 1.0, 0.8),), fields=nothing, T=Float64)
+    dim = length(ba.states)
+    b = Dict(ba.states .=&gt; 1:dim)
+    I_vec, J_vec, V_vec = Int[], Int[], T[]
+
+    for sₙ in ba.states
+        n = b[sₙ]
+        Nₙ = ba.norms[n]
+        diag_val = zero(T)
+
+        if fields !== nothing # Σ hᵢ Sᶻᵢ
+            diag_val += sum(fields[i] * (Int(read(sₙ, i)) - 0.5) for i in 1:L)
+        end
+
+        for (d, J, Δd) in couplings, i in 1:L
+            j = mod1(i + d, L)
+            if read(sₙ, i) == read(sₙ, j)
+                diag_val += Δd * J / 4
+                continue
+            end
+            diag_val -= Δd * J / 4
+
+            temp_s = flip(sₙ, [i, j])
+            rep_s, rep_fac = representative(temp_s, ba)
+            haskey(b, rep_s) || continue
+
+            m = b[rep_s]
+            push!(I_vec, m)
+            push!(J_vec, n)
+            push!(V_vec, T(0.5 * J * sqrt(ba.norms[m] / Nₙ) * rep_fac))
+        end
+
+        push!(I_vec, n)
+        push!(J_vec, n)
+        push!(V_vec, diag_val)
+    end
+
+    return sparse(I_vec, J_vec, V_vec, dim, dim)
+end
+
+spectrum(h) = eigvals(Hermitian(Matrix(h)))</code></pre><p>The whole spectrum is needed, not a few extremal eigenvalues, so this page uses dense <code>eigvals</code> throughout rather than the <code>Arpack</code> solver used elsewhere in these examples.</p><ul><li><strong>Model A</strong> (integrable control): <code>couplings = ((1, 1.0, Δ),)</code> — the plain XXZ chain.</li><li><strong>Model B</strong> (chaotic, the actual test): <code>((1, 1.0, Δ), (2, J₂, Δ₂))</code> — XXZ with next-nearest-neighbor couplings, which breaks integrability.</li><li><strong>Model C</strong> (disordered): <code>((1, 1.0, 1.0),)</code> plus <code>fields</code> — the random-field Heisenberg chain.</li></ul><h3 id="The-same-Hamiltonians-with-OperatorAlgebra.jl"><a class="docs-heading-anchor" href="#The-same-Hamiltonians-with-OperatorAlgebra.jl">The same Hamiltonians with OperatorAlgebra.jl</a><a id="The-same-Hamiltonians-with-OperatorAlgebra.jl-1"></a><a class="docs-heading-anchor-permalink" href="#The-same-Hamiltonians-with-OperatorAlgebra.jl" title="Permalink"></a></h3><p><a href="https://github.com/h-mnzlr/OperatorAlgebra.jl">OperatorAlgebra.jl</a> is an optional package whose SymBasis.jl extension activates as soon as both are loaded. It expresses the same operators declaratively, and <code>sparse(H, ba)</code> applies the identical <code>representative</code>-based projection internally, so it reproduces <code>build_chain</code> up to round-off:</p><pre><code class="language-julia hljs">using OperatorAlgebra
+
+bond(J, Δd, i, j) = J * (0.5 * (Op(RAISE, i) * Op(LOWER, j) + Op(LOWER, i) * Op(RAISE, j))
+                         + Δd * Op(SPIN_Z, i) * Op(SPIN_Z, j))
+
+ba_oa = basis(dofo, 12,
+    sym(TotalMagnetization(0, 12), dofo) ∘
+    sym(Translational(0, mod1.((1:12) .+ 1, 12)), dofo))
+
+H_oa = sum(bond(1.0, 0.8, i, mod1(i + 1, 12)) for i in 1:12) +      # Model B
+       sum(bond(1.0, 0.8, i, mod1(i + 2, 12)) for i in 1:12)
+
+d_bond = norm(collect(sparse(H_oa, ba_oa)) -
+              collect(build_chain(12, ba_oa; couplings=((1, 1.0, 0.8), (2, 1.0, 0.8)))))
+@assert d_bond &lt; 1e-10
+d_bond</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">3.925231146709438e-16</code></pre><p><code>ba_oa</code> is a genuine momentum sector rather than a magnetization-only basis, so its normalization factors are not all <code>1</code> and the <span>$\sqrt{N_m/N_n}$</span> projection is exercised on both sides of the comparison.</p><p>Model C&#39;s disorder term needs one extra care, and it must be built in a magnetization-only basis — a random field breaks translation, so there is no momentum sector to project into:</p><pre><code class="language-julia hljs">ba_fld = basis(dofo, 12, sym(TotalMagnetization(0, 12), dofo))
+hs = [0.3 * cospi(i / 3) for i in 1:12]
+
+H_fld = sum(bond(1.0, 1.0, i, mod1(i + 1, 12)) for i in 1:12) +
+        sum(-hs[i] * Op(SPIN_Z, i) for i in 1:12)          # note the minus sign
+
+d_fld = norm(collect(sparse(H_fld, ba_fld)) -
+             collect(build_chain(12, ba_fld; couplings=((1, 1.0, 1.0),), fields=hs)))
+@assert d_fld &lt; 1e-10
+d_fld</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">6.540311493867724e-15</code></pre><div class="admonition is-warning" id="Op(SPIN_Z,-i)-is-Sᶻᵢ-in-this-convention-7403cd2ad1f3666e"><header class="admonition-header">Op(SPIN_Z, i) is −Sᶻᵢ in this convention<a class="admonition-anchor" href="#Op(SPIN_Z,-i)-is-Sᶻᵢ-in-this-convention-7403cd2ad1f3666e" title="Permalink"></a></header><div class="admonition-body"><p><code>SPIN_Z</code> is <code>[1/2 0; 0 -1/2]</code> and the extension reads matrix index <code>1</code> as digit <code>0</code>, but <a href="../../api/dofobjects/#SymBasis.DoFObjects.Spin"><code>Spin</code></a><code>(1//2)</code> has <code>ldof = (-1//2, 1//2)</code>, so digit <code>0</code> is spin <em>down</em>. The two conventions are exactly opposite:</p><pre><code class="language-julia hljs">ba_one = basis(dofo, 2, sym(TotalMagnetization(0, 2), dofo))
+s_one = ba_one.states[1]
+d_one = Int(read(s_one, 1))
+
+(; digit=d_one, Sᶻ=dofo.ldof[d_one+1],
+    Op_SPIN_Z=real(sparse(Op(SPIN_Z, 1), ba_one)[1, 1]))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(digit = 1, Sᶻ = 1//2, Op_SPIN_Z = -0.5)</code></pre><p>Inside a two-site <span>$S^zS^z$</span> product the sign appears twice and cancels, which is why the bond Hamiltonian above needs no correction. A single-site term is not protected: dropping the minus sign in <code>H_fld</code> flips the sign of every field and changes the physics without raising any error.</p></div></div><h2 id="Which-symmetries-are-good-in-which-sector"><a class="docs-heading-anchor" href="#Which-symmetries-are-good-in-which-sector">Which symmetries are good in which sector</a><a id="Which-symmetries-are-good-in-which-sector-1"></a><a class="docs-heading-anchor-permalink" href="#Which-symmetries-are-good-in-which-sector" title="Permalink"></a></h2><p>This is where the test can most easily be sabotaged before it starts, and where SymBasis answers the question directly. Reflection maps <span>$k \to -k$</span>, so it is <em>not</em> a symmetry within a single momentum block except where <span>$k$</span> and <span>$-k$</span> coincide. Rather than asserting that rule, we can simply ask <a href="../../api/bases/#SymBasis.Bases.is_commutative-Tuple{Basis, CombSymGroup}"><code>is_commutative</code></a>:</p><pre><code class="language-julia hljs">L_c = 8
+P_perm = 1:L_c |&gt; reverse |&gt; collect
+
+@printf(&quot;%4s %26s\n&quot;, &quot;k&quot;, &quot;T(k) ∘ P  commutative?&quot;)
+for k in 0:(L_c-1)
+    csg = sym(TotalMagnetization(0, L_c), dofo) ∘
+          sym(Translational(k, mod1.((1:L_c) .+ 1, L_c)), dofo) ∘
+          sym(SpatialReflection(1, P_perm), dofo)
+    @printf(&quot;%4d %26s\n&quot;, k, is_commutative(basis(dofo, L_c, csg)))
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">   k     T(k) ∘ P  commutative?
+   0                       true
+   1                      false
+   2                      false
+   3                      false
+   4                       true
+   5                      false
+   6                      false
+   7                      false</code></pre><p>The library says <code>true</code> at <span>$k = 0$</span> and <span>$k = L/2$</span> (that is, <span>$k = \pi$</span>) and <code>false</code> everywhere else, which is exactly the textbook rule. Spin inversion, by contrast, commutes with translation at every <span>$k$</span>. So the sector structure is:</p><pre><code class="language-julia hljs">reflection_allowed(k, L) = k == 0 || 2k == L
+
+function sector_basis(L, k, z; p=0)
+    csg = sym(TotalMagnetization(0, L), dofo) ∘
+          sym(Translational(k, mod1.((1:L) .+ 1, L)), dofo) ∘
+          sym(SpinInversion(z, L), dofo)
+    p == 0 || (csg = csg ∘ sym(SpatialReflection(p, 1:L |&gt; reverse |&gt; collect), dofo))
+    return basis(dofo, L, csg)
+end
+
+function sector_list(L) # k and -k have identical spectra, so sweep k = 0 … L/2
+    out = NamedTuple{(:k, :p, :z),Tuple{Int,Int,Int}}[]
+    for k in 0:(L÷2), z in (1, -1)
+        if reflection_allowed(k, L)
+            push!(out, (; k, p=1, z))
+            push!(out, (; k, p=-1, z))
+        else
+            push!(out, (; k, p=0, z))
+        end
+    end
+    return out
+end
+
+function sector_spectrum(L, s; couplings)
+    ba = sector_basis(L, s.k, s.z; p=s.p)
+    isempty(ba.states) &amp;&amp; return Float64[], 0
+    T = reflection_allowed(s.k, L) ? Float64 : ComplexF64
+    return spectrum(build_chain(L, ba; couplings=couplings, T=T)), length(ba.states)
+end</code></pre><p>Two further constraints on the model parameters, both of which would look like bugs if ignored:</p><ul><li><strong>Spin inversion needs <span>$S^z = 0$</span>.</strong> <a href="../../api/symgroups/#SymBasis.SymGroups.SpinInversion"><code>SpinInversion</code></a> enforces this internally — its <code>sym</code> method enumerates only configurations with vanishing total magnetization — so composing it with <code>TotalMagnetization(0, L)</code> is redundant, but kept above for readability.</li><li><strong>Avoid <span>$\Delta = 1$</span>.</strong> At the isotropic point SU(2) symmetry produces exact multiplet degeneracies across <span>$S^z$</span> sectors. Either resolve total <span>$S$</span>, or stay off <span>$\Delta = 1$</span>; this page does the latter.</li></ul><div class="admonition is-warning" id="GOE,-not-GUE,-at-k-0,-π-18b144b514abe986"><header class="admonition-header">GOE, not GUE, at k ≠ 0, π<a class="admonition-anchor" href="#GOE,-not-GUE,-at-k-0,-π-18b144b514abe986" title="Permalink"></a></header><div class="admonition-body"><p>The <span>$k \neq 0, \pi$</span> blocks are genuinely <em>complex</em> Hermitian, which invites the guess that they should follow GUE. They do not. Reflection composed with complex conjugation is an antiunitary symmetry that maps a single <span>$k$</span> block to itself and squares to <span>$+1$</span>, so these sectors are GOE like all the others. Expecting <span>$0.5996$</span> here and finding <span>$0.53$</span> would look exactly like a broken projection.</p></div></div><h2 id="Check-0-—-Model-C,-disorder,-U(1)-only"><a class="docs-heading-anchor" href="#Check-0-—-Model-C,-disorder,-U(1)-only">Check 0 — Model C, disorder, U(1) only</a><a id="Check-0-—-Model-C,-disorder,-U(1)-only-1"></a><a class="docs-heading-anchor-permalink" href="#Check-0-—-Model-C,-disorder,-U(1)-only" title="Permalink"></a></h2><p>Start where the symmetry machinery is not involved at all. The random-field Heisenberg chain<sup class="footnote-reference"><a id="citeref-Luitz_2015" href="#footnote-Luitz_2015" class="footnote-ref">[Luitz_2015]</a><span class="footnote-preview" id="fn-Luitz_2015"></span></sup></p><p class="math-container">\[\hat{H} = \sum_i \vec{S}_i \cdot \vec{S}_{i+1} + \sum_i h_i \hat{S}^z_i,
+\qquad h_i \sim \mathcal{U}[-W, W]\]</p><p>has disorder that breaks translation, reflection and SU(2), leaving <strong>only</strong> the U(1) magnetization. Resolution is therefore trivially complete, which isolates the <span>$r$</span> machinery — edge trimming, averaging, degeneracy counting — from everything else. It should give GOE at small <span>$W$</span> and cross over to Poisson at large <span>$W$</span>.</p><pre><code class="language-julia hljs">function model_c(L, W, nreal; seed=1234)
+    rng = MersenneTwister(seed)
+    ba = basis(dofo, L, sym(TotalMagnetization(0, L), dofo))
+    all_r, n_deg = Float64[], 0
+    for _ in 1:nreal
+        h = build_chain(L, ba; couplings=((1, 1.0, 1.0),),
+            fields=W .* (2 .* rand(rng, L) .- 1))
+        rs, nd = r_values(spectrum(h))
+        append!(all_r, rs) # r computed WITHIN a realization, then pooled
+        n_deg += nd
+    end
+    m, e = mean_r(all_r)
+    return (; W, mean=m, err=e, n=length(all_r), n_deg, dim=length(ba.states))
+end
+
+Ws = (0.5, 1.0, 2.0, 3.0, 4.0, 6.0, 8.0)
+c_res = [model_c(12, W, 8) for W in Ws]
+
+@printf(&quot;%6s %8s %10s %8s %6s\n&quot;, &quot;W&quot;, &quot;&lt;r&gt;&quot;, &quot;±&quot;, &quot;N&quot;, &quot;deg&quot;)
+for c in c_res
+    @printf(&quot;%6.1f %8.4f %10.4f %8d %6d\n&quot;, c.W, c.mean, c.err, c.n, c.n_deg)
+    @assert c.n_deg == 0
+end
+@printf(&quot;\nGOE = %.4f, Poisson = %.5f\n&quot;, GOE, POISSON)
+@assert abs(c_res[1].mean - GOE) &lt; 0.02
+@assert abs(c_res[end].mean - POISSON) &lt; 0.02</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">     W      &lt;r&gt;          ±        N    deg
+   0.5   0.5236     0.0042     3680      0
+   1.0   0.5232     0.0042     3680      0
+   2.0   0.4773     0.0044     3680      0
+   3.0   0.4183     0.0046     3680      0
+   4.0   0.3999     0.0045     3680      0
+   6.0   0.3927     0.0046     3680      0
+   8.0   0.3905     0.0046     3680      0
+
+GOE = 0.5307, Poisson = 0.38629</code></pre><p>Note the ordering inside <code>model_c</code>: <span>$r$</span> is computed <strong>within</strong> each disorder realization and only then pooled. Pooling spectra from different realizations before computing <span>$r$</span> would superpose independent spectra — which is the very pathology this page is about, and would push the answer toward Poisson regardless of <span>$W$</span>.</p><h2 id="Check-2-—-the-deliberate-failure-test"><a class="docs-heading-anchor" href="#Check-2-—-the-deliberate-failure-test">Check 2 — the deliberate-failure test</a><a id="Check-2-—-the-deliberate-failure-test-1"></a><a class="docs-heading-anchor-permalink" href="#Check-2-—-the-deliberate-failure-test" title="Permalink"></a></h2><p>Before trusting the diagnostic as evidence about real bugs, calibrate how sensitive it actually is at these system sizes. Take a chaotic model in properly resolved sectors and then <em>deliberately merge</em> blocks that ought to be independent:</p><pre><code class="language-julia hljs">Δ_xxz = 0.8
+MODEL_B = ((1, 1.0, Δ_xxz), (2, 1.0, Δ_xxz))
+MODEL_A = ((1, 1.0, Δ_xxz),)
+
+L_m = 16
+mE_0pp, _ = sector_spectrum(L_m, (; k=0, p=1, z=1); couplings=MODEL_B)
+mE_0mp, _ = sector_spectrum(L_m, (; k=0, p=-1, z=1); couplings=MODEL_B)
+mE_0pm, _ = sector_spectrum(L_m, (; k=0, p=1, z=-1); couplings=MODEL_B)
+mE_k1, _ = sector_spectrum(L_m, (; k=1, p=0, z=1); couplings=MODEL_B)
+mE_k2, _ = sector_spectrum(L_m, (; k=2, p=0, z=1); couplings=MODEL_B)
+
+@printf(&quot;%-38s %7s %18s\n&quot;, &quot;&quot;, &quot;N&quot;, &quot;&lt;r&gt;&quot;)
+for (label, E) in (
+    (&quot;resolved   k=0, p=+1, z=+1&quot;, mE_0pp),
+    (&quot;resolved   k=0, p=-1, z=+1&quot;, mE_0mp),
+    (&quot;resolved   k=1, z=+1&quot;, mE_k1),
+    (&quot;MERGED     p=+1 ∪ p=-1&quot;, vcat(mE_0pp, mE_0mp)),
+    (&quot;MERGED     z=+1 ∪ z=-1&quot;, vcat(mE_0pp, mE_0pm)),
+    (&quot;MERGED     k=1 ∪ k=2&quot;, vcat(mE_k1, mE_k2)),
+)
+    rs, _ = r_values(E)
+    m, e = mean_r(rs)
+    @printf(&quot;%-38s %7d   %.4f ± %.4f\n&quot;, label, length(rs), m, e)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">                                             N                &lt;r&gt;
+resolved   k=0, p=+1, z=+1                 127   0.5119 ± 0.0220
+resolved   k=0, p=-1, z=+1                  78   0.5411 ± 0.0329
+resolved   k=1, z=+1                       194   0.5496 ± 0.0181
+MERGED     p=+1 ∪ p=-1                     207   0.4485 ± 0.0196
+MERGED     z=+1 ∪ z=-1                     218   0.4367 ± 0.0191
+MERGED     k=1 ∪ k=2                       401   0.4491 ± 0.0139</code></pre><p>Merging any two blocks collapses <span>$\langle r \rangle$</span> from the GOE value to around <span>$0.445$</span> — a shift of roughly <span>$0.085$</span>, which is four to six standard errors and about <span>$60\%$</span> of the way to Poisson. That is the sensitivity of the diagnostic at these sector sizes, and it is what licenses the interpretation of the next section.</p><p>The inference runs in both directions, which is the reason to do this check at all. If merging two blocks had <em>not</em> moved <span>$\langle r \rangle$</span>, then those two &quot;blocks&quot; were never independent spectra in the first place — meaning the projection was wrong.</p><h2 id="Check-1-—-Model-B,-fully-resolved"><a class="docs-heading-anchor" href="#Check-1-—-Model-B,-fully-resolved">Check 1 — Model B, fully resolved</a><a id="Check-1-—-Model-B,-fully-resolved-1"></a><a class="docs-heading-anchor-permalink" href="#Check-1-—-Model-B,-fully-resolved" title="Permalink"></a></h2><p>Now the actual test. Model B is the XXZ chain with next-nearest-neighbor couplings,</p><p class="math-container">\[\hat{H} = \sum_i \left( S^x_i S^x_{i+1} + S^y_i S^y_{i+1} + \Delta S^z_i S^z_{i+1} \right)
+        + J_2 \sum_i \left( S^x_i S^x_{i+2} + S^y_i S^y_{i+2} + \Delta_2 S^z_i S^z_{i+2} \right),\]</p><p>with <span>$\Delta = \Delta_2 = 0.8$</span> and <span>$J_2 = 1$</span>. The <span>$J_2$</span> term destroys integrability, so a fully resolved sector should be GOE<sup class="footnote-reference"><a id="citeref-Poilblanc_1993" href="#footnote-Poilblanc_1993" class="footnote-ref">[Poilblanc_1993]</a><span class="footnote-preview" id="fn-Poilblanc_1993"></span></sup>.</p><pre><code class="language-julia hljs">ba20 = sector_basis(20, 0, 1; p=1)   # built once, reused for Model A below
+EB = spectrum(build_chain(20, ba20; couplings=MODEL_B))
+rB, degB = r_values(EB)
+mB, eB = mean_r(rB)
+
+@printf(&quot;L = 20, k = 0, p = +1, z = +1\n&quot;)
+@printf(&quot;  sector dimension  = %d\n  ratios used       = %d\n&quot;,
+    length(ba20.states), length(rB))
+@printf(&quot;  exact degeneracies= %d\n&quot;, degB)
+@printf(&quot;  &lt;r&gt;               = %.4f ± %.4f   (GOE = %.4f)\n&quot;, mB, eB, GOE)
+@assert degB == 0
+@assert abs(mB - GOE) &lt; 0.02</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">L = 20, k = 0, p = +1, z = +1
+  sector dimension  = 2518
+  ratios used       = 1258
+  exact degeneracies= 0
+  &lt;r&gt;               = 0.5345 ± 0.0072   (GOE = 0.5307)</code></pre><p>This is the completeness statement: within the resolution of the test, the four symmetries resolved here — magnetization, translation, reflection and spin inversion — exhaust the symmetries of Model B in this sector. Had a fifth been lurking, <span>$\langle r \rangle$</span> would have sat near the <span>$0.445$</span> measured above.</p><p>The reading, following Santos and Rigol<sup class="footnote-reference"><a id="citeref-Santos_2010" href="#footnote-Santos_2010" class="footnote-ref">[Santos_2010]</a><span class="footnote-preview" id="fn-Santos_2010"></span></sup>, is: | measured <span>$\langle r \rangle$</span> | conclusion | |:–-|:–-| | <span>$\approx 0.5307$</span> | resolution is complete, as far as this test can tell | | <span>$0.39$</span> – <span>$0.52$</span> | almost certainly a residual unresolved symmetry, or sectors pooled somewhere | | <span>$\approx 0.386$</span> | a superposition of many independent spectra — the projection is probably not being applied at all | | <span>$&gt; 0.54$</span> | suspect the analysis, not the physics: levels dropped, degeneracies over-filtered, edges trimmed asymmetrically |</p><h2 id="Check-3-—-Model-A,-integrable-control"><a class="docs-heading-anchor" href="#Check-3-—-Model-A,-integrable-control">Check 3 — Model A, integrable control</a><a id="Check-3-—-Model-A,-integrable-control-1"></a><a class="docs-heading-anchor-permalink" href="#Check-3-—-Model-A,-integrable-control" title="Permalink"></a></h2><p>Same machinery with <span>$J_2 = 0$</span>. The plain XXZ chain is Bethe-ansatz integrable, so it should give Poisson:</p><pre><code class="language-julia hljs">EA = spectrum(build_chain(20, ba20; couplings=MODEL_A))   # same sector, J₂ = 0
+rA, degA = r_values(EA)
+mA, eA = mean_r(rA)
+
+@printf(&quot;L = 20, k = 0, p = +1, z = +1, J₂ = 0\n&quot;)
+@printf(&quot;  ratios used       = %d\n  exact degeneracies= %d\n&quot;, length(rA), degA)
+@printf(&quot;  &lt;r&gt;               = %.4f ± %.4f   (Poisson = %.5f)\n&quot;, mA, eA, POISSON)
+@assert degA == 0
+@assert abs(mA - POISSON) &lt; 0.03</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">L = 20, k = 0, p = +1, z = +1, J₂ = 0
+  ratios used       = 1258
+  exact degeneracies= 0
+  &lt;r&gt;               = 0.4009 ± 0.0081   (Poisson = 0.38629)</code></pre><p>This confirms the pipeline is not manufacturing artificial level repulsion — by dropping levels, say, or trimming asymmetrically. But note carefully what it does <strong>not</strong> show: an integrable model gives Poisson statistics <em>whether or not</em> the resolution is complete, since incomplete resolution also produces Poisson. Model A alone therefore proves nothing about completeness. All the diagnostic power lives in Model B.</p><h3 id="An-aside:-when-the-degeneracy-counter-earns-its-keep"><a class="docs-heading-anchor" href="#An-aside:-when-the-degeneracy-counter-earns-its-keep">An aside: when the degeneracy counter earns its keep</a><a id="An-aside:-when-the-degeneracy-counter-earns-its-keep-1"></a><a class="docs-heading-anchor-permalink" href="#An-aside:-when-the-degeneracy-counter-earns-its-keep" title="Permalink"></a></h3><p>The choice <span>$\Delta = 0.8$</span> above is not arbitrary. Running the same fully resolved sector across a range of anisotropies, and counting exact degeneracies rather than filtering them:</p><pre><code class="language-julia hljs">ba_deg = sector_basis(16, 0, 1; p=1)
+
+@printf(&quot;%10s %10s %8s %8s %10s\n&quot;, &quot;Δ&quot;, &quot;γ/π&quot;, &quot;levels&quot;, &quot;deg&quot;, &quot;&lt;r&gt;&quot;)
+for Δd in (0.0, 0.3, 0.5, 1 / sqrt(2), 0.8, 0.9)
+    E_d = spectrum(build_chain(16, ba_deg; couplings=((1, 1.0, Δd),)))
+    rs_d, nd_d = r_values(E_d)
+    @printf(&quot;%10.4f %10.4f %8d %8d %10.4f\n&quot;,
+        Δd, acos(Δd) / pi, length(rs_d), nd_d, mean(rs_d))
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">         Δ        γ/π   levels      deg        &lt;r&gt;
+    0.0000     0.5000      127       76     0.2402
+    0.3000     0.4030      127        0     0.4180
+    0.5000     0.3333      127        8     0.3551
+    0.7071     0.2500      127        0     0.3443
+    0.8000     0.2048      127        0     0.3888
+    0.9000     0.1436      127        0     0.3648</code></pre><p>Both anisotropies that carry exact degeneracies here, <span>$\Delta = 0$</span> and <span>$\Delta = 0.5$</span>, are <em>root-of-unity</em> points, where <span>$\gamma/\pi = 1/2$</span> and <span>$1/3$</span> are rational. At such points the XXZ chain acquires an additional <span>$sl_2$</span> loop-algebra symmetry<sup class="footnote-reference"><a id="citeref-Deguchi_2001" href="#footnote-Deguchi_2001" class="footnote-ref">[Deguchi_2001]</a><span class="footnote-preview" id="fn-Deguchi_2001"></span></sup> beyond the translation, reflection, magnetization and spin inversion resolved here, producing exactly the kind of unresolved-symmetry degeneracy this page is about. (<span>$\Delta = 0$</span> is also the free-fermion point, so its degeneracies have an elementary explanation as well.) Even at <span>$L = 16$</span> the <span>$\Delta = 0.5$</span> sector carries eight exactly degenerate pairs and its <span>$\langle r \rangle$</span> falls to <span>$0.346$</span> — <em>below</em> Poisson; by <span>$L = 20$</span> the same sector carries 150 of them.</p><p>The converse does not hold sector by sector: <span>$\Delta = 1/\sqrt2$</span> is a root of unity too (<span>$\gamma/\pi = 1/4$</span>) yet shows no degeneracies at this <span>$L$</span>, because whether the extra multiplets land inside a given sector depends on the chain length and on the order of the root. The practical rule is simply to check, not to predict.</p><p>This is worth dwelling on, because it is the whole argument for counting rather than filtering. A pipeline that silently dropped zero gaps would have reported a plausible-looking number here and quietly hidden a real extra symmetry of the model. The degeneracy counter is what turned an invisible wrong answer into a visible one — and the fix was to move to <span>$\Delta = 0.8$</span>, where <span>$\gamma/\pi$</span> is irrational and no such degeneracies exist.</p><h2 id="Check-4-—-every-sector"><a class="docs-heading-anchor" href="#Check-4-—-every-sector">Check 4 — every sector</a><a id="Check-4-—-every-sector-1"></a><a class="docs-heading-anchor-permalink" href="#Check-4-—-every-sector" title="Permalink"></a></h2><p>A single sector agreeing with GOE is suggestive; every sector agreeing independently is the real result, and it is far more informative, because a single outlier localizes the problem to <em>that sector&#39;s</em> projection. Sweeping every sector of <span>$L = 16$</span> (using the <span>$k \leftrightarrow -k$</span> spectral equivalence to halve the work):</p><pre><code class="language-julia hljs">L_sweep = 16
+sweep_rows = map(sector_list(L_sweep)) do s
+    E, dim = sector_spectrum(L_sweep, s; couplings=MODEL_B)
+    rs, nd = r_values(E)
+    m, e = mean_r(rs)
+    (; s.k, s.p, s.z, dim, n=length(rs), mean=m, err=e, n_deg=nd)
+end
+
+@printf(&quot;%4s %4s %4s %8s %8s %18s\n&quot;, &quot;k&quot;, &quot;p&quot;, &quot;z&quot;, &quot;dim&quot;, &quot;N&quot;, &quot;&lt;r&gt;&quot;)
+for row in sweep_rows
+    @printf(&quot;%4d %+4d %+4d %8d %8d   %.4f ± %.4f%s\n&quot;,
+        row.k, row.p, row.z, row.dim, row.n, row.mean, row.err,
+        row.n_deg &gt; 0 ? &quot;   DEGENERACIES: $(row.n_deg)&quot; : &quot;&quot;)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">   k    p    z      dim        N                &lt;r&gt;
+   0   +1   +1      257      127   0.5119 ± 0.0220
+   0   -1   +1      158       78   0.5411 ± 0.0329
+   0   +1   -1      183       91   0.5070 ± 0.0253
+   0   -1   -1      212      104   0.5776 ± 0.0250
+   1   +0   +1      392      194   0.5496 ± 0.0181
+   1   +0   -1      408      202   0.5211 ± 0.0186
+   2   +0   +1      411      205   0.5181 ± 0.0175
+   2   +0   -1      397      197   0.5428 ± 0.0176
+   3   +0   +1      392      194   0.5133 ± 0.0194
+   3   +0   -1      408      202   0.5174 ± 0.0176
+   4   +0   +1      413      205   0.5255 ± 0.0175
+   4   +0   -1      396      196   0.5232 ± 0.0188
+   5   +0   +1      392      194   0.5565 ± 0.0171
+   5   +0   -1      408      202   0.5354 ± 0.0177
+   6   +0   +1      411      205   0.5244 ± 0.0175
+   6   +0   -1      397      197   0.5371 ± 0.0198
+   7   +0   +1      392      194   0.5234 ± 0.0191
+   7   +0   -1      408      202   0.5136 ± 0.0187
+   8   +1   +1      239      119   0.5030 ± 0.0238
+   8   -1   +1      175       87   0.4944 ± 0.0282
+   8   +1   -1      166       82   0.5254 ± 0.0287
+   8   -1   -1      230      114   0.4894 ± 0.0238</code></pre><pre><code class="language-julia hljs">sweep_means = [row.mean for row in sweep_rows]
+worst = maximum(abs.(sweep_means .- GOE))
+
+@printf(&quot;sectors swept        : %d\n&quot;, length(sweep_rows))
+@printf(&quot;mean over sectors    : %.4f   (GOE = %.4f)\n&quot;, mean(sweep_means), GOE)
+@printf(&quot;spread               : %.4f … %.4f\n&quot;, minimum(sweep_means), maximum(sweep_means))
+@printf(&quot;worst deviation      : %.4f\n&quot;, worst)
+@printf(&quot;typical stat. error  : %.4f\n&quot;, mean(row.err for row in sweep_rows))
+
+@assert all(row -&gt; row.n_deg == 0, sweep_rows)
+@assert abs(mean(sweep_means) - GOE) &lt; 0.015
+@assert worst &lt; 0.08</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">sectors swept        : 22
+mean over sectors    : 0.5250   (GOE = 0.5307)
+spread               : 0.4894 … 0.5776
+worst deviation      : 0.0469
+typical stat. error  : 0.0211</code></pre><p>Every sector lands on GOE within a couple of standard errors, and the mean over sectors sits within <span>$0.006$</span> of <span>$0.5307$</span>. The worst single-sector deviation is about <span>$0.047$</span>, against a typical statistical error of <span>$0.021$</span> and the <span>$0.085$</span> gap to the merged-block value measured in Check 2 — so the scatter is sampling noise in the smaller <span>$k = 0$</span> and <span>$k = \pi$</span> sectors, not a signal.</p><p>These sectors hold between about 80 and 200 levels each, well short of the thousand or so at which the per-sector estimate becomes sharp, which is why the scatter is this wide; the <span>$L = 20$</span> result above is the precise one. What the sweep buys instead is <em>coverage</em> — it is the step that would localize a broken projection to a single sector, and no aggregate number can do that. The dimensions also close exactly once the <span>$k \leftrightarrow -k$</span> partners are counted:</p><pre><code class="language-julia hljs">swept_dim = sum(row.dim for row in sweep_rows)
+paired_dim = sum(row.dim for row in sweep_rows if !reflection_allowed(row.k, L_sweep))
+@printf(&quot;swept + mirrored = %d,   binomial(%d, %d) = %d\n&quot;,
+    swept_dim + paired_dim, L_sweep, L_sweep ÷ 2, binomial(L_sweep, L_sweep ÷ 2))
+@assert swept_dim + paired_dim == binomial(L_sweep, L_sweep ÷ 2)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">swept + mirrored = 12870,   binomial(16, 8) = 12870</code></pre><h2 id="Check-5-—-the-full-distribution"><a class="docs-heading-anchor" href="#Check-5-—-the-full-distribution">Check 5 — the full distribution</a><a id="Check-5-—-the-full-distribution-1"></a><a class="docs-heading-anchor-permalink" href="#Check-5-—-the-full-distribution" title="Permalink"></a></h2><p>Two different pathologies can produce the same <span>$\langle r \rangle$</span> while giving visibly different distributions, so the mean is worth backing up with the shape. The surmise of Atas <em>et al.</em><sup class="footnote-reference"><a id="citeref-Atas_2013" href="#footnote-Atas_2013" class="footnote-ref">[Atas_2013]</a><span class="footnote-preview" id="fn-Atas_2013"></span></sup> is</p><p class="math-container">\[P_\beta(r) = \frac{1}{Z_\beta} \frac{(r + r^2)^\beta}{(1 + r + r^2)^{1 + 3\beta/2}},\]</p><p>with <span>$\beta = 1$</span> for GOE, against <span>$P(r) = 2/(1+r)^2$</span> for Poisson. Rather than hardcoding <span>$Z_\beta$</span> — the normalization constants are easy to misremember, and the curve is meaningless if it is wrong — we integrate for it:</p><pre><code class="language-julia hljs">using QuadGK
+
+P_surmise(r, β) = (r + r^2)^β / (1 + r + r^2)^(1 + 3β / 2) /
+                  quadgk(x -&gt; (x + x^2)^β / (1 + x + x^2)^(1 + 3β / 2), 0, 1)[1]
+P_poisson(r) = 2 / (1 + r)^2
+
+@printf(&quot;∫₀¹ P₁ dr = %.12f\n∫₀¹ P_Poisson dr = %.12f\n&quot;,
+    quadgk(r -&gt; P_surmise(r, 1), 0, 1)[1], quadgk(P_poisson, 0, 1)[1])</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">∫₀¹ P₁ dr = 1.000000000000
+∫₀¹ P_Poisson dr = 1.000000000000</code></pre><pre><code class="language-julia hljs">using CairoMakie
+
+fig = Figure(size=(900, 380))
+
+ax1 = Axis(fig[1, 1]; xlabel=L&quot;r&quot;, ylabel=L&quot;P(r)&quot;,
+    title=&quot;Model B (chaotic) vs Model A (integrable), L = 20&quot;)
+hist!(ax1, rB; bins=range(0, 1, length=26), normalization=:pdf,
+    color=(Makie.wong_colors()[1], 0.5), label=&quot;Model B, ⟨r⟩ = $(round(mB, digits=3))&quot;)
+hist!(ax1, rA; bins=range(0, 1, length=26), normalization=:pdf,
+    color=(Makie.wong_colors()[2], 0.5), label=&quot;Model A, ⟨r⟩ = $(round(mA, digits=3))&quot;)
+lines!(ax1, 0.001:0.001:1, r -&gt; P_surmise(r, 1); color=:black, linestyle=:dash,
+    label=L&quot;P_{\mathrm{GOE}}(r)&quot;)
+lines!(ax1, 0.001:0.001:1, P_poisson; color=:black, linestyle=:dot,
+    label=L&quot;P_{\mathrm{Poisson}}(r)&quot;)
+ylims!(ax1, 0, 2.6)
+axislegend(ax1; position=:lt, labelsize=11)
+
+ax2 = Axis(fig[1, 2]; xlabel=L&quot;W&quot;, ylabel=L&quot;\langle r \rangle&quot;, xscale=log10,
+    xticks=([0.5, 1.0, 2.0, 4.0, 8.0], [&quot;0.5&quot;, &quot;1&quot;, &quot;2&quot;, &quot;4&quot;, &quot;8&quot;]),
+    title=&quot;Model C: ergodic-to-localized crossover&quot;)
+errorbars!(ax2, [c.W for c in c_res], [c.mean for c in c_res], [c.err for c in c_res];
+    whiskerwidth=8)
+scatterlines!(ax2, [c.W for c in c_res], [c.mean for c in c_res]; color=Cycled(1))
+hlines!(ax2, [GOE]; color=:black, linestyle=:dash)
+hlines!(ax2, [POISSON]; color=:black, linestyle=:dot)
+text!(ax2, 1.0, GOE; text=&quot;GOE&quot;, align=(:left, :bottom), fontsize=11)
+text!(ax2, 1.0, POISSON; text=&quot;Poisson&quot;, align=(:left, :bottom), fontsize=11)
+
+fig</code></pre><img src="58bb1b93.svg" alt="Example block output"/><p>The left panel shows the two mechanisms directly: Model B follows the GOE curve, vanishing linearly as <span>$r \to 0$</span> because nearby levels repel, while Model A follows the Poisson curve, which is maximal at <span>$r = 0$</span> because uncorrelated levels are free to nearly coincide. The right panel is the standard many-body-localization crossover — the same <span>$r$</span> machinery, with no nontrivial symmetry resolution involved anywhere.</p><h2 id="Where-to-use-this"><a class="docs-heading-anchor" href="#Where-to-use-this">Where to use this</a><a id="Where-to-use-this-1"></a><a class="docs-heading-anchor-permalink" href="#Where-to-use-this" title="Permalink"></a></h2><p>Run this test last, as a closing check on a symmetry implementation. It is the only check in this documentation that can detect a symmetry you never implemented, and its cost is one dense diagonalization per sector. If a sector comes back between <span>$0.39$</span> and <span>$0.52$</span> for a model you believe is chaotic, the most likely explanation is an unresolved symmetry rather than marginal chaoticity — raise <span>$J_2$</span> and see whether the number moves toward <span>$0.5307$</span>; if it plateaus below, go hunting.</p><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-Oganesyan_2007"><a class="tag is-link" href="#citeref-Oganesyan_2007">Oganesyan_2007</a>V. Oganesyan and D. A. Huse, <em>Localization of interacting fermions at high temperature</em>, <a href="https://doi.org/10.1103/PhysRevB.75.155111">Phys. Rev. B <strong>75</strong>, 155111 (2007)</a>.</li><li class="footnote" id="footnote-Atas_2013"><a class="tag is-link" href="#citeref-Atas_2013">Atas_2013</a>Y. Y. Atas, E. Bogomolny, O. Giraud, and G. Roux, <em>Distribution of the ratio of consecutive level spacings in random matrix ensembles</em>, <a href="https://doi.org/10.1103/PhysRevLett.110.084101">Phys. Rev. Lett. <strong>110</strong>, 084101 (2013)</a>.</li><li class="footnote" id="footnote-Poilblanc_1993"><a class="tag is-link" href="#citeref-Poilblanc_1993">Poilblanc_1993</a>D. Poilblanc, T. Ziman, J. Bellissard, F. Mila, and G. Montambaux, <em>Poisson vs. GOE statistics in integrable and non-integrable quantum Hamiltonians</em>, <a href="https://doi.org/10.1209/0295-5075/22/7/010">Europhys. Lett. <strong>22</strong>, 537 (1993)</a>.</li><li class="footnote" id="footnote-Santos_2010"><a class="tag is-link" href="#citeref-Santos_2010">Santos_2010</a>L. F. Santos and M. Rigol, <em>Onset of quantum chaos in one-dimensional bosonic and fermionic systems and its relation to thermalization</em>, <a href="https://doi.org/10.1103/PhysRevE.81.036206">Phys. Rev. E <strong>81</strong>, 036206 (2010)</a>.</li><li class="footnote" id="footnote-Luitz_2015"><a class="tag is-link" href="#citeref-Luitz_2015">Luitz_2015</a>D. J. Luitz, N. Laflorencie, and F. Alet, <em>Many-body localization edge in the random-field Heisenberg chain</em>, <a href="https://doi.org/10.1103/PhysRevB.91.081103">Phys. Rev. B <strong>91</strong>, 081103(R) (2015)</a>.</li><li class="footnote" id="footnote-Deguchi_2001"><a class="tag is-link" href="#citeref-Deguchi_2001">Deguchi_2001</a>T. Deguchi, K. Fabricius, and B. M. McCoy, <em>The sl₂ loop algebra symmetry of the six-vertex model at roots of unity</em>, <a href="https://doi.org/10.1023/A:1004894701900">J. Stat. Phys. <strong>102</strong>, 701 (2001)</a>.</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../spins/">« Quantum mechanical spins</a><a class="docs-footer-nextpage" href="../pxp/">Quantum many-body scars in the PXP chain »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Saturday 1 August 2026 08:10">Saturday 1 August 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

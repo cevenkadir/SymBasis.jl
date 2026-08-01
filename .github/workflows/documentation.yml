@@ -99,6 +99,16 @@ jobs:
       # via a separate worktree checked out from origin/main, since this job's own checkout may
       # be at a release tag, not main -- switching branches in place while carrying uncommitted
       # generated files could conflict.
+      #
+      # The commit message deliberately carries no `[skip ci]` marker. Loop protection comes
+      # from the credentials instead: this pushes with actions/checkout's persisted
+      # GITHUB_TOKEN, and GitHub never creates a workflow run from an event triggered by
+      # GITHUB_TOKEN. `[skip ci]` was worse than redundant -- it is honoured for *every* push
+      # event including tag pushes, so tagging a release on one of these auto-commits silently
+      # skipped CI and Documentation for that tag (this is why v0.2.0 shipped without docs).
+      # If this push is ever switched to a PAT or deploy key, the loop protection is gone and
+      # a guard has to come back -- use `if: github.actor != 'github-actions[bot]'`, not
+      # `[skip ci]`.
       - name: Commit results to main
         if: needs.benchmark.result == 'success'
         run: |
@@ -111,7 +121,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/src/benchmarks.md benchmark/results/*.csv
-          git diff --staged --quiet || (git commit -m "Update benchmark results [skip ci]" && git push origin HEAD:main)
+          git diff --staged --quiet || (git commit -m "Update benchmark results" && git push origin HEAD:main)
       - name: Build and deploy
         run: julia --color=yes --project=docs docs/make.jl
         env:

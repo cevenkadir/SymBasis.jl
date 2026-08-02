@@ -202,6 +202,117 @@ function apply_perm_fermionic(p, state)
 end
 
 """
+    WeightedCounts{K,B}
+
+Collapsed description of a conserved quantity that is a linear function of the digit counts
+of a state. Instead of one group cycle per admissible digit-count signature — which makes
+[`SymBasis.Bases.basis`](@ref) re-walk every state once per signature — a single cycle
+carries `K` non-negative weight tables and their target values, so the sector membership
+test is one pass over the digits regardless of how many signatures the sector admits.
+
+# Fields
+- `weights::NTuple{K,NTuple{B,Int}}`: `weights[k][d+1]` is the contribution of digit value
+    `d` to the `k`-th conserved quantity. All entries must be non-negative (the membership
+    test relies on the partial sums being monotone to bail out early).
+- `targets::NTuple{K,Int}`: the target value of each conserved quantity.
+- `sigs::Vector{NTuple{B,Int}}`: the admissible digit-count signatures `(N0, …, N(B-1))`,
+    retained so that sector enumeration
+    ([`SymBasis.SymGroups._candidate_states`](@ref)) can still avoid the full `Bᴺ` scan.
+"""
+struct WeightedCounts{K,B}
+    weights::NTuple{K,NTuple{B,Int}}
+    targets::NTuple{K,Int}
+    sigs::Vector{NTuple{B,Int}}
+end
+
+function Base.:(==)(a::WeightedCounts, b::WeightedCounts)
+    return a.weights == b.weights && a.targets == b.targets && a.sigs == b.sigs
+end
+
+Base.hash(w::WeightedCounts, h::UInt) = hash(w.sigs, hash(w.targets, hash(w.weights, h)))
+
+@inline _any_exceeds(::Tuple{}, ::Tuple{}) = false
+@inline function _any_exceeds(sums::Tuple, targets::Tuple)
+    return first(sums) > first(targets) ||
+           _any_exceeds(Base.tail(sums), Base.tail(targets))
+end
+
+@inline function _add_weights(
+    sums::NTuple{K,Int}, weights::NTuple{K,NTuple{B,Int}}, d::Int
+) where {K,B}
+    return ntuple(k -> sums[k] + @inbounds(weights[k][d]), Val(K))
+end
+
+"""
+    _check_wc(
+        state::SymBasis.DigitBase.BaseInt{T,Ti,B},
+        wc::SymBasis.SymGroups.WeightedCounts{K,B},
+        N::Integer
+    ) where {T,Ti,B,K}
+
+Internal single-pass membership test for a [`SymBasis.SymGroups.WeightedCounts`](@ref)
+sector: accumulate the `K` weighted digit sums over the `N` digits of `state` and compare
+them against the targets. Because the weights are non-negative the partial sums are
+monotone, so the walk bails out as soon as one of them overshoots its target.
+"""
+@inline function _check_wc(
+    state::BaseInt{T,Ti,B}, wc::WeightedCounts{K,B}, N::Integer
+) where {T,Ti,B,K}
+    BB = T(B)
+    weights = wc.weights
+    targets = wc.targets
+    sums = ntuple(_ -> 0, Val(K))
+    v = state.value
+    for _ in 1:N
+        d = Int(v % BB) + 1
+        sums = _add_weights(sums, weights, d)
+        _any_exceeds(sums, targets) && return false
+        v ÷= BB
+    end
+    return sums == targets
+end
+
+"""
+    _weighted_count_cycle(
+        cycles,
+        weight_lists::NTuple{K,<:AbstractVector{<:Integer}},
+        ::Val{B},
+        N::Integer
+    ) where {K,B}
+
+Collapse a list of per-signature digit-count cycles into a single cycle
+`(; wc::`[`SymBasis.SymGroups.WeightedCounts`](@ref)`, N)` carrying the same sector.
+
+Returns `nothing` — signalling the caller to keep the original per-signature cycles — when
+the collapse would not be an exact rewrite or would not pay off:
+
+- fewer than two signatures (nothing to collapse; in particular every base-2 sector, whose
+  [`SymBasis.SymGroups.check_Nₛ`](@ref) has a dedicated `count_ones` fast path),
+- a negative weight (the early-exit in [`_check_wc`](@ref) assumes monotone partial sums),
+- signatures that do not all encode the same target value.
+"""
+function _weighted_count_cycle(
+    cycles,
+    weight_lists::NTuple{K,<:AbstractVector{<:Integer}},
+    ::Val{B},
+    N::Integer
+) where {K,B}
+    length(cycles) > 1 || return nothing
+    all(wl -> length(wl) == B && all(>=(0), wl), weight_lists) || return nothing
+
+    sigs = [_digit_targets(p, Val(B)) for p in cycles]
+    weights = ntuple(k -> ntuple(j -> Int(weight_lists[k][j]), Val(B)), Val(K))
+    targets = ntuple(k -> _weighted_sum(sigs[1], weights[k]), Val(K))
+    for sig in sigs
+        ntuple(k -> _weighted_sum(sig, weights[k]), Val(K)) == targets || return nothing
+    end
+
+    return (; wc=WeightedCounts(weights, targets, sigs), N=Int(N))
+end
+
+@inline _weighted_sum(sig::NTuple{B,Int}, w::NTuple{B,Int}) where {B} = sum(map(*, sig, w))
+
+"""
     check_Nₛ(
         p::NamedTuple{names,NT},
         state::SymBasis.DigitBase.BaseInt,
@@ -228,6 +339,27 @@ function check_Nₛ(
 end
 
 """
+    check_Nₛ(
+        p::NamedTuple{names,<:Tuple{SymBasis.SymGroups.WeightedCounts,Integer}},
+        state::SymBasis.DigitBase.BaseInt,
+        prev_bool::Bool
+    ) where {names}
+
+Collapsed form of the digit-count check: instead of testing one fixed signature, test the
+conserved quantity carried by `p.wc` in a single pass over the digits (see
+[`SymBasis.SymGroups.WeightedCounts`](@ref)). This is the method selected for the
+multi-signature sectors built by `sym` for `TotalBosonicNumber`, `TotalMagnetization` and
+`TotalSpinfulFermionicNumber`.
+"""
+function check_Nₛ(
+    p::NamedTuple{names,<:Tuple{WeightedCounts,Integer}},
+    state::BaseInt,
+    prev_bool::Bool
+) where {names}
+    return prev_bool && _check_wc(state, p.wc, p.N)
+end
+
+"""
     _check_Nₛ(
         state::SymBasis.DigitBase.BaseInt{T,Ti,B},
         p::NamedTuple{names}
@@ -249,25 +381,26 @@ function _check_Nₛ(
     p::NamedTuple{names}
 ) where {T,Ti,B,names}
     BB = T(B)
+    targets = _digit_targets(p, Val(B))
     counts = ntuple(_ -> 0, Val(B))
     v = state.value
     for _ in 1:p.N
         digit = Int(v % BB)
-        counts = Base.setindex(counts, counts[digit+1] + 1, digit + 1)
+        c = counts[digit+1] + 1
+        # Early exit: once any digit count exceeds its target the state cannot match.
+        c > targets[digit+1] && return false
+        counts = Base.setindex(counts, c, digit + 1)
         v ÷= BB
     end
-    return _digit_counts_match(p, counts)
+    return counts == targets
 end
 
-# Compare the digit counts against the `N0`, `N1`, …, `N(B-1)` fields of `p` with the
-# field lookups resolved at compile time (a runtime `Symbol("N$j")` would intern a new
-# symbol per digit per call).
-@generated function _digit_counts_match(p::NamedTuple, counts::NTuple{B,Int}) where {B}
-    checks = [
-        :(getfield(p, $(QuoteNode(Symbol("N", j)))) == counts[$(j + 1)])
-        for j in 0:(B-1)
-    ]
-    return foldr((a, b) -> :($a && $b), checks)
+# Fetch the target digit counts (`N0`, `N1`, …, `N(B-1)`) from `p` with the field lookups
+# resolved at compile time (a runtime `Symbol("N$j")` would intern a new symbol per digit
+# per call).
+@generated function _digit_targets(p::NamedTuple, ::Val{B}) where {B}
+    fields = [:(Int(getfield(p, $(QuoteNode(Symbol("N", j)))))) for j in 0:(B-1)]
+    return :(($(fields...),))
 end
 
 """
@@ -318,6 +451,14 @@ function apply_Nₛ(
     return state
 end
 
+# Collapsed digit-count cycles (see `WeightedCounts`) act trivially too.
+function apply_Nₛ(
+    p::NamedTuple{names,<:Tuple{WeightedCounts,Integer}},
+    state::BaseInt
+) where {names}
+    return state
+end
+
 """
     check_flip(
         p::NamedTuple{names,<:Tuple{Bool,<:AbstractVector{Ti},Vararg{Integer}}},
@@ -344,6 +485,30 @@ function check_flip(
     prev_bool::Bool
 ) where {names,T,Ti,B}
     return prev_bool && _check_Nₛ(state, p)
+end
+
+"""
+    check_flip(
+        p::NamedTuple{
+            names,<:Tuple{Bool,<:AbstractVector{<:Integer},
+            SymBasis.SymGroups.WeightedCounts,Integer}
+        },
+        state::SymBasis.DigitBase.BaseInt,
+        prev_bool::Bool
+    ) where {names}
+
+Collapsed form of [`check_flip`](@ref) for sectors whose admissible digit-count signatures
+have been folded into a single [`SymBasis.SymGroups.WeightedCounts`](@ref) (see
+`sym(::SpinInversion, …)`).
+"""
+function check_flip(
+    p::NamedTuple{
+        names,<:Tuple{Bool,<:AbstractVector{<:Integer},WeightedCounts,Integer}
+    },
+    state::BaseInt,
+    prev_bool::Bool
+) where {names}
+    return prev_bool && _check_wc(state, p.wc, p.N)
 end
 
 """
@@ -375,6 +540,16 @@ function apply_flip(
     else
         return state
     end
+end
+
+# Same flip, for the collapsed cycles carrying a `WeightedCounts` instead of one signature.
+function apply_flip(
+    p::NamedTuple{
+        names,<:Tuple{Bool,<:AbstractVector{<:Integer},WeightedCounts,Integer}
+    },
+    state::BaseInt
+) where {names}
+    return p.is_flipped ? flip(state, p.sites) : state
 end
 # END -- check and apply functions for predefined symmetries
 
@@ -413,19 +588,73 @@ function _sector_states_from_counts(
     # define disjoint sectors.
     sigs = Set{NTuple{B,Int}}()
     for p in cycles
-        push!(sigs, ntuple(j -> Int(getfield(p, Symbol("N", j - 1))), Val(B)))
-    end
-
-    out = BaseInt{T,Ti,B}[]
-    for sig in sigs
-        sum(sig) == N || continue # no N-digit state can match such a signature
-        if B == 2
-            _append_fixed_popcount_states!(out, BaseInt{T,Ti,2}, N, sig[2])
-        else
-            _append_fixed_counts_states!(out, BaseInt{T,Ti,B}, N, sig)
+        for sig in _cycle_sigs(p, Val(B))
+            push!(sigs, sig)
         end
     end
-    return sort!(out)
+
+    # Each signature block comes out in ascending order, so the blocks only need merging.
+    blocks = Vector{BaseInt{T,Ti,B}}[]
+    for sig in sigs
+        sum(sig) == N || continue # no N-digit state can match such a signature
+        block = BaseInt{T,Ti,B}[]
+        if B == 2
+            _append_fixed_popcount_states!(block, BaseInt{T,Ti,2}, N, sig[2])
+        else
+            _append_fixed_counts_states!(block, BaseInt{T,Ti,B}, N, sig)
+        end
+        isempty(block) || push!(blocks, block)
+    end
+    return _merge_sorted_blocks(blocks, BaseInt{T,Ti,B})
+end
+
+# Digit-count signatures a cycle admits: a collapsed cycle carries the whole list, a plain
+# one encodes exactly one in its `N0`, …, `N(B-1)` fields. (`haskey` on a `NamedTuple` is
+# resolved at compile time.)
+@inline function _cycle_sigs(p::NamedTuple, ::Val{B}) where {B}
+    haskey(p, :wc) && return p.wc.sigs
+    return (_digit_targets(p, Val(B)),)
+end
+
+# Merge already-ascending, pairwise-disjoint blocks into one ascending vector. Signature
+# blocks are disjoint by construction, so a plain merge cannot produce duplicates. Merging
+# pairwise (⌈log₂ k⌉ passes) rather than sorting the concatenation matters: at spinful
+# N=12 the final `sort!` alone used to cost 16.9 ms of a 24.5 ms enumeration.
+function _merge_sorted_blocks(
+    blocks::Vector{Vector{V}}, ::Type{V}
+) where {V}
+    isempty(blocks) && return V[]
+    while length(blocks) > 1
+        merged = Vector{Vector{V}}()
+        sizehint!(merged, cld(length(blocks), 2))
+        for i in 1:2:length(blocks)
+            if i == length(blocks)
+                push!(merged, blocks[i])
+            else
+                push!(merged, _merge_two(blocks[i], blocks[i+1]))
+            end
+        end
+        blocks = merged
+    end
+    return blocks[1]
+end
+
+function _merge_two(a::Vector{V}, b::Vector{V}) where {V}
+    isempty(a) && return b
+    isempty(b) && return a
+    out = Vector{V}(undef, length(a) + length(b))
+    i = 1
+    j = 1
+    @inbounds for k in eachindex(out)
+        if j > length(b) || (i <= length(a) && isless(a[i], b[j]))
+            out[k] = a[i]
+            i += 1
+        else
+            out[k] = b[j]
+            j += 1
+        end
+    end
+    return out
 end
 
 # All N-bit values with exactly k ones, via Gosper's hack.
@@ -438,6 +667,7 @@ function _append_fixed_popcount_states!(
     end
     (0 < k <= N) || return out
 
+    sizehint!(out, length(out) + binomial(N, k))
     limit = one(T) << N
     v = (one(T) << k) - one(T)
     while v < limit
@@ -454,28 +684,42 @@ function _append_fixed_counts_states!(
     out::Vector{BaseInt{T,Ti,B}}, ::Type{BaseInt{T,Ti,B}}, N::Int, counts::NTuple{B2,Int}
 ) where {T,Ti,B,B2}
     all(>=(0), counts) || return out
+
+    # Multinomial coefficient N! / ∏ counts[j]!, estimated in Float64 to avoid overflow
+    # and capped so the hint itself stays modest.
+    est = 1.0
+    r = N
+    for c in counts
+        est *= Float64(binomial(r, c))
+        r -= c
+    end
+    sizehint!(out, length(out) + (est < 1e7 ? round(Int, est) : 10_000_000))
+
     pows = T[T(B)^(p - 1) for p in 1:N]
     remaining = collect(counts)
-    _fixed_counts_rec!(out, remaining, pows, N, 1, zero(T))
+    _fixed_counts_rec!(out, remaining, pows, N, zero(T))
     return out
 end
 
+# Fill the digit positions from the most significant one downwards, trying digit values in
+# ascending order. Since the value of a state is `Σ dₚ Bᵖ⁻¹`, that emission order is
+# numerically ascending, which lets `_sector_states_from_counts` merge the per-signature
+# blocks instead of sorting their concatenation.
 function _fixed_counts_rec!(
     out::Vector{BaseInt{T,Ti,B}},
     remaining::Vector{Int},
     pows::Vector{T},
-    N::Int,
     pos::Int,
     val::T
 ) where {T,Ti,B}
-    if pos > N
+    if pos < 1
         push!(out, BaseInt{T,Ti,B}(val))
         return nothing
     end
     @inbounds for d in 0:(B-1)
         if remaining[d+1] > 0
             remaining[d+1] -= 1
-            _fixed_counts_rec!(out, remaining, pows, N, pos + 1, val + T(d) * pows[pos])
+            _fixed_counts_rec!(out, remaining, pows, pos - 1, val + T(d) * pows[pos])
             remaining[d+1] += 1
         end
     end

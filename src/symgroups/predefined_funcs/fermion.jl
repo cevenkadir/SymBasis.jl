@@ -264,9 +264,16 @@ function sym(
     up_weights = [count(==(m_up), l) for l in dofo.ldof]
     down_weights = [count(==(m_down), l) for l in dofo.ldof]
 
-    cyclesₛ = combos_dof_sum_weighted(
+    all_sigsₛ = combos_dof_sum_weighted(
         (up_weights, down_weights), (ss.n_up, ss.n_down), ss.N
     )
+
+    # `N_up` and `N_down` are two weighted digit-count constraints, so every admissible
+    # signature collapses into a single cycle checked in one pass over the digits.
+    collapsed = _weighted_count_cycle(
+        all_sigsₛ, (up_weights, down_weights), Val(B), ss.N
+    )
+    cyclesₛ = collapsed === nothing ? all_sigsₛ : [collapsed]
 
     Nud_sym = SymGroup(
         dofo,

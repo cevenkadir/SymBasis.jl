@@ -224,21 +224,40 @@
             @test Sz_symᵢ.factors == factor1ₛ[i]
         end
 
+        # Spin-1 (base 3) sectors can admit several digit-count signatures. Those are
+        # collapsed into a single `WeightedCounts` cycle: digit `d` is the projection
+        # `d - s`, so the sector is `Σ d == Sz + N*s` and one digit pass decides membership
+        # for every signature at once.
+        WC = SymBasis.SymGroups.WeightedCounts
         dofo2 = dof_object(Spin(1 // 1))
         Sz_sym2ₛ = [sym(TotalMagnetization(Sz, 3), dofo2) for Sz in -3//2:3//2]
         cycle2ₛ = [
             [(; N0=3, N1=0, N2=0, N=3)],
-            [(; N0=1, N1=2, N2=0, N=3), (; N0=2, N1=0, N2=1, N=3)],
-            [(; N0=0, N1=2, N2=1, N=3), (; N0=1, N1=0, N2=2, N=3)],
+            [(; wc=WC(((0, 1, 2),), (2,), [(1, 2, 0), (2, 0, 1)]), N=3)],
+            [(; wc=WC(((0, 1, 2),), (4,), [(0, 2, 1), (1, 0, 2)]), N=3)],
             [(; N0=0, N1=0, N2=3, N=3)]
         ]
-        factor2ₛ = [[1.0,], [1.0, 1.0], [1.0, 1.0], [1.0,]]
+        factor2ₛ = [[1.0,], [1.0,], [1.0,], [1.0,]]
         for (i, Sz_symᵢ) in enumerate(Sz_sym2ₛ)
             @test Sz_symᵢ.dofo == dofo2
             @test Sz_symᵢ.cycles == cycle2ₛ[i]
             @test Sz_symᵢ.check == check_Nₛ
             @test Sz_symᵢ.apply == apply_Nₛ
             @test Sz_symᵢ.factors == factor2ₛ[i]
+        end
+
+        # The collapsed cycle must select exactly the states matching one of the signatures
+        # it replaced -- entries 2 and 3 are the multi-signature sectors.
+        digit_sig(bi, n, B) = ntuple(d -> sum(x -> x == d - 1, eachdigit(bi, n)), B)
+        all_sigs = [
+            [(3, 0, 0)], [(1, 2, 0), (2, 0, 1)], [(0, 2, 1), (1, 0, 2)], [(0, 0, 3)]
+        ]
+        for (i, sigs) in enumerate(all_sigs)
+            expected = [
+                bi for bi in BaseInt(UInt(0); base=3):BaseInt(UInt(3^3 - 1); base=3)
+                if digit_sig(bi, 3, 3) in sigs
+            ]
+            @test basis(dofo2, 3, Sz_sym2ₛ[i]).states == expected
         end
     end
 
@@ -372,14 +391,16 @@
             @test Z_sym1.factors == [z^0, z^1]
         end
 
-        # Spin-1, N=2: combos_spin_sum(1//1, 0, 2) gives two combos
+        # Spin-1, N=2: combos_spin_sum(1//1, 0, 2) gives two combos, which collapse into a
+        # single `WeightedCounts` cycle -- so the group has one cycle per flip, not one per
+        # (flip, signature) pair.
+        WC = SymBasis.SymGroups.WeightedCounts
         dofo2 = dof_object(Spin(1 // 1))
         sites2 = collect(1:2)
+        wc2 = WC(((0, 1, 2),), (2,), [(0, 2, 0), (1, 0, 1)])
         cycle2 = [
-            (; is_flipped=false, sites=sites2, N0=0, N1=2, N2=0, N=2),
-            (; is_flipped=false, sites=sites2, N0=1, N1=0, N2=1, N=2),
-            (; is_flipped=true, sites=sites2, N0=0, N1=2, N2=0, N=2),
-            (; is_flipped=true, sites=sites2, N0=1, N1=0, N2=1, N=2),
+            (; is_flipped=false, sites=sites2, wc=wc2, N=2),
+            (; is_flipped=true, sites=sites2, wc=wc2, N=2),
         ]
         for z in [1, -1]
             Z_sym2 = sym(SpinInversion(z, 2), dofo2)
@@ -387,7 +408,15 @@
             @test Z_sym2.cycles == cycle2
             @test Z_sym2.check == check_flip
             @test Z_sym2.apply == apply_flip
-            @test Z_sym2.factors == [z^0, z^0, z^1, z^1]
+            @test Z_sym2.factors == [z^0, z^1]
+
+            # Same sector as the uncollapsed representation: the Sz = 0 states of two
+            # spin-1 sites are |0,2⟩, |1,1⟩ and |2,0⟩, of which the flip-even/odd
+            # combination keeps two resp. one.
+            states = basis(dofo2, 2, Z_sym2).states
+            @test states == (z == 1 ?
+                             [BaseInt(UInt(2); base=3), BaseInt(UInt(4); base=3)] :
+                             [BaseInt(UInt(2); base=3)])
         end
     end
 
@@ -848,17 +877,26 @@
     @testset "sym of TotalSpinfulFermionicNumber" begin
         dofo1 = dof_object(SpinfulFermion(1 // 2, 2))
 
-        # N=2, n_up=1, n_down=1: two digit-count cycles ("down+up" and "empty+doublon")
+        # N=2, n_up=1, n_down=1: two digit-count signatures ("down+up" and
+        # "empty+doublon"), collapsed into a single cycle testing `N_up` and `N_down`
+        # directly via per-digit weight tables.
         N_sym1 = sym(TotalSpinfulFermionicNumber(1, 1, 2), dofo1)
         @test N_sym1.dofo == dofo1
         @test N_sym1.check == check_Nₛ
         @test N_sym1.apply == apply_Nₛ
-        @test N_sym1.cycles == [
-            (; N0=0, N1=1, N2=1, N3=0, N=2),
-            (; N0=1, N1=0, N2=0, N3=1, N=2),
-        ]
+        @test N_sym1.cycles == [(;
+            wc=SymBasis.SymGroups.WeightedCounts(
+                ((0, 0, 1, 1), (0, 1, 0, 1)), (1, 1), [(0, 1, 1, 0), (1, 0, 0, 1)]
+            ),
+            N=2
+        )]
         @test length(N_sym1.factors) == length(N_sym1.cycles)
         @test all(isone, N_sym1.factors)
+
+        # The collapse must not change the sector: |↓↑⟩, |↑↓⟩, |0,↑↓⟩ and |↑↓,0⟩ are the
+        # four N_up = N_down = 1 states of two sites.
+        @test basis(dofo1, 2, N_sym1).states ==
+              [BaseInt(UInt(v); base=4) for v in (3, 6, 9, 12)]
 
         # N=3, n_up=1, n_down=0: only one digit-count cycle (2 empties, 1 up-only)
         N_sym2 = sym(TotalSpinfulFermionicNumber(1, 0, 3), dofo1)
@@ -920,5 +958,80 @@
 
         # Only valid on a :SpinfulFermion dofo.
         @test_throws AssertionError sym(FermionicSpinInversion(1, 2), dof_object(Boson(1)))
+    end
+
+    @testset "sector-state enumeration" begin
+        # `basis` scans the candidate states in order and relies on them arriving ascending
+        # and duplicate-free. Multi-signature sectors are enumerated one signature block at
+        # a time and merged, so those are the interesting cases.
+        candidates(sg, ::Type{V}, N) where {V} =
+            SymBasis.SymGroups._candidate_states(sg.check, sg.cycles, V, N)
+
+        cases = [
+            ("boson B=3 N=6 n=6",
+                dof_object(Boson(2)), 6, TotalBosonicNumber(6, 6)),
+            ("boson B=4 N=5 n=7",
+                dof_object(Boson(3)), 5, TotalBosonicNumber(7, 5)),
+            ("spinful B=4 N=5 (2,3)",
+                dof_object(SpinfulFermion(1 // 2, 2)), 5,
+                TotalSpinfulFermionicNumber(2, 3, 5)),
+            ("spin-1 B=3 N=5 Sz=0",
+                dof_object(Spin(1 // 1)), 5, TotalMagnetization(0, 5)),
+            ("spin-1/2 B=2 N=6 Sz=0",
+                dof_object(Spin(1 // 2)), 6, TotalMagnetization(0, 6)),
+        ]
+
+        for (name, dofo, N, ss) in cases
+            sg = sym(ss, dofo)
+            B = length(dofo)
+            V = typeof(BaseInt(UInt(0); base=B))
+            cand = candidates(sg, V, N)
+
+            @test cand !== nothing
+            @test issorted(cand)
+            @test allunique(cand)
+
+            # The candidate set is a superset of the sector and a subset of all N-digit
+            # states passing the check for some cycle -- here it is exactly the latter.
+            brute = [
+                bi for bi in BaseInt(UInt(0); base=B):BaseInt(UInt(B^N - 1); base=B)
+                if any(c -> sg.check(c, bi, true), sg.cycles)
+            ]
+            @test cand == brute
+
+            # Every candidate really does enter the basis: these groups act trivially, so
+            # the sector dimension equals the candidate count.
+            @test length(basis(dofo, N, sg).states) == length(cand)
+        end
+
+        # Sector dimensions against independently computed expectations.
+        # Bosons: the number of length-N occupation vectors with entries in 0..max_occ
+        # summing to `total`, counted by a straightforward convolution.
+        function n_bounded_vectors(N, max_occ, total)
+            dp = zeros(Int, total + 1)
+            dp[1] = 1
+            for _ in 1:N
+                nxt = zeros(Int, total + 1)
+                for s in 0:total, d in 0:max_occ
+                    s + d <= total && (nxt[s+d+1] += dp[s+1])
+                end
+                dp = nxt
+            end
+            return dp[total+1]
+        end
+        for (max_occ, N, total) in ((2, 6, 6), (3, 5, 7), (2, 7, 5))
+            dofo_b = dof_object(Boson(max_occ))
+            sg = sym(TotalBosonicNumber(total, N), dofo_b)
+            @test length(basis(dofo_b, N, sg).states) ==
+                  n_bounded_vectors(N, max_occ, total)
+        end
+
+        # Spinful fermions: choosing which sites hold an up and which hold a down are
+        # independent, so dim = C(N, n_up) * C(N, n_down).
+        dofo_sf = dof_object(SpinfulFermion(1 // 2, 2))
+        for (nu, nd, N) in ((2, 3, 5), (3, 3, 6), (1, 4, 6))
+            sg = sym(TotalSpinfulFermionicNumber(nu, nd, N), dofo_sf)
+            @test length(basis(dofo_sf, N, sg).states) == binomial(N, nu) * binomial(N, nd)
+        end
     end
 end

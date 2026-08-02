@@ -60,13 +60,20 @@ function sym(
 
     all_boson_sumₛ = combos_boson_sum(dofo.ldof[end], ss.n_particles, ss.N)
 
+    # Digit `d` carries `d` bosons, so the sector is one weighted digit-count constraint and
+    # all its signatures collapse into a single cycle.
+    collapsed = _weighted_count_cycle(
+        all_boson_sumₛ, (collect(0:(B-1)),), Val(B), ss.N
+    )
+    cyclesₛ = collapsed === nothing ? all_boson_sumₛ : [collapsed]
+
     N_sym = SymGroup(
         dofo,
-        all_boson_sumₛ,
+        cyclesₛ,
         check_Nₛ,
         apply_Nₛ,
         phase_unity,
-        ones(length(all_boson_sumₛ)),
+        ones(length(cyclesₛ)),
         ss.N
     )
 

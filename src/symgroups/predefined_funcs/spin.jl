@@ -51,30 +51,54 @@ function _check_multipole(
     ET = _multipole_eltype(Tw)
     BB = T(B)
 
-    # Compute isapprox(multipole_sumₛ, target_vec) without materializing either vector:
-    # the per-component multipole sum is accumulated in the scalar `a_j` (digits extracted
-    # by a sequential divrem pass per component).
     RANK = ndims(p.qₛ)
     rev_perm = ntuple(k -> RANK + 1 - k, RANK)
+    D_eff = size(p.weights, 2)
+
+    # Compute isapprox(multipole_sumₛ, target_vec) without materializing the target
+    # vector. With a single component the sum is accumulated in a scalar, extracting the
+    # digits in one allocation-free divrem pass. With several components the digits are
+    # extracted once into a buffer and shared by all components, instead of repeating the
+    # (O(N)) extraction per component.
     norm_diff_sq = zero(ET)
     norm_a_sq = zero(ET)
     norm_b_sq = zero(ET)
-    for (j, idx) in enumerate(CartesianIndices(p.qₛ))
+
+    if D_eff == 1
         a_j = zero(ET)
         v = state.value
         for id_site in 1:p.N
             digit = Int(v % BB)
             v ÷= BB
-            m_i = ET((2 * digit - (B - 1)) // 2)
-            a_j += p.weights[id_site, j] * m_i
+            a_j += p.weights[id_site, 1] * ET((2 * digit - (B - 1)) // 2)
+        end
+        b_j = ET(p.qₛ[first(CartesianIndices(p.qₛ))])
+        norm_diff_sq = (a_j - b_j)^2
+        norm_a_sq = a_j^2
+        norm_b_sq = b_j^2
+    else
+        mₛ = Vector{ET}(undef, p.N)
+        v = state.value
+        @inbounds for id_site in 1:p.N
+            digit = Int(v % BB)
+            v ÷= BB
+            mₛ[id_site] = ET((2 * digit - (B - 1)) // 2)
         end
 
-        ridx = CartesianIndex(ntuple(k -> Tuple(idx)[rev_perm[k]], RANK))
-        b_j = ET(p.qₛ[ridx])
-        norm_diff_sq += (a_j - b_j)^2
-        norm_a_sq += a_j^2
-        norm_b_sq += b_j^2
+        for (j, idx) in enumerate(CartesianIndices(p.qₛ))
+            a_j = zero(ET)
+            @inbounds for id_site in 1:p.N
+                a_j += p.weights[id_site, j] * mₛ[id_site]
+            end
+
+            ridx = CartesianIndex(ntuple(k -> Tuple(idx)[rev_perm[k]], RANK))
+            b_j = ET(p.qₛ[ridx])
+            norm_diff_sq += (a_j - b_j)^2
+            norm_a_sq += a_j^2
+            norm_b_sq += b_j^2
+        end
     end
+
     tol = max(p.atol, p.rtol * max(sqrt(norm_a_sq), sqrt(norm_b_sq)))
     return sqrt(norm_diff_sq) <= tol
 end
@@ -221,13 +245,20 @@ function sym(
 
     all_spin_sumₛ = combos_spin_sum(s, ss.mag, ss.N)
 
+    # Digit `d` is the projection `d - s`, so fixing the total magnetization fixes `Σ d`:
+    # one weighted digit-count constraint, hence a single cycle for all its signatures.
+    collapsed = _weighted_count_cycle(
+        all_spin_sumₛ, (collect(0:(B-1)),), Val(B), ss.N
+    )
+    cyclesₛ = collapsed === nothing ? all_spin_sumₛ : [collapsed]
+
     Sz_sym = SymGroup(
         dofo,
-        all_spin_sumₛ,
+        cyclesₛ,
         check_Nₛ,
         apply_Nₛ,
         phase_unity,
-        ones(length(all_spin_sumₛ)),
+        ones(length(cyclesₛ)),
         ss.N
     )
 
@@ -426,17 +457,24 @@ function sym(
 
     rₛ = 0:1
 
+    # Collapse the zero-magnetization signatures into one weighted digit-count constraint,
+    # leaving two cycles (unflipped and flipped) instead of two per signature.
+    collapsed = _weighted_count_cycle(
+        all_spin_sumₛ, (collect(0:(B-1)),), Val(B), ss.N
+    )
+    sumsₛ = collapsed === nothing ? all_spin_sumₛ : [collapsed]
+
     Z_sym = SymGroup(
         dofo,
         [
             merge((; is_flipped=Bool(r), sites=sites,), sumⱼ)
             for r in rₛ
-            for sumⱼ in all_spin_sumₛ
+            for sumⱼ in sumsₛ
         ],
         check_flip,
         apply_flip,
         phase_unity,
-        [ss.z^r for r in rₛ for sumⱼ in all_spin_sumₛ],
+        [ss.z^r for r in rₛ for sumⱼ in sumsₛ],
         ss.N
     )
 

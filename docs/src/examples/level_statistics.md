@@ -91,11 +91,9 @@ One builder covers all three models — a list of `(distance, J, Δ)` couplings 
 ```@example levelstat
 function build_chain(L, ba; couplings=((1, 1.0, 0.8),), fields=nothing, T=Float64)
     dim = length(ba.states)
-    b = Dict(ba.states .=> 1:dim)
     I_vec, J_vec, V_vec = Int[], Int[], T[]
 
-    for sₙ in ba.states
-        n = b[sₙ]
+    for (n, sₙ) in enumerate(ba.states)
         Nₙ = ba.norms[n]
         diag_val = zero(T)
 
@@ -113,9 +111,9 @@ function build_chain(L, ba; couplings=((1, 1.0, 0.8),), fields=nothing, T=Float6
 
             temp_s = flip(sₙ, [i, j])
             rep_s, rep_fac = representative(temp_s, ba)
-            haskey(b, rep_s) || continue
+            m = state_index(ba, rep_s)
+            m === nothing && continue
 
-            m = b[rep_s]
             push!(I_vec, m)
             push!(J_vec, n)
             push!(V_vec, T(0.5 * J * sqrt(ba.norms[m] / Nₙ) * rep_fac))

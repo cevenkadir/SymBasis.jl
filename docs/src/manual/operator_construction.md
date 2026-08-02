@@ -14,9 +14,9 @@ Depth = 2
 ## Building operators from scratch
 
 The general recipe is the same for every model:
-1. Index the basis states, `b = Dict(ba.states .=> eachindex(ba.states))`.
-2. For each representative state `sₙ`, apply the local pieces of the operator (using `read`, `flip`, `dec`, `inc`, or `write` from [State operations](@ref "State operations")) to obtain a candidate state.
-3. Map the candidate state back to its representative with `rep_s, rep_fac = representative(candidate, ba)`, and discard it if `rep_s` is not in the basis.
+1. Walk the basis states with `for (n, sₙ) in enumerate(ba.states)`; `n` is the column index of `sₙ` and `ba.norms[n]` its normalization constant.
+2. Apply the local pieces of the operator (using `read`, `eachdigit`, `flip`, `dec`, `inc`, or `write` from [State operations](@ref "State operations")) to obtain a candidate state.
+3. Map the candidate state back to its representative with `rep_s, rep_fac = representative(candidate, ba)`, and look up its row index with [`state_index(ba, rep_s)`](@ref SymBasis.Bases.state_index), which returns `nothing` if `rep_s` is not in the basis (see [Looking up states](@ref "Looking up states")).
 4. Accumulate the matrix element, weighted by `rep_fac` and the normalization ratio `sqrt(Nₘ/Nₙ)` (see [Determining representative states](@ref "Determining representative states") for where this factor comes from), into a sparse matrix.
 
 As a concrete example, consider the transverse-field Ising chain with periodic boundary conditions,
@@ -43,14 +43,12 @@ The diagonal $ZZ$ term is read off directly from each state's digits (digit `0`/
 using SparseArrays
 
 hilbert_dim = length(ba.states)
-b = Dict(ba.states .=> 1:hilbert_dim)
 
 I_vec = Int64[]
 J_vec = Int64[]
 V_vec = ComplexF64[]
 
-for sₙ in ba.states
-    n = b[sₙ]
+for (n, sₙ) in enumerate(ba.states)
     Nₙ = ba.norms[n]
 
     # diagonal ZZ term
@@ -70,8 +68,8 @@ for sₙ in ba.states
         temp_s = flip(sₙ, i)
         rep_s, rep_fac = representative(temp_s, ba)
 
-        if haskey(b, rep_s)
-            m = b[rep_s]
+        m = state_index(ba, rep_s)
+        if m !== nothing
             Nₘ = ba.norms[m]
 
             all_fac = h * sqrt(Nₘ / Nₙ) * rep_fac
@@ -86,6 +84,9 @@ end
 # construct the sparse Hamiltonian matrix
 h_manual = sparse(I_vec, J_vec, V_vec, hilbert_dim, hilbert_dim)
 ```
+
+!!! tip
+    [`state_index`](@ref SymBasis.Bases.state_index) binary-searches the (always sorted) state vector, so each lookup costs $\mathcal{O}(\log n)$ and needs no auxiliary storage. In a matrix-element loop this is dwarfed by [`representative`](@ref SymBasis.Bases.representative), but if you ever write a loop that is dominated by lookups rather than by symmetry operations, a precomputed `Dict(ba.states .=> eachindex(ba.states))` gives $\mathcal{O}(1)$ lookups in exchange for $\mathcal{O}(n)$ extra memory.
 
 !!! note
     Just as in the [Bose-Hubbard chain example](@ref "Phase diagram of the Bose-Hubbard chain"), `h_manual` is Hermitian only up to floating-point round-off, since the normalization ratio `sqrt(Nₘ/Nₙ)` is not computed exactly symmetrically for the two directions of a matrix element. Symmetrize it explicitly before using it, e.g. `h_manual = (h_manual + h_manual') / 2`.

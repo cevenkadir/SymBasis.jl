@@ -36,7 +36,7 @@ end
 
 We assemble the Hamiltonian by looping over nearest-neighbor bonds and both spin flavors, picking up the fermionic sign from the Jordan-Wigner string:
 ```@example fhm_lieb_wu
-function hop!(I, J, V, b, ba, sₙ, n, Nₙ, site_from, site_to, flavor, t)
+function hop!(I, J, V, ba, sₙ, n, Nₙ, site_from, site_to, flavor, t)
     res = apply_flavor(read(sₙ, site_from), flavor, false)
     res === nothing && return nothing
     new_d_from, sign_from = res
@@ -46,35 +46,34 @@ function hop!(I, J, V, b, ba, sₙ, n, Nₙ, site_from, site_to, flavor, t)
     res === nothing && return nothing
     new_d_to, sign_to = res
 
-    jw = isodd(sum(parity(read(temp, y)) for y in 1:(site_to-1); init=0) +
-               sum(parity(read(temp, y)) for y in 1:(site_from-1); init=0))
+    # Jordan-Wigner strings: `eachdigit(temp, k)` yields exactly the first `k` digits
+    jw = isodd(sum(parity(d) for d in eachdigit(temp, site_to - 1); init=0) +
+               sum(parity(d) for d in eachdigit(temp, site_from - 1); init=0))
     rep_s, rep_fac = representative(write(temp, site_to, new_d_to), ba)
-    haskey(b, rep_s) || return nothing
 
-    m = b[rep_s]
+    m = state_index(ba, rep_s)
+    m === nothing && return nothing
+
     fac = -t * sign_from * sign_to * (jw ? -1 : 1) * sqrt(ba.norms[m] / Nₙ) * rep_fac
     push!(I, m); push!(J, n); push!(V, fac)
 end
 
 function build_hamiltonian(N, ba; t=1.0, U=0.0)
     hilbert_dim = length(ba.states)
-    b = Dict(ba.states .=> 1:hilbert_dim)
     I_vec, J_vec, V_vec = Int[], Int[], ComplexF64[]
 
-    for sₙ in ba.states
-        n = b[sₙ]
+    for (n, sₙ) in enumerate(ba.states)
         Nₙ = ba.norms[n]
 
-        for x in 1:N
-            d = read(sₙ, x)
+        for d in eachdigit(sₙ, N)
             push!(I_vec, n); push!(J_vec, n); push!(V_vec, U * has(d, 1) * has(d, 0))
         end
 
         for x in 1:N
             x1 = mod1(x + 1, N)
             for flavor in (0, 1)
-                hop!(I_vec, J_vec, V_vec, b, ba, sₙ, n, Nₙ, x1, x, flavor, t)
-                hop!(I_vec, J_vec, V_vec, b, ba, sₙ, n, Nₙ, x, x1, flavor, t)
+                hop!(I_vec, J_vec, V_vec, ba, sₙ, n, Nₙ, x1, x, flavor, t)
+                hop!(I_vec, J_vec, V_vec, ba, sₙ, n, Nₙ, x, x1, flavor, t)
             end
         end
     end

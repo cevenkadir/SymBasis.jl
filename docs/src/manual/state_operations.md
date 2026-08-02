@@ -182,6 +182,33 @@ posₛ = [1, 3] # Query positions 1 and 3
 read(state, posₛ) # Returns [1, 2]
 ```
 
+If the positions are contiguous, pass them as a range rather than a vector. `read` and `count` then walk the digits once instead of looking each position up on its own, which costs nothing extra for a power-of-two base and is several times faster otherwise:
+
+```@example read
+read(state, 1:3) # one ordered walk, not three independent lookups
+```
+
+**All digits:**
+
+When you need every digit of a state — a diagonal on-site term, a particle count, a Jordan-Wigner string — use [`eachdigit(state, n)`](@ref SymBasis.DigitBase.eachdigit) instead of calling `read` position by position. It is an allocation-free iterator that yields the first `n` digits from the least-significant one upwards, peeling off one digit per step rather than recomputing a power of the base for every position:
+
+```@example read
+collect(eachdigit(state, 4)) # digits of (1201)₃, least-significant first
+```
+
+```@example read
+sum(Int(d) for d in eachdigit(state, 4)) # total "particle number" of the state
+```
+
+Pair it with `enumerate` when you also need the position:
+
+```@example read
+[(pos, Int(d)) for (pos, d) in enumerate(eachdigit(state, 4))]
+```
+
+!!! tip
+    For bases that are **not** a power of two (e.g. `Spin(1)` or `Boson(2)`, both base 3), sweeping a state with `eachdigit` is several times faster than the equivalent `read` loop, because `read(state, pos)` has to form `Bᵖᵒˢ⁻¹` each time. When the base *is* a power of two (base 2 for spin-1/2 and spinless fermions, base 4 for spinful fermions), a digit is a bit field that `read` extracts with a shift and a mask, so a plain `read` loop is just as fast and the choice is a matter of readability. Either way, `read` remains the right tool for random access, such as comparing a site with its neighbour.
+
 !!! warning
     `read` returns the digit as the same (unsigned, by default `UInt`) integer type used to store the state's value, not `Int`. Mixing it directly into signed arithmetic can silently underflow instead of erroring, e.g. `1 - 2*read(state, pos)` wraps around to a huge positive number instead of giving `-1` or `1`. Wrap the result in `Int(...)` first whenever you need signed arithmetic on it, e.g. `1 - 2*Int(read(state, pos))`.
 

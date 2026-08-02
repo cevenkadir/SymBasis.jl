@@ -22,11 +22,9 @@ dofo = dof_object(SpinlessFermion())
 
 function build_hamiltonian(N, ba; t=1.0, V=0.0)
     hilbert_dim = length(ba.states)
-    b = Dict(ba.states .=> 1:hilbert_dim)
     I_vec, J_vec, V_vec = Int[], Int[], ComplexF64[]
 
-    for sₙ in ba.states
-        n = b[sₙ]
+    for (n, sₙ) in enumerate(ba.states)
         Nₙ = ba.norms[n]
 
         diagV = sum(V * read(sₙ, x) * read(sₙ, mod1(x + 1, N)) for x in 1:N)
@@ -44,9 +42,9 @@ function build_hamiltonian(N, ba; t=1.0, V=0.0)
                 temp = inc(temp, site_to)
 
                 rep_s, rep_fac = representative(temp, ba)
-                haskey(b, rep_s) || continue
+                m = state_index(ba, rep_s)
+                m === nothing && continue
 
-                m = b[rep_s]
                 fac = -t * jw * sqrt(ba.norms[m] / Nₙ) * rep_fac
                 push!(I_vec, m); push!(J_vec, n); push!(V_vec, fac)
             end

@@ -103,9 +103,7 @@ J_vec = Int64[]
 V_vec = Float64[]
 
 hilbert_dim = length(ba.states)
-b = Dict(ba.states .=> 1:hilbert_dim)
-for sₙ in ba.states
-    n = b[sₙ]
+for (n, sₙ) in enumerate(ba.states)
     Nₙ = ba.norms[n]
 
     for xᵢ in 1:N
@@ -118,8 +116,8 @@ for sₙ in ba.states
             temp_s = flip(sₙ, xᵢ₊₁)
             rep_s, rep_fac = representative(temp_s, ba)
 
-            if rep_s ∈ ba.states
-                m = b[rep_s]
+            m = state_index(ba, rep_s)
+            if m !== nothing
                 Nₘ = ba.norms[m]
 
                 all_fac = sqrt(Nₘ / Nₙ) * rep_fac
@@ -169,7 +167,7 @@ end
 # find the representative of the Z_2 state in the symmetry-resolved basis
 rep_Z_2_state, _ = representative(Z_2_state, ba)
 # determine the index of the representative state in the basis
-m_Z_2_state = b[rep_Z_2_state]
+m_Z_2_state = state_index(ba, rep_Z_2_state)
 # construct the vector representation of the Z_2 state in the symmetry-resolved basis
 Z_2_vec = zeros(hilbert_dim)
 Z_2_vec[m_Z_2_state] = 1.0

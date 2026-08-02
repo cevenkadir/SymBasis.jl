@@ -50,6 +50,29 @@ b_with_both_syms = basis(dofo, N, csg)
 ```
 This will generate a basis that consists of the basis states with total magnetization quantum number $S^z = 0$ and momentum quantum number $k = 0$ for a system of 4 spin-1/2 objects.
 
+## Looking up states
+
+A [`Basis`](@ref SymBasis.Bases.Basis) holds its states in `b.states` and their normalization constants in `b.norms`, with matching indices: `b.norms[n]` belongs to `b.states[n]`. Given a state, [`state_index`](@ref SymBasis.Bases.state_index) returns its position in the basis, or `nothing` if the state is not part of it:
+```@example basis_construction
+s = b_with_both_syms.states[2]
+
+state_index(b_with_both_syms, s)
+```
+```@example basis_construction
+# the all-up state is not in the Sz=0 sector, so it has no index
+state_index(b_with_both_syms, bi"1111"2) === nothing
+```
+Membership alone is available as `s ∈ b`:
+```@example basis_construction
+s ∈ b_with_both_syms, bi"1111"2 ∈ b_with_both_syms
+```
+
+`basis` enumerates the states in ascending order, which the `sorted` field records:
+```@example basis_construction
+b_with_both_syms.sorted
+```
+Both lookups then use a binary search and cost $\mathcal{O}(\log n)$, so there is no need to build a separate index map for mapping operator-generated states back onto the basis (see [Operator construction](@ref "Operator construction")). If you construct a `Basis` yourself from an unsorted state vector, `sorted` is `false` and both fall back to a linear scan.
+
 !!! warning
     If you are unsure about whether these symmetries commute with each other in the constructed basis, you can simply pass the combined symmetry group to the [`is_commutative`](@ref SymBasis.Bases.is_commutative) function from the [`SymBasis.SymGroups`](@ref symgroups-api) submodule to check if the symmetries commute:
     ```@example basis_construction

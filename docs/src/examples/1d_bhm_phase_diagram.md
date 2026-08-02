@@ -92,14 +92,11 @@ for (id_t, t) in enumerate(tₛ)
                 J_vec = Int64[]
                 V_vec = ComplexF64[]
                 
-                b = Dict(ba.states .=> 1:hilbert_dim)
-                for sₙ in ba.states
-                    n = b[sₙ]
+                for (n, sₙ) in enumerate(ba.states)
                     Nₙ = ba.norms[n]
                     
                     # diagonal interaction term
-                    for xᵢ in 1:N
-                        n_xᵢ = read(sₙ, xᵢ)
+                    for n_xᵢ in eachdigit(sₙ, N)
                         if n_xᵢ > 0
                             push!(I_vec, n)
                             push!(J_vec, n)
@@ -119,8 +116,8 @@ for (id_t, t) in enumerate(tₛ)
                             temp_s₁ = inc(temp_s₁, xᵢ)
                             rep_s₁, rep_fac₁ = representative(temp_s₁, ba)
                             
-                            if haskey(b, rep_s₁)
-                                m = b[rep_s₁]
+                            m = state_index(ba, rep_s₁)
+                            if m !== nothing
                                 Nₘ = ba.norms[m]
                                 ladder_fac₁ = sqrt(n_xᵢ + 1) * sqrt(n_xᵢ₊₁)
                                 all_fac = -t * ladder_fac₁ * sqrt(Nₘ / Nₙ) * rep_fac₁
@@ -136,8 +133,8 @@ for (id_t, t) in enumerate(tₛ)
                             temp_s₂ = inc(temp_s₂, xᵢ₊₁)
                             rep_s₂, rep_fac₂ = representative(temp_s₂, ba)
                             
-                            if haskey(b, rep_s₂)
-                                m = b[rep_s₂]
+                            m = state_index(ba, rep_s₂)
+                            if m !== nothing
                                 Nₘ = ba.norms[m]
                                 ladder_fac₂ = sqrt(n_xᵢ) * sqrt(n_xᵢ₊₁ + 1)
                                 all_fac = -t * ladder_fac₂ * sqrt(Nₘ / Nₙ) * rep_fac₂

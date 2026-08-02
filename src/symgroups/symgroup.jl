@@ -251,6 +251,18 @@ end
     )
 end
 
+# Apply every dimension's element without computing any phase. Used by `representative`,
+# which discards the phase of all but the winning cycle, so evaluating it during the scan
+# is pure waste — for fermionic groups it was ~90% of the call.
+@inline _apply_all(applys::Tuple{}, cycle::Tuple{}, state) = state
+@inline function _apply_all(applys::Tuple, cycle::Tuple, state)
+    return _apply_all(
+        Base.tail(applys),
+        Base.tail(cycle),
+        first(applys)(first(cycle), state)
+    )
+end
+
 @inline _apply_phase_all(applys::Tuple{}, phases::Tuple{}, cycle::Tuple{}, state, ph) =
     (state, ph)
 @inline function _apply_phase_all(applys::Tuple, phases::Tuple, cycle::Tuple, state, ph)

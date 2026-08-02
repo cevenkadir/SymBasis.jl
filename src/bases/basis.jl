@@ -1,6 +1,6 @@
 
 using SymBasis.DigitBase: BaseInt, BaseIntRange, base_number_to_string
-using SymBasis.SymGroups: SymGroup, CombSymGroup, _check_all, _apply_phase_all,
+using SymBasis.SymGroups: SymGroup, CombSymGroup, _apply_all, _apply_phase_all,
     _candidate_states
 using SymBasis.DoFObjects: DoFObject
 
@@ -25,6 +25,9 @@ efficient representation and manipulation of states in different bases.
     basis. It can be either a [`SymBasis.SymGroups.SymGroup`](@ref) or a
     [`SymBasis.SymGroups.CombSymGroup`](@ref), or `nothing` if no symmetry group is
     associated.
+- `sorted::Bool`: Whether `states` is in ascending order, determined once at construction.
+    Bases built by [`basis`](@ref) always are; [`state_index`](@ref) uses this to pick a
+    binary search over a linear scan.
 
 # Constructor Arguments
 - `states::AbstractVector{T}`: A vector of basis states, where `T` is the type of the basis
@@ -49,13 +52,16 @@ struct Basis{
     states::T_states
     norms::T_norms
     sg::T_sg
+    sorted::Bool
     function Basis(
         states::AbstractVector{T},
         norms::AbstractVector{T_n},
         sg::Union{SymGroup,CombSymGroup,Nothing}=nothing
     ) where {T,T_n<:Number}
         @assert length(states) == length(norms) "Length of states and norms must be equal"
-        return new{T,T_n,typeof(states),typeof(norms),typeof(sg)}(states, norms, sg)
+        return new{T,T_n,typeof(states),typeof(norms),typeof(sg)}(
+            states, norms, sg, issorted(states)
+        )
     end
 end
 
@@ -75,6 +81,48 @@ Base.iterate(b::Basis) = (b.states, Val(:norms))
 Base.iterate(b::Basis, ::Val{:norms}) = (b.norms, Val(:sg))
 Base.iterate(b::Basis, ::Val{:sg}) = (b.sg, Val(:done))
 Base.iterate(b::Basis, ::Val{:done}) = nothing
+
+"""
+    state_index(b::SymBasis.Bases.Basis{T}, state::T) where {T}
+
+Return the index of `state` in `b.states`, or `nothing` if it is not a basis state.
+
+Bases produced by [`basis`](@ref) are sorted, in which case the lookup is a binary search
+(`O(log n)`); otherwise it falls back to a linear scan. This is the efficient way to map a
+representative state back to its basis index when assembling operators — it avoids both
+the `O(n)` cost of `findfirst`/`∈` on `b.states` and the memory of a separate index
+`Dict`.
+
+# Arguments
+- `b::`[`SymBasis.Bases.Basis`](@ref)`{T}`: The basis to look the state up in.
+- `state::T`: The state to look up.
+
+# Returns
+- `Union{Int,Nothing}`: The index of `state` in `b.states`, or `nothing` if absent.
+"""
+function state_index(b::Basis{T}, state::T) where {T}
+    if b.sorted
+        i = searchsortedfirst(b.states, state)
+        (i <= length(b.states) && b.states[i] == state) && return i
+        return nothing
+    end
+    return findfirst(isequal(state), b.states)
+end
+
+"""
+    Base.in(state::T, b::SymBasis.Bases.Basis{T}) where {T}
+
+Check whether `state` is one of the basis states of `b`, using the same fast lookup as
+[`state_index`](@ref).
+
+# Arguments
+- `state::T`: The state to test.
+- `b::`[`SymBasis.Bases.Basis`](@ref)`{T}`: The basis to test against.
+
+# Returns
+- `Bool`: `true` if `state` is a basis state of `b`, `false` otherwise.
+"""
+Base.in(state::T, b::Basis{T}) where {T} = state_index(b, state) !== nothing
 
 function Base.summary(io::IO, b::Basis{T,T_n}) where {T,T_n}
     print(io, "Basis{$T,$T_n} with ", length(b.states), " states")
@@ -149,8 +197,8 @@ Generates the full basis for a DoF-object without symmetry considerations.
 # Keyword Arguments
 - `norm_type::DataType=Float64`: The data type for the norms of the basis states. Default is
     `Float64`.
-- `is_sorted::Bool=false`: Whether to sort the basis states in ascending order. Default is
-    `false`.
+- `is_sorted::Bool=false`: Retained for backwards compatibility and has no effect: the
+    states are enumerated in ascending order, so the returned basis is always sorted.
 
 # Returns
 - [`SymBasis.Bases.Basis`](@ref): The generated basis.
@@ -163,65 +211,225 @@ function basis(
 ) where {B,T_s,T,Ti}
     states = collect(BaseInt(T(0); base=B, Ti=Ti):BaseInt(T(B^N - 1); base=B, Ti=Ti))
     norms = ones(norm_type, length(states))
-    if is_sorted
-        sorted_indices = sortperm(states)
-        return Basis(states[sorted_indices], norms[sorted_indices])
+    # The scan is over an ascending range, so the output is sorted by construction and
+    # `is_sorted` needs no extra work.
+    return Basis(states, norms)
+end
+
+# Tracker for the number of distinct states visited in one symmetry orbit. Small groups
+# use a linear buffer; large groups (≥ 32 cycles, e.g. 2D lattices) switch to an
+# open-addressing table with a generation stamp so no per-state reset is needed.
+mutable struct _OrbitDedup{T}
+    linear::Vector{T}
+    use_hash::Bool
+    tbl_vals::Vector{T}
+    tbl_stamp::Vector{Int32}
+    gen::Int32
+    mask::Int
+    count::Int
+end
+
+function _OrbitDedup(::Type{T}, n_cycles::Int) where {T}
+    if n_cycles >= 32
+        sz = max(8, nextpow(2, 2 * n_cycles))
+        return _OrbitDedup{T}(T[], true, Vector{T}(undef, sz), zeros(Int32, sz),
+            Int32(0), sz - 1, 0)
     else
-        return Basis(states, norms)
+        return _OrbitDedup{T}(Vector{T}(undef, n_cycles), false, T[], Int32[],
+            Int32(0), 0, 0)
     end
 end
 
-function _basis_impl(
-    all_bints::Union{BaseIntRange{T,Ti,B},AbstractVector{BaseInt{T,Ti,B}}},
-    n_cycles::Int,
-    sg::Union{SymGroup{B,T_s,T,Ti,Ts},CombSymGroup{B,T_s,T,Ti,Ts}},
-    F₀::Complex{T_n},
-    eps_norm_type::T_n,
-    get_temp_state::F,
-    is_sorted::Bool
-) where {T,Ti,B,T_n<:Real,T_s,Ts,F}
-    nthreads = Threads.nthreads()
+@inline function _dedup_reset!(d::_OrbitDedup)
+    d.count = 0
+    if d.use_hash
+        if d.gen == typemax(Int32)
+            fill!(d.tbl_stamp, Int32(0))
+            d.gen = Int32(0)
+        end
+        d.gen += Int32(1)
+    end
+    return d
+end
 
-    tasks = map(Iterators.partition(all_bints, length(all_bints) ÷ nthreads + 1)) do chunk
+@inline function _dedup_insert!(d::_OrbitDedup{T}, v::T) where {T}
+    if d.use_hash
+        z = v % UInt64
+        z ⊻= z >>> 33
+        z *= 0xff51afd7ed558ccd
+        z ⊻= z >>> 33
+        i = (Int(z & 0x7fffffffffffffff) & d.mask) + 1
+        @inbounds while true
+            if d.tbl_stamp[i] != d.gen
+                d.tbl_stamp[i] = d.gen
+                d.tbl_vals[i] = v
+                d.count += 1
+                return d
+            elseif d.tbl_vals[i] == v
+                return d
+            end
+            i = (i & d.mask) + 1
+        end
+    else
+        buf = d.linear
+        n = d.count
+        @inbounds for k in 1:n
+            buf[k] == v && return d
+        end
+        d.count = n + 1
+        @inbounds buf[n+1] = v
+        return d
+    end
+end
+
+"""
+    _dim_elements(cycles::AbstractArray{TT,D}) where {TT<:Tuple,D}
+
+Extract, for each dimension of a `CombSymGroup`'s cycle product, the vector of that
+dimension's distinct symmetry elements. `cycles` is built from `Base.product`, so the
+dim-`i` component of the cycle at CartesianIndex `I` depends only on `I[i]`.
+"""
+function _dim_elements(cycles::AbstractArray{TT,D}) where {TT<:Tuple,D}
+    f = first(CartesianIndices(cycles))
+    return ntuple(Val(D)) do i
+        [cycles[CartesianIndex(ntuple(j -> j == i ? k : f[j], Val(D)))][i]
+         for k in axes(cycles, i)]
+    end
+end
+
+# Evaluate each dimension's check once per distinct element of that dimension (instead of
+# once per flattened cycle). Returns `false` as soon as some dimension has no valid
+# element, in which case no cycle of the product can be valid for `state₀`.
+# Generated so the per-dimension loops are fully unrolled with no tuple juggling.
+@generated function _fill_valid!(
+    valid::NTuple{D,Any}, checks::NTuple{D,Any}, elems::NTuple{D,Any}, state₀
+) where {D}
+    body = Expr(:block)
+    for i in 1:D
+        vs, es, chk, ok, anyok = gensym(:vs), gensym(:es), gensym(:chk),
+        gensym(:ok), gensym(:anyok)
+        push!(body.args, quote
+            $vs = valid[$i]
+            $es = elems[$i]
+            $chk = checks[$i]
+            $anyok = false
+            @inbounds for k in eachindex($es)
+                $ok = $chk($es[k], state₀, true)
+                $vs[k] = $ok
+                $anyok |= $ok
+            end
+            $anyok || return false
+        end)
+    end
+    push!(body.args, :(return true))
+    return body
+end
+
+# Nested scan over the valid part of the cycle product, reusing partial applications: the
+# dim-1 transformation of `state₀` is computed once and shared by all combinations of the
+# later dimensions. At the leaf the fully transformed state feeds the orbit dedup and the
+# F accumulation; an early return unwinds the whole nest when a valid cycle maps `state₀`
+# below itself. Generated so all `D` loops are emitted explicitly (a `Base.tail`
+# recursion over tuples of vectors cannot be inlined and allocates per state).
+@generated function _scan_product(
+    applys::NTuple{D,Any}, phases::NTuple{D,Any}, elems::NTuple{D,Any},
+    valid::NTuple{D,Any}, factors, state₀, F₀, dedup::_OrbitDedup
+) where {D}
+    ks = [Symbol(:k_, i) for i in 1:D]
+    sts = [Symbol(:state_, i) for i in 0:D]
+    els = [Symbol(:elem_, i) for i in 1:D]
+
+    # The phase is read only when the fully transformed state lands back on `state₀`, i.e.
+    # for stabilizer elements — a handful of leaves out of the whole product. So it is built
+    # here from the per-level element and input state, which are still live at the leaf,
+    # instead of being accumulated on the way down. A state with a stabilizer of size `s`
+    # now rebuilds the chain `s` times rather than reusing the descent's shared prefix, but
+    # `s` is 1 for the overwhelming majority of states and this takes the phase off the hot
+    # path entirely — for fermionic groups the sign was ~two thirds of the whole scan.
+    phase_expr = foldl(
+        (acc, i) -> :($acc * phases[$i]($(els[i]), $(sts[i]))), 1:D; init=1
+    )
+
+    body = quote
+        _dedup_insert!(dedup, $(sts[D+1]).value)
+        if isless($(sts[D+1]), state₀)
+            return (zero(F), true)
+        elseif $(sts[D+1]) == state₀
+            F += @inbounds(factors[$(ks...)]) * $phase_expr
+        end
+    end
+
+    for i in D:-1:1
+        es, vs, a = gensym(:es), gensym(:vs), gensym(:a)
+        body = quote
+            $es = elems[$i]
+            $vs = valid[$i]
+            $a = applys[$i]
+            @inbounds for $(ks[i]) in eachindex($es)
+                $vs[$(ks[i])] || continue
+                $(els[i]) = $es[$(ks[i])]
+                $(sts[i+1]) = $a($(els[i]), $(sts[i]))
+                $body
+            end
+        end
+    end
+
+    return quote
+        $(sts[1]) = state₀
+        F = F₀
+        $body
+        return (F, false)
+    end
+end
+
+# Split a scan range into chunks for `Threads.@spawn`. Oversubscribing to ~4 chunks per
+# thread balances an uneven density of valid states across the range, but it only pays once
+# there is enough work to amortize the extra spawns: a scan that finishes in microseconds
+# loses more to task overhead than it gains. The relevant measure is total work, not the
+# number of candidates -- each candidate is scanned against every cycle of the group -- so
+# the chunk count is driven by `n * n_cycles` and floored at one chunk per thread.
+const _WORK_PER_CHUNK = 256
+
+function _chunk_length(n::Integer, n_cycles::Integer, nthreads::Integer)
+    n_chunks = clamp(cld(n * n_cycles, _WORK_PER_CHUNK), nthreads, 4 * nthreads)
+    return max(1, cld(n, n_chunks))
+end
+
+function _basis_impl_csg(
+    all_bints::Union{BaseIntRange{T,Ti,B},AbstractVector{BaseInt{T,Ti,B}}},
+    csg::CombSymGroup{B,T_s,T,Ti,Ts},
+    dim_elems::DE,
+    F₀::Complex{T_n},
+    eps_norm_type::T_n
+) where {T,Ti,B,T_n<:Real,T_s,Ts,DE<:Tuple}
+    n_cycles = length(csg.cycles)
+    checks = csg.check
+    applys = csg.apply
+    phases = csg.phase
+    factors = csg.factors
+
+    nthreads = Threads.nthreads()
+    chunk_len = _chunk_length(length(all_bints), n_cycles, nthreads)
+
+    tasks = map(Iterators.partition(all_bints, chunk_len)) do chunk
         Threads.@spawn begin
             local_norms = T_n[]
             local_states = BaseInt{T,Ti,B}[]
-            local_F = F₀
-            local_valbuf = Vector{T}(undef, n_cycles)
-            local_count = 0
+            sizehint!(local_norms, length(chunk) ÷ n_cycles + 4)
+            sizehint!(local_states, length(chunk) ÷ n_cycles + 4)
+            valid = map(es -> Vector{Bool}(undef, length(es)), dim_elems)
+            dedup = _OrbitDedup(T, n_cycles)
 
             for state₀ in chunk
-                local_F = F₀
-                local_count = 0
+                _fill_valid!(valid, checks, dim_elems, state₀) || continue
 
-                @inbounds for idx in 1:n_cycles
-                    is_valid_state, temp_state, temp_phase = get_temp_state(idx, state₀)
+                _dedup_reset!(dedup)
+                local_F, aborted = _scan_product(
+                    applys, phases, dim_elems, valid, factors, state₀, F₀, dedup
+                )
+                aborted && continue
 
-                    if is_valid_state
-                        v_temp_state = temp_state.value
-
-                        is_new = true
-                        @inbounds for k in 1:local_count
-                            if local_valbuf[k] == v_temp_state
-                                is_new = false
-                                break
-                            end
-                        end
-                        if is_new
-                            local_count += 1
-                            @inbounds local_valbuf[local_count] = v_temp_state
-                        end
-
-                        if isless(temp_state, state₀)
-                            local_F = F₀
-                            break
-                        elseif temp_state == state₀
-                            local_F += sg.factors[idx] * temp_phase
-                        end
-                    end
-                end
-
-                norm₀ = local_count * abs2(local_F)
+                norm₀ = dedup.count * abs2(local_F)
                 if norm₀ > eps_norm_type
                     push!(local_norms, norm₀)
                     push!(local_states, state₀)
@@ -236,12 +444,73 @@ function _basis_impl(
     states = isempty(results) ? BaseInt{T,Ti,B}[] : vcat((r[1] for r in results)...)
     norms = isempty(results) ? T_n[] : vcat((r[2] for r in results)...)
 
-    if is_sorted
-        sorted_indices = sortperm(states)
-        return Basis(states[sorted_indices], norms[sorted_indices], sg)
-    else
-        return Basis(states, norms, sg)
+    # Ascending by construction: ordered scan + order-preserving chunk concatenation.
+    return Basis(states, norms, csg)
+end
+
+function _basis_impl(
+    all_bints::Union{BaseIntRange{T,Ti,B},AbstractVector{BaseInt{T,Ti,B}}},
+    n_cycles::Int,
+    sg::Union{SymGroup{B,T_s,T,Ti,Ts},CombSymGroup{B,T_s,T,Ti,Ts}},
+    F₀::Complex{T_n},
+    eps_norm_type::T_n,
+    get_temp_state::F,
+    get_phase::G,
+    is_sorted::Bool
+) where {T,Ti,B,T_n<:Real,T_s,Ts,F,G}
+    nthreads = Threads.nthreads()
+
+    chunk_len = _chunk_length(length(all_bints), n_cycles, nthreads)
+
+    tasks = map(Iterators.partition(all_bints, chunk_len)) do chunk
+        Threads.@spawn begin
+            local_norms = T_n[]
+            local_states = BaseInt{T,Ti,B}[]
+            sizehint!(local_norms, length(chunk) ÷ n_cycles + 4)
+            sizehint!(local_states, length(chunk) ÷ n_cycles + 4)
+            local_F = F₀
+            dedup = _OrbitDedup(T, n_cycles)
+
+            for state₀ in chunk
+                local_F = F₀
+                _dedup_reset!(dedup)
+
+                @inbounds for idx in 1:n_cycles
+                    is_valid_state, temp_state = get_temp_state(idx, state₀)
+
+                    if is_valid_state
+                        _dedup_insert!(dedup, temp_state.value)
+
+                        if isless(temp_state, state₀)
+                            local_F = F₀
+                            break
+                        elseif temp_state == state₀
+                            # Only the stabilizer of `state₀` contributes a phase, so it is
+                            # evaluated here rather than alongside every `apply` above.
+                            local_F += sg.factors[idx] * get_phase(idx, state₀)
+                        end
+                    end
+                end
+
+                norm₀ = dedup.count * abs2(local_F)
+                if norm₀ > eps_norm_type
+                    push!(local_norms, norm₀)
+                    push!(local_states, state₀)
+                end
+            end
+
+            (local_states, local_norms)
+        end
     end
+
+    results = fetch.(tasks)
+    states = isempty(results) ? BaseInt{T,Ti,B}[] : vcat((r[1] for r in results)...)
+    norms = isempty(results) ? T_n[] : vcat((r[2] for r in results)...)
+
+    # `all_bints` is scanned in ascending order (a range, or a pre-sorted candidate
+    # vector) and chunk concatenation preserves that order, so the output is already
+    # sorted and `is_sorted` needs no extra work.
+    return Basis(states, norms, sg)
 end
 
 """
@@ -264,8 +533,8 @@ Generates the symmetry-resolved basis for a DoF-object under the action of a sym
 # Keyword Arguments
 - `norm_type::DataType=Float64`: The data type for the norms of the basis states. Default is
     `Float64`.
-- `is_sorted::Bool=false`: Whether to sort the basis states in ascending order. Default is
-    `false`.
+- `is_sorted::Bool=false`: Retained for backwards compatibility and has no effect: the
+    states are enumerated in ascending order, so the returned basis is always sorted.
 
 # Returns
 - [`SymBasis.Bases.Basis`](@ref): The generated symmetry-resolved basis.
@@ -288,9 +557,13 @@ function basis(
     get_temp_state = (idx, state₀) -> begin
         cycleᵢ = sg.cycles[idx]
         temp_state = sg.apply(cycleᵢ, state₀)
-        temp_phase = sg.phase(cycleᵢ, state₀)
-        (sg.check(cycleᵢ, temp_state, c), temp_state, temp_phase)
+        (sg.check(cycleᵢ, temp_state, c), temp_state)
     end
+
+    # Kept separate from `get_temp_state` so `_basis_impl` can call it only for the cycles
+    # that actually fix `state₀`; `sg.phase` is a pure function of `(cycle, state)`, so the
+    # deferred call sees exactly the arguments the eager one did.
+    get_phase = (idx, state₀) -> sg.phase(sg.cycles[idx], state₀)
 
     return _basis_impl(
         all_bints,
@@ -299,6 +572,7 @@ function basis(
         F₀,
         eps_norm_type,
         get_temp_state,
+        get_phase,
         is_sorted
     )
 end
@@ -325,8 +599,8 @@ Generates the symmetry-resolved basis for a DoF-object under the action of a com
 # Keyword Arguments
 - `norm_type::DataType=Float64`: The data type for the norms of the basis states. Default is
     `Float64`.
-- `is_sorted::Bool=false`: Whether to sort the basis states in ascending order. Default is
-    `false`.
+- `is_sorted::Bool=false`: Retained for backwards compatibility and has no effect: the
+    states are enumerated in ascending order, so the returned basis is always sorted.
 
 # Returns
 - [`SymBasis.Bases.Basis`](@ref): The generated symmetry-resolved basis.
@@ -340,16 +614,16 @@ function basis(
 ) where {T,Ti,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
     F₀ = zero(Complex{norm_type})
     eps_norm_type = eps(norm_type)
-    c = true
+
+    # Per-dimension distinct symmetry elements, recovered once from the cycle product.
+    dim_elems = _dim_elements(csg.cycles)
 
     # Use the smallest directly-enumerable sector among the dimensions (if any); the
     # remaining dimensions' checks still run on every candidate, so any superset of the
     # valid states gives an identical basis.
     candidates = nothing
     for i in 1:ndims(csg.cycles)
-        candᵢ = _candidate_states(
-            csg.check[i], (cycle[i] for cycle in csg.cycles), BaseInt{T,Ti,B}, N
-        )
+        candᵢ = _candidate_states(csg.check[i], dim_elems[i], BaseInt{T,Ti,B}, N)
         if candᵢ !== nothing && (candidates === nothing || length(candᵢ) < length(candidates))
             candidates = candᵢ
         end
@@ -358,27 +632,7 @@ function basis(
                 (BaseInt(T(0); base=B, Ti=Ti):BaseInt(T(B^N - 1); base=B, Ti=Ti)) :
                 candidates
 
-    get_temp_state = (idx, state₀) -> begin
-        cycle = csg.cycles[idx]
-        is_valid = _check_all(csg.check, cycle, state₀, c)
-        temp_state = state₀
-        temp_phase = 1
-        if is_valid
-            temp_state, temp_phase =
-                _apply_phase_all(csg.apply, csg.phase, cycle, state₀, 1)
-        end
-        (is_valid, temp_state, temp_phase)
-    end
-
-    return _basis_impl(
-        all_bints,
-        length(csg.cycles),
-        csg,
-        F₀,
-        eps_norm_type,
-        get_temp_state,
-        is_sorted
-    )
+    return _basis_impl_csg(all_bints, csg, dim_elems, F₀, eps_norm_type)
 end
 
 """
@@ -400,55 +654,69 @@ function is_commutative(b::Basis, csg::CombSymGroup)
         @warn "The symmetry group of the basis does not match the provided combined symmetry group."
     end
 
-    n_cycles = csg.cycles |> length
     ndims_cycles = csg.cycles |> ndims
     nthreads = Threads.nthreads()
 
+    # Distinct elements per dimension: the flattened cycle product repeats each
+    # (element i, element j) pair many times, and only the pair matters here.
+    dim_elems = _dim_elements(csg.cycles)
     state_indices = eachindex(b.states)
+    chunk_len = _chunk_length(
+        length(state_indices), ndims_cycles * (ndims_cycles - 1) ÷ 2, nthreads)
 
-    # Partition work and spawn tasks
-    tasks = map(
-        Iterators.partition(state_indices, length(state_indices) ÷ nthreads + 1)
-    ) do chunk
+    tasks = map(Iterators.partition(state_indices, chunk_len)) do chunk
         Threads.@spawn begin
-            for s_idx in chunk
-                test_state = b.states[s_idx]
-
-                for i in 1:ndims_cycles
-                    for j in (i+1):ndims_cycles
-                        for cycle_idx in 1:n_cycles
-                            cycle = csg.cycles[cycle_idx]
-
-                            # Apply symmetry i then j
-                            phase_i = csg.phase[i](cycle[i], test_state)
-                            state_ij = csg.apply[i](cycle[i], test_state)
-                            phase_j = csg.phase[j](cycle[j], state_ij)
-                            state_ij = csg.apply[j](cycle[j], state_ij)
-                            state_ij, factor_ij = representative(state_ij, csg)
-                            factor_ij *= phase_i * phase_j
-
-                            # Apply symmetry j then i
-                            phase_j = csg.phase[j](cycle[j], test_state)
-                            state_ji = csg.apply[j](cycle[j], test_state)
-                            phase_i = csg.phase[i](cycle[i], state_ji)
-                            state_ji = csg.apply[i](cycle[i], state_ji)
-                            state_ji, factor_ji = representative(state_ji, csg)
-                            factor_ji *= phase_i * phase_j
-
-                            if state_ij != state_ji || !(factor_ij ≈ factor_ji)
-                                return false
-                            end
-                        end
-                    end
-                end
+            ok = true
+            for i in 1:ndims_cycles, j in (i+1):ndims_cycles
+                # Function barrier: resolve the per-dimension functions and element
+                # vectors once per dimension pair instead of on every inner iteration
+                # (indexing a heterogeneous tuple with a runtime index is type-unstable).
+                ok = _commutes_pair(
+                    b.states, chunk, csg,
+                    csg.apply[i], csg.phase[i], dim_elems[i],
+                    csg.apply[j], csg.phase[j], dim_elems[j]
+                )
+                ok || break
             end
-            return true
+            ok
         end
     end
 
     # Fetch results from all tasks - all must be true
     results = fetch.(tasks)
     return all(results)
+end
+
+function _commutes_pair(
+    states, chunk, csg,
+    applyᵢ::Fa, phaseᵢ::Fp, elemsᵢ,
+    applyⱼ::Ga, phaseⱼ::Gp, elemsⱼ
+) where {Fa,Fp,Ga,Gp}
+    @inbounds for s_idx in chunk
+        test_state = states[s_idx]
+        for eᵢ in elemsᵢ, eⱼ in elemsⱼ
+            # Apply symmetry i then j
+            phase_i = phaseᵢ(eᵢ, test_state)
+            state_ij = applyᵢ(eᵢ, test_state)
+            phase_j = phaseⱼ(eⱼ, state_ij)
+            state_ij = applyⱼ(eⱼ, state_ij)
+            state_ij, factor_ij = representative(state_ij, csg)
+            factor_ij *= phase_i * phase_j
+
+            # Apply symmetry j then i
+            phase_j = phaseⱼ(eⱼ, test_state)
+            state_ji = applyⱼ(eⱼ, test_state)
+            phase_i = phaseᵢ(eᵢ, state_ji)
+            state_ji = applyᵢ(eᵢ, state_ji)
+            state_ji, factor_ji = representative(state_ji, csg)
+            factor_ji *= phase_i * phase_j
+
+            if state_ij != state_ji || !(factor_ij ≈ factor_ji)
+                return false
+            end
+        end
+    end
+    return true
 end
 
 """
@@ -492,20 +760,21 @@ function representative(
     n_cycles = length(sg.cycles)
 
     id_rep_state = first(eachindex(sg.cycles))
-    rep_phase = sg.phase(sg.cycles[id_rep_state], state)
     rep_state = sg.apply(sg.cycles[id_rep_state], state)
 
     @inbounds for idx in 2:n_cycles
-        temp_phase = sg.phase(sg.cycles[idx], state)
         temp_state = sg.apply(sg.cycles[idx], state)
 
         if isless(temp_state, rep_state)
             id_rep_state = idx
             rep_state = temp_state
-            rep_phase = temp_phase
         end
     end
 
+    # Only the winning cycle's phase survives, so it is evaluated once here instead of once
+    # per cycle above. `sg.phase` is a pure function of `(cycle, state)` and the comparison
+    # stays strict, so the same cycle wins and the factor is unchanged.
+    rep_phase = sg.phase(sg.cycles[id_rep_state], state)
     rep_fac = rep_phase * sg.factors[id_rep_state]
 
     return rep_state, rep_fac
@@ -536,22 +805,26 @@ function representative(
 ) where {T,Ti,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
     n_cycles = length(csg.cycles)
 
-    # Initialize with first cycle
-    rep_state, rep_phase =
-        _apply_phase_all(csg.apply, csg.phase, csg.cycles[1], state, one(Ts))
+    # Flat scan over the cycle product: unlike `basis`, this is called once per state
+    # (e.g. per Hamiltonian matrix element), so there is nothing to amortize the setup of
+    # a per-dimension nested scan against.
+    rep_state = _apply_all(csg.apply, csg.cycles[1], state)
     id_rep_state = 1
 
     @inbounds for idx in 2:n_cycles
-        temp_state, temp_phase =
-            _apply_phase_all(csg.apply, csg.phase, csg.cycles[idx], state, one(Ts))
+        temp_state = _apply_all(csg.apply, csg.cycles[idx], state)
 
         if isless(temp_state, rep_state)
             id_rep_state = idx
             rep_state = temp_state
-            rep_phase = temp_phase
         end
     end
 
+    # As in the `SymGroup` method: scan with `apply` alone, then pay for the phase chain
+    # once, for the cycle that actually won.
+    _, rep_phase = @inbounds _apply_phase_all(
+        csg.apply, csg.phase, csg.cycles[id_rep_state], state, one(Ts)
+    )
     rep_fac = rep_phase * csg.factors[id_rep_state]
 
     return rep_state, rep_fac

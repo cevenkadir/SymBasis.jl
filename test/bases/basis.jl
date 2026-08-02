@@ -29,6 +29,40 @@ function test_basis_result(dofo, N, args...;
 end
 
 @testset "Testing Basis..." begin
+    @testset "state_index and in for Basis" begin
+        N = 8
+        dofo = dof_object(Spin(1 // 2))
+        sz = sym(TotalMagnetization(0 // 1, N), dofo)
+        Tsg = sym(Translational(0, mod1.((1:N) .+ 1, N)), dofo)
+        b = basis(dofo, N, sz ∘ Tsg)
+
+        # Bases from `basis` come out sorted, so lookups take the binary-search path.
+        @test b.sorted
+        @test issorted(b.states)
+        @test all(i -> state_index(b, b.states[i]) == i, eachindex(b.states))
+        @test all(s -> s ∈ b, b.states)
+
+        # The all-ones state has maximal magnetization, so it cannot be in the Sz = 0
+        # sector and must be reported absent by both entry points.
+        absent = BaseInt(UInt(2^N - 1); base=2)
+        @test !(absent in b.states)
+        @test state_index(b, absent) === nothing
+        @test !(absent ∈ b)
+
+        # Linear-scan fallback for a basis that is not in ascending order.
+        ub = Basis(reverse(collect(b.states)), reverse(collect(b.norms)), b.sg)
+        @test !ub.sorted
+        @test all(i -> state_index(ub, ub.states[i]) == i, eachindex(ub.states))
+        @test all(s -> s ∈ ub, ub.states)
+        @test state_index(ub, absent) === nothing
+        @test !(absent ∈ ub)
+
+        # Empty basis edge case.
+        eb = Basis(BaseInt{UInt,Int,2}[], Float64[])
+        @test state_index(eb, BaseInt(UInt(0); base=2)) === nothing
+        @test !(BaseInt(UInt(0); base=2) ∈ eb)
+    end
+
     @testset "Construction of Basis" begin
         # Test basic construction and iterator protocol
         N = 2
@@ -847,6 +881,26 @@ end
             end
         end
 
+        # The other groups in this testset all carry `phase_unity`; this one exercises
+        # `phase_perm_fermionic` on a plain `SymGroup`, where the returned factor is a real
+        # Jordan-Wigner sign rather than just the group's own factor.
+        @testset "spinless fermions with translational symmetry" begin
+            @testset "k = 0 for N = 4" begin
+                N = 4
+                dofo = dof_object(SpinlessFermion())
+                perm = [2, 3, 4, 1] # cyclic translation
+                sg = sym(Translational(0, perm), dofo)
+
+                # bi"1001"2 has sites 1 and 4 occupied. Translating by one maps them to
+                # positions 4 and 3 (inverse permutation [4,1,2,3]), one inversion, so the
+                # sign is -1 -- the only nontrivial sign in this sector.
+                test_states = [bi"1001"2, bi"1010"2, bi"1100"2, bi"1011"2]
+                test_reps = [bi"11"2, bi"101"2, bi"11"2, bi"111"2]
+                test_factors = ComplexF64[-1, 1, 1, 1]
+                test_representatives(test_states, test_reps, test_factors, sg)
+            end
+        end
+
         @testset "spin-1/2 with spatial reflection symmetry" begin
             @testset "R = -1 for N = 3" begin
                 N = 3
@@ -932,6 +986,31 @@ end
                 test_reps = [bi"111"2]
                 test_representatives(test_states, test_reps, ComplexF64[1], csg)
             end
+        end
+
+        # Base-4 fermions: `_phase_perm_fermionic` here goes through the per-digit
+        # occupation-parity lookup, so an empty site (digit 0) and a doubly-occupied one
+        # (digit 3) both count as even and contribute no sign, while a singly-occupied site
+        # (digits 1 and 2) does.
+        @testset "spinful fermions with N_up/N_down and translational symmetry" begin
+            N = 3
+            dofo = dof_object(SpinfulFermion(1 // 2, 2))
+            csg = sym(TotalSpinfulFermionicNumber(1, 1, N), dofo) ∘
+                  sym(Translational(0, [2, 3, 1]), dofo)
+
+            # N_up = N_down = 1 on three sites: nine states in three orbits of three, so
+            # three representatives, each of norm 3.
+            b = basis(dofo, N, csg)
+            @test b.states == [bi"003"4, bi"012"4, bi"021"4]
+            @test b.norms == [3.0, 3.0, 3.0]
+
+            # bi"003"4 is a lone doublon: even parity, so translation never signs it.
+            # bi"102"4 carries an up on site 1 and a down on site 3, which cross under the
+            # translation that brings it to its representative -- hence -1.
+            test_states = [bi"003"4, bi"012"4, bi"102"4, bi"201"4]
+            test_reps = [bi"003"4, bi"012"4, bi"021"4, bi"012"4]
+            test_factors = ComplexF64[1, 1, -1, -1]
+            test_representatives(test_states, test_reps, test_factors, csg)
         end
     end
 

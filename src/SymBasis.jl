@@ -95,4 +95,46 @@ export basis
 using .Bases: is_commutative, representative
 export is_commutative, representative
 
+using .Bases: state_index
+export state_index
+
+# Precompile the common construction flows on tiny systems, so the first real `basis`
+# call in a session does not pay for compiling the whole pipeline.
+using PrecompileTools: @setup_workload, @compile_workload
+
+@setup_workload begin
+    N = 4
+    perm = mod1.((1:N) .+ 1, N)
+    refl = mod1.(reverse(1:N), N)
+
+    @compile_workload begin
+        # Spin-1/2: magnetization sector, combined with translation and reflection.
+        spin = dof_object(Spin(1 // 2))
+        sz = sym(TotalMagnetization(0 // 1, N), spin)
+        tr = sym(Translational(0, perm), spin)
+        rf = sym(SpatialReflection(1, refl), spin)
+        basis(spin, N, sz)
+        b = basis(spin, N, sz ∘ tr)
+        basis(spin, N, sz ∘ tr ∘ rf)
+        st = first(b.states)
+        representative(st, sz ∘ tr)
+        state_index(b, st)
+
+        # Bosons (B > 2) with particle-number conservation.
+        bos = dof_object(Boson(2))
+        basis(bos, N, sym(TotalBosonicNumber(2, N), bos))
+
+        # Spinless fermions: number conservation plus a fermionic-phase symmetry.
+        fer = dof_object(SpinlessFermion())
+        nf = sym(TotalSpinlessFermionicNumber(2, N), fer)
+        basis(fer, N, nf ∘ sym(Translational(0, perm), fer))
+
+        # Full basis without symmetries, and the digit helpers.
+        basis(spin, N)
+        for d in eachdigit(st, N)
+            d
+        end
+    end
+end
+
 end

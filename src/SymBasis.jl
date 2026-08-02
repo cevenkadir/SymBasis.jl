@@ -15,6 +15,9 @@ export flip, inc, dec, permute
 using .DigitBase: num_digits_in_base
 export num_digits_in_base
 
+using .DigitBase: eachdigit
+export eachdigit
+
 using .DigitBase: BaseIntRange
 export BaseIntRange
 

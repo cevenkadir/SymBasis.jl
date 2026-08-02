@@ -126,6 +126,50 @@ end
 # END -- General digit-base integer type and associated functions
 
 # START -- Digit manipulation functions
+
+# When the base is a power of two, a digit occupies a fixed bit field, so the place value
+# `B^(pos-1)` is a shift and the digit itself is a shift plus a mask -- no runtime power and,
+# more importantly, no hardware division. `B` is a type parameter, so `ispow2(B)` is folded at
+# compile time and only one of the two branches survives in the generated code. For every
+# other base the original `B^(pos-1)` / `÷` / `%` arithmetic is kept exactly as it was,
+# including its integer-promotion behaviour for narrow `T`.
+@inline _base_shift(::Val{B}) where {B} = trailing_zeros(B)
+
+# Exactly `B^k`, same `Int` type and same value (including the wrapping of large `k`), so it
+# is a drop-in for the place values that feed the mixed-type arithmetic and overflow checks
+# below -- only cheaper to compute.
+@inline function _base_pow(::Val{B}, k::Integer) where {B}
+    ispow2(B) && return one(Int) << (_base_shift(Val(B)) * k)
+    return B^k
+end
+
+# `value` is not necessarily the state's own `T`: integer promotion can widen it (e.g. a
+# `UInt8`-backed state whose intermediate value became an `Int`), so dispatch on what is
+# actually passed. The shift is only equivalent to the division for unsigned values -- `>>`
+# on a negative signed integer is arithmetic, `÷` truncates -- hence the `V <: Unsigned`
+# guard, which like `ispow2(B)` is resolved at compile time.
+@inline function _digit_at(value::V, ::Val{B}, pos::Integer) where {V<:Integer,B}
+    (ispow2(B) && V <: Unsigned) &&
+        return (value >> (_base_shift(Val(B)) * (pos - 1))) & V(B - 1)
+    return (value ÷ B^(pos - 1)) % B
+end
+
+# Discard the `k` least-significant digits, so that digit `k+1` becomes digit 1. Used to
+# start an ordered walk part-way through a state without stepping over the digits below it.
+@inline function _drop_low_digits(value::V, ::Val{B}, k::Integer) where {V<:Integer,B}
+    (ispow2(B) && V <: Unsigned) && return value >> (_base_shift(Val(B)) * k)
+    return value ÷ B^k
+end
+
+# An ordered walk of `n` digits starting at position `start`. Walking from position 1 -- by
+# far the common case -- needs no repositioning at all, so it must not pay for one.
+@inline function _walk_from(b::BaseInt{T,Ti,B}, start::Integer, n::Integer) where {T,Ti,B}
+    start == 1 && return eachdigit(b, n)
+    return eachdigit(
+        BaseInt{T,Ti,B}(_drop_low_digits(b.value, Val(B), Int(start) - 1)), n
+    )
+end
+
 """
     flip(b::SymBasis.DigitBase.BaseInt{T,Ti,B}, pos::Ti) where {T,Ti,B}
 
@@ -143,8 +187,8 @@ function flip(b::BaseInt{T,Ti,B}, pos::Ti) where {T,Ti,B}
     pos > 0 || throw(ArgumentError("position must be positive, got $pos"))
     B >= 2 || throw(ArgumentError("base must be ≥ 2, got $B"))
 
-    power = B^(pos - 1)
-    digit = (b.value ÷ power) % B
+    power = _base_pow(Val(B), pos - 1)
+    digit = _digit_at(b.value, Val(B), pos)
 
     new_digit = (B - 1) - digit
 
@@ -238,8 +282,8 @@ Increment the digit at position `pos` in the base-`B` representation of the inte
 function inc(b::BaseInt{T,Ti,B}, pos::Ti) where {T,Ti,B}
     pos <= 0 && throw(ArgumentError("digit position must be non-negative"))
 
-    base_pow = B^(pos - 1)
-    digit = (b.value ÷ base_pow) % B
+    base_pow = _base_pow(Val(B), pos - 1)
+    digit = _digit_at(b.value, Val(B), pos)
 
     new_digit = digit + 1
     carry = new_digit ÷ B
@@ -249,8 +293,8 @@ function inc(b::BaseInt{T,Ti,B}, pos::Ti) where {T,Ti,B}
 
     pos_next = pos + 1
     while carry != 0
-        base_pow_next = B^(pos_next - 1)
-        current_digit = (new_val ÷ base_pow_next) % B
+        base_pow_next = _base_pow(Val(B), pos_next - 1)
+        current_digit = _digit_at(new_val, Val(B), pos_next)
         new_digit = current_digit + carry
         carry = new_digit ÷ B
         new_digit = new_digit % B
@@ -302,8 +346,8 @@ Decrement the digit at position `pos` in the base-`B` representation of the inte
 function dec(b::BaseInt{T,Ti,B}, pos::Ti) where {T,Ti,B}
     pos <= 0 && throw(ArgumentError("digit position must be non-negative"))
 
-    base_pow = B^(pos - 1)
-    digit = (b.value ÷ base_pow) % B
+    base_pow = _base_pow(Val(B), pos - 1)
+    digit = _digit_at(b.value, Val(B), pos)
 
     if digit > 0
         new_val = b.value - base_pow
@@ -311,17 +355,17 @@ function dec(b::BaseInt{T,Ti,B}, pos::Ti) where {T,Ti,B}
     else
         pos_next = pos + 1
         while true
-            base_pow_next = B^(pos_next - 1)
+            base_pow_next = _base_pow(Val(B), pos_next - 1)
             if base_pow_next > b.value
                 break
             end
-            current_digit = (b.value ÷ base_pow_next) % B
+            current_digit = _digit_at(b.value, Val(B), pos_next)
             if current_digit > 0
                 new_val = b.value - base_pow_next
                 # Set all positions from pos to pos_next-1 to (B-1)
                 for p in pos:(pos_next-1)
-                    base_pow_p = B^(p - 1)
-                    current_digit_p = (b.value ÷ base_pow_p) % B
+                    base_pow_p = _base_pow(Val(B), p - 1)
+                    current_digit_p = _digit_at(b.value, Val(B), p)
                     new_val += (B - 1 - current_digit_p) * base_pow_p
                 end
                 return BaseInt{T,Ti,B}(new_val)
@@ -457,8 +501,8 @@ function permute(
     @boundscheck any(p -> p < 0 || p >= B, perm) &&
                  throw(ArgumentError("permutation entries must be in 0:$(B-1)"))
 
-    power = B^(pos - 1)
-    old_digit = (b.value ÷ power) % B
+    power = _base_pow(Val(B), pos - 1)
+    old_digit = _digit_at(b.value, Val(B), pos)
 
     new_digit = perm[old_digit+1]
 
@@ -530,9 +574,7 @@ function Base.read(b::BaseInt{T,Ti,B}, pos::Ti) where {T,Ti,B}
     pos >= 1 || throw(ArgumentError("position must be ≥ 1 (1‑based indexing)"))
     B >= 2 || throw(ArgumentError("base must be ≥ 2, got $B"))
 
-    power = B^(pos - 1)
-
-    return (b.value ÷ power) % B
+    return _digit_at(b.value, Val(B), pos)
 
 end
 
@@ -577,6 +619,111 @@ function Base.read(b::BaseInt{T,Ti,B}, pos::AbstractVector{Ti}) where {T,Ti,B}
 end
 
 """
+    Base.read(b::SymBasis.DigitBase.BaseInt{T,Ti,B}, pos::AbstractUnitRange{Ti}) where {T,Ti,B}
+
+Read the digits over a contiguous range of positions in the base-`B` representation of the
+integer `b`.
+
+Because the positions are consecutive, the digits are produced by a single ordered walk (as
+in [`eachdigit`](@ref)) rather than one independent lookup per position. For a base that is
+not a power of two this is several times faster than the general
+[`read(b, pos::AbstractVector)`](@ref) method, which recomputes `B^(pos-1)` for every
+position.
+
+# Arguments
+- `b::`[`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: The base-`B` integer.
+- `pos::AbstractUnitRange{Ti}`: The contiguous positions to read (1-based indexing).
+
+# Returns
+- `Vector{T}`: The digits at the specified positions, in order.
+"""
+function Base.read(b::BaseInt{T,Ti,B}, pos::AbstractUnitRange{Ti}) where {T,Ti,B}
+    # Match the element type of the per-position method exactly -- integer promotion in the
+    # scalar `read` can widen the digit past `T` for a narrow `T`, and base 2 has its own
+    # specialization. Asking the same dispatch is the only reliable source; the call itself
+    # is elided, only its type survives.
+    Td = typeof(read(b, oneunit(Ti)))
+
+    isempty(pos) && return Td[]
+    first(pos) >= 1 || throw(ArgumentError("position must be ≥ 1 (1‑based indexing)"))
+
+    out = Vector{Td}(undef, length(pos))
+    i = 0
+    @inbounds for digit in _walk_from(b, first(pos), length(pos))
+        out[i+=1] = digit
+    end
+    return out
+end
+
+"""
+    DigitIterator{T,Ti,B}
+
+Iterator over the low-order digits of a [`SymBasis.DigitBase.BaseInt`](@ref), returned by
+[`eachdigit`](@ref).
+
+# Fields
+- `value::T`: The value whose digits are iterated.
+- `n::Int`: The number of digits to produce (LSD-first, zero-padded).
+"""
+struct DigitIterator{T<:Integer,Ti<:Integer,B}
+    value::T
+    n::Int
+end
+
+"""
+    eachdigit(b::SymBasis.DigitBase.BaseInt{T,Ti,B}, n::Integer) where {T,Ti,B}
+
+Iterate the first `n` digits of `b` in base `B`, least-significant digit first, padding
+with zeros once the value is exhausted.
+
+Each digit costs one division/remainder pair on a running value, so reading all `n` digits
+of a state takes `O(n)` operations in total. Iteration allocates nothing.
+
+When `B` is **not** a power of two, reading the same digits with [`Base.read`](@ref) instead
+costs `O(n)` *per digit*, since every call recomputes `B^(pos-1)` — prefer `eachdigit`
+whenever a check or operator needs to scan a whole state. When `B` is a power of two, a
+digit is a bit field and `read` extracts it with a shift and a mask, so a plain `read` loop
+is just as fast (marginally faster, in fact: the positions are independent, whereas the
+running value here is a serial dependency). Use whichever reads more clearly there.
+
+# Arguments
+- `b::`[`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: The base-`B` integer.
+- `n::Integer`: The number of digits to produce.
+
+# Returns
+- [`SymBasis.DigitBase.DigitIterator`](@ref)`{T,Ti,B}`: An iterator yielding `n` digits of
+    type `T`, least-significant first.
+
+# Examples
+```jldoctest
+julia> using SymBasis
+
+julia> collect(eachdigit(BaseInt(UInt(0b1011); base=2), 5))
+5-element Vector{UInt64}:
+ 0x0000000000000001
+ 0x0000000000000001
+ 0x0000000000000000
+ 0x0000000000000001
+ 0x0000000000000000
+```
+"""
+function eachdigit(b::BaseInt{T,Ti,B}, n::Integer) where {T,Ti,B}
+    n >= 0 || throw(ArgumentError("number of digits must be non-negative, got $n"))
+    return DigitIterator{T,Ti,B}(b.value, Int(n))
+end
+
+Base.length(it::DigitIterator) = it.n
+Base.eltype(::Type{<:DigitIterator{T}}) where {T} = T
+Base.IteratorSize(::Type{<:DigitIterator}) = Base.HasLength()
+Base.IteratorEltype(::Type{<:DigitIterator}) = Base.HasEltype()
+
+function Base.iterate(it::DigitIterator{T,Ti,B}, state::Tuple{Int,T}=(1, it.value)) where {T,Ti,B}
+    i, v = state
+    i > it.n && return nothing
+    return (v % T(B), (i + 1, v ÷ T(B)))
+end
+
+"""
     Base.write(b::SymBasis.DigitBase.BaseInt{T,Ti,B}, pos::Ti, d::Integer) where {T,Ti,B}
 
 Write the digit `d` at position `pos` in the base-`B` representation of the integer `b`.
@@ -595,8 +742,8 @@ function Base.write(b::BaseInt{T,Ti,B}, pos::Ti, d::Integer) where {T,Ti,B}
     B >= 2 || throw(ArgumentError("base must be ≥ 2, got $B"))
     0 ≤ d < B || throw(ArgumentError("digit must satisfy 0 ≤ d < $B, got $d"))
 
-    power = B^(pos - 1)
-    old = (b.value ÷ power) % B
+    power = _base_pow(Val(B), pos - 1)
+    old = _digit_at(b.value, Val(B), pos)
 
     d == old && return b
 
@@ -672,6 +819,46 @@ function Base.count(b::BaseInt{T,Ti,B}, pos::AbstractVector{Ti}, d::Integer) whe
     cnt = 0
     @inbounds for p in pos
         cnt += (read(b, p) == d) ? 1 : 0
+    end
+    return cnt
+end
+
+"""
+    Base.count(
+        b::SymBasis.DigitBase.BaseInt{T,Ti,B},
+        pos::AbstractUnitRange{Ti},
+        d::Integer
+    ) where {T,Ti,B}
+
+Count the occurrences of the digit `d` over a contiguous range of positions in the base-`B`
+representation of the integer `b`.
+
+Like [`read(b, pos::AbstractUnitRange)`](@ref), this walks the digits once instead of
+looking each position up independently, which is faster at every base and several times
+faster when `B` is not a power of two.
+
+# Arguments
+- `b::`[`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: The base-`B` integer.
+- `pos::AbstractUnitRange{Ti}`: The contiguous positions to check (1-based indexing).
+- `d::Integer`: The digit to count.
+
+# Returns
+- `Int`: The count of occurrences of the digit `d` at the specified positions.
+"""
+function Base.count(
+    b::BaseInt{T,Ti,B},
+    pos::AbstractUnitRange{Ti},
+    d::Integer
+) where {T,Ti,B}
+    0 ≤ d < B || throw(ArgumentError("digit must satisfy 0 ≤ d < B, got $d"))
+    isempty(pos) && return 0
+
+    @boundscheck first(pos) < 1 &&
+                 throw(ArgumentError("all positions must be ≥ 1 (1‑based indexing)"))
+
+    cnt = 0
+    for digit in _walk_from(b, first(pos), length(pos))
+        cnt += (digit == d) ? 1 : 0
     end
     return cnt
 end

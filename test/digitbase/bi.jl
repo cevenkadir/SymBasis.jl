@@ -382,4 +382,110 @@
         counts_c = count(c, [1, 2, 3, 4], [2, 3, 4, 5])
         @test counts_c == [0, 1, 1, 2]
     end
+
+    @testset "eachdigit for BaseInt" begin
+        # Agrees with `read` across bases, and pads with zeros past the value's length.
+        for (base, val, n) in [(2, 0b1011, 6), (4, 1234, 8), (3, 500, 7), (2, 0, 4),
+            (10, 90210, 6), (6, 12345, 3)]
+            b = BaseInt(UInt(val); base=base)
+            @test collect(eachdigit(b, n)) == [read(b, i) for i in 1:n]
+        end
+
+        b = bi"1011"2
+        @test collect(eachdigit(b, 4)) == UInt[1, 1, 0, 1]
+        @test length(eachdigit(b, 7)) == 7
+        @test eltype(eachdigit(b, 7)) == UInt
+        @test collect(eachdigit(b, 0)) == UInt[]
+
+        # Iteration must not allocate: it is meant for the innermost loops.
+        b4 = BaseInt(UInt(1234); base=4)
+        sumdigits(x, n) = (s = zero(UInt); for d in eachdigit(x, n)
+            s += d
+        end; s)
+        sumdigits(b4, 8)
+        @test (@allocated sumdigits(b4, 8)) == 0
+        @test sumdigits(b4, 8) == sum(read(b4, i) for i in 1:8)
+
+        @test_throws ArgumentError eachdigit(b, -1)
+    end
+
+    @testset "power-of-two digit fast path matches the generic arithmetic" begin
+        # `read`/`flip`/`inc`/`dec`/`write`/`permute` take a shift-and-mask path when the
+        # base is a power of two. It must agree with the plain `B^(pos-1)` / `÷` / `%`
+        # arithmetic everywhere, including where a narrow `T` makes the place value exceed
+        # the width of the stored value.
+        ref_digit(v, B, pos) = (v ÷ B^(pos - 1)) % B
+
+        for base in (2, 3, 4, 5, 8, 10, 16), T in (UInt8, UInt16, UInt64)
+            vals = T === UInt8 ? (T(0):typemax(T)) :         # exhaustive for UInt8
+                   T.(rand(UInt16, 64))                       # sampled otherwise
+            for v in vals, pos in 1:6
+                b = BaseInt(T(v); base=base, Ti=Int)
+                @test read(b, pos) == ref_digit(v, base, pos)
+                @test count(b, [pos], read(b, pos) % base) == 1
+            end
+        end
+
+        # Round-trip and mutation consistency on the power-of-two bases, against digits
+        # recovered independently through `eachdigit`.
+        for base in (2, 4, 8, 16)
+            for v in rand(UInt32, 200), pos in 1:4
+                b = BaseInt(UInt(v); base=base)
+                digits_before = collect(eachdigit(b, 8))
+
+                @test read(b, pos) == digits_before[pos]
+                @test read(flip(b, pos), pos) == (base - 1) - read(b, pos)
+                @test read(write(b, pos, 1), pos) == 1
+                @test collect(eachdigit(write(b, pos, 1), 8)) ==
+                      [i == pos ? UInt(1) : digits_before[i] for i in 1:8]
+
+                # `inc`/`dec` are exact inverses away from the carry/borrow boundaries.
+                if read(b, pos) < base - 1
+                    @test dec(inc(b, pos), pos) == b
+                end
+                if read(b, pos) > 0
+                    @test inc(dec(b, pos), pos) == b
+                end
+
+                perm = circshift(0:(base-1), 1)
+                @test read(permute(b, pos, perm), pos) == perm[read(b, pos)+1]
+            end
+        end
+    end
+
+    @testset "contiguous-range read/count match the per-position path" begin
+        # `read`/`count` over a UnitRange walk the digits once instead of looking each
+        # position up independently. The result must be identical to the generic method,
+        # which is reached by passing the very same positions as a plain vector.
+        for base in (2, 3, 4, 5, 8, 10, 16), T in (UInt8, UInt64)
+            vals = T === UInt8 ? T.(0:8:255) : T.(rand(UInt32, 40))
+            ranges = [1:1, 1:4, 1:12, 2:5, 3:3, 7:20, 5:4]  # last one is empty
+            for v in vals, r in ranges
+                b = BaseInt(T(v); base=base, Ti=Int)
+                @test read(b, r) == read(b, collect(r))
+                @test typeof(read(b, r)) == typeof(read(b, collect(r)))
+                for d in 0:min(base - 1, 3)
+                    @test count(b, r, d) == count(b, collect(r), d)
+                end
+            end
+        end
+
+        # Positions past the width of the stored value read as zero on both paths.
+        b8 = BaseInt(UInt8(200); base=4, Ti=Int)
+        @test read(b8, 1:10) == read(b8, collect(1:10))
+        @test count(b8, 1:10, 0) == count(b8, collect(1:10), 0)
+
+        # Unordered, repeated and strided positions keep using the generic path.
+        b = BaseInt(UInt(1234); base=4)
+        @test read(b, [4, 1, 1, 2]) == [read(b, 4), read(b, 1), read(b, 1), read(b, 2)]
+        @test read(b, 1:2:7) == [read(b, p) for p in 1:2:7]
+        @test count(b, [3, 3, 1], 1) == count(b, [3, 3, 1], 1)
+
+        # Empty and invalid ranges behave like the generic method.
+        @test read(b, 3:2) == UInt[]
+        @test count(b, 3:2, 1) == 0
+        @test_throws ArgumentError read(b, 0:3)
+        @test_throws ArgumentError count(b, 0:3, 1)
+        @test_throws ArgumentError count(b, 1:3, 4)
+    end
 end

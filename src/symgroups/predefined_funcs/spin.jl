@@ -228,6 +228,11 @@ TotalMagnetization(mag::AbstractFloat, N) = TotalMagnetization(rationalize(mag),
 Create a total magnetization symmetry group for the given spin DoF-object `dofo`, and target
 total magnetization specification `ss`.
 
+A sector may admit several digit-count signatures once `B > 2`. Those are folded into a
+single cycle carrying a [`SymBasis.SymGroups.WeightedCounts`](@ref), so `length(sg.cycles)`
+does not track the number of signatures; with a single signature, as is always the case for
+spin-1/2, the plain `N0`, …, `N(B-1)` cycle is kept.
+
 # Arguments
 - `ss::`[`SymBasis.SymGroups.TotalMagnetization`](@ref)`{T_s,T_N}`: The total magnetization
     symmetry specification.
@@ -433,8 +438,14 @@ end
     ) where {B,T_s,T,Ti,T_z,T_N}
 
 Create a spin inversion symmetry group for the given DoF-object `dofo`, and spin inversion
-symmetry specification `ss`. The function generates all combinations of spin projections
-that sum to zero.
+symmetry specification `ss`. The group has one cycle per flip (unflipped and flipped), each
+restricted to the zero-magnetization sector.
+
+When that sector admits more than one digit-count signature — possible for `B > 2`, i.e.
+spin greater than 1/2 — the signatures are folded into a single
+[`SymBasis.SymGroups.WeightedCounts`](@ref) carried by both cycles, so the group has two
+cycles rather than two per signature. With a single signature, as is always the case for
+spin-1/2, the plain `N0`, …, `N(B-1)` cycles are kept.
 
 # Arguments
 - `ss::`[`SymBasis.SymGroups.SpinInversion`](@ref)`{T_z,T_N}`: The spin inversion symmetry

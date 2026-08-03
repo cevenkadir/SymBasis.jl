@@ -96,13 +96,16 @@ h_manual = sparse(I_vec, J_vec, V_vec, hilbert_dim, hilbert_dim)
 Fermionic creation/annihilation operators anticommute across sites, so acting with them requires an extra Jordan-Wigner sign that is not needed for spins or bosons. This sign has to be computed by hand as part of the same recipe above, by counting the occupied sites between the two sites involved in a hopping term, e.g.:
 ```julia
 temp_s = dec(sₙ, j) # annihilate at site j
-anticomm_sign = cispi(sum(read(temp_s, x) for x in 1:(j-1); init=0))
-anticomm_sign *= cispi(-sum(read(temp_s, x) for x in 1:(i-1); init=0))
+anticomm_sign = cispi(count(temp_s, 1:(j-1), 1))  # occupied sites below j
+anticomm_sign *= cispi(-count(temp_s, 1:(i-1), 1)) # occupied sites below i
 temp_s = inc(temp_s, i) # create at site i
 
 rep_s, rep_fac = representative(temp_s, ba)
 # ... accumulate matrix_element * anticomm_sign * sqrt(Nₘ/Nₙ) * rep_fac as before
 ```
+Counting over a contiguous range walks the digits once, so it is cheaper than
+`sum(read(temp_s, x) for x in 1:(j-1))`, which recomputes the place value at every position
+(see [State operations](@ref "State operations")).
 For the complete derivation and a worked example, see the [Spinless-fermion t-V chain vs. the exact Bethe-Hulthén solution](@ref "Spinless-fermion t-V chain vs. the exact Bethe-Hulthén solution") and [Fermi-Hubbard chain vs. the exact Lieb-Wu solution](@ref "Fermi-Hubbard chain vs. the exact Lieb-Wu solution") examples.
 
 ## Building operators with OperatorAlgebra.jl

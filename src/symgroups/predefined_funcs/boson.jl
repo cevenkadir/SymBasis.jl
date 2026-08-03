@@ -43,6 +43,12 @@ end
 Create a symmetry group for particle conservation for the given bosonic DoF-object `dofo`,
 and target total particle number specification `ss`.
 
+A given total particle number is usually reachable through several digit-count signatures
+(e.g. `N_b = 3` on 5 sites with `n_max = 2` admits both `(N0, N1, N2) = (2, 3, 0)` and
+`(3, 1, 1)`). Those are folded into a single cycle carrying a
+[`SymBasis.SymGroups.WeightedCounts`](@ref), so `length(sg.cycles)` does not track the number
+of signatures; with a single signature the plain `N0`, …, `N(B-1)` cycle is kept.
+
 # Arguments
 - `ss::TotalBosonicNumber{T_b,T_N}`: The particle number conservation specification,
     containing the target total number of particles and the total number of DoF-objects.

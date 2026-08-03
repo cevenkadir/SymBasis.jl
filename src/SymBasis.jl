@@ -57,6 +57,9 @@ export check_Nₛ, check_perm, check_flip
 using .SymGroups: apply_Nₛ, apply_perm, apply_flip
 export apply_Nₛ, apply_perm, apply_flip
 
+using .SymGroups: WeightedCounts
+export WeightedCounts
+
 using .SymGroups: phase_unity
 export phase_unity
 

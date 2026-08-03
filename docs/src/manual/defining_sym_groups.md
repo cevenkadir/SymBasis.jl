@@ -206,6 +206,25 @@ N_b = 3 # total particle number quantum number
 sg = sym(TotalBosonicNumber(N_b, N), dofo)
 ```
 
+Notice that the group has a single cycle even though $N_b = 3$ on 5 sites is reachable two
+ways: three singly-occupied sites, or one doubly- and one singly-occupied site. In terms of
+digit counts $(N_0, N_1, N_2)$ — how many sites carry occupation $0$, $1$ and $2$ — these are
+$(2, 3, 0)$ and $(3, 1, 1)$.
+
+Rather than storing one cycle per such *signature*, a conserved quantity that is a linear
+function of the digit counts is stored as one cycle carrying a
+[`WeightedCounts`](@ref SymBasis.SymGroups.WeightedCounts): a weight table giving each digit
+value's contribution (here $0, 1, 2$ bosons for digits $0, 1, 2$), the target value ($N_b$),
+and the list of admissible signatures. Membership is then decided by
+[`check_Nₛ`](@ref SymBasis.SymGroups.check_Nₛ) in a single pass over a state's digits,
+whatever the number of signatures, instead of one pass per signature. The signatures are
+still kept because [`basis`](@ref SymBasis.Bases.basis) uses them to enumerate the sector
+directly rather than scanning all $B^N$ states.
+
+This means `length(sg.cycles)` does not count signatures. Sectors admitting only one — always
+the case for $B = 2$, such as the spin-1/2 magnetization and the spinless-fermion number
+groups above and below — keep the plain `N0`, …, `N(B-1)` cycle instead.
+
 #### Spinless fermions
 ##### Particle number conservation
 

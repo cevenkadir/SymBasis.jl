@@ -247,6 +247,12 @@ end
 Create a spin-resolved fermionic number symmetry group for the given spin-1/2 spinful
 fermionic DoF-object `dofo`, fixing `N_up = ss.n_up` and `N_down = ss.n_down`
 independently.
+
+Distinct digit-count signatures can carry the same `(N_up, N_down)`, since a doubly-occupied
+site contributes one of each. Those signatures are folded into a single cycle carrying a
+two-component [`SymBasis.SymGroups.WeightedCounts`](@ref) — one weight table per spin
+projection — so `length(sg.cycles)` does not track the number of signatures; with a single
+signature the plain `N0`, …, `N(B-1)` cycle is kept.
 """
 function sym(
     ss::TotalSpinfulFermionicNumber{T_b,T_N},

@@ -19,7 +19,7 @@ function apply_flavor(d, flavor, create)
     has(d, flavor) == create &amp;&amp; return nothing
     sign = (flavor == 1 &amp;&amp; has(d, 0)) ? -1 : 1
     return xor(d, 1 &lt;&lt; flavor), sign
-end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">apply_flavor (generic function with 1 method)</code></pre><p>We assemble the Hamiltonian by looping over nearest-neighbor bonds and both spin flavors, picking up the fermionic sign from the Jordan-Wigner string:</p><pre><code class="language-julia hljs">function hop!(I, J, V, b, ba, sₙ, n, Nₙ, site_from, site_to, flavor, t)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">apply_flavor (generic function with 1 method)</code></pre><p>We assemble the Hamiltonian by looping over nearest-neighbor bonds and both spin flavors, picking up the fermionic sign from the Jordan-Wigner string:</p><pre><code class="language-julia hljs">function hop!(I, J, V, ba, sₙ, n, Nₙ, site_from, site_to, flavor, t)
     res = apply_flavor(read(sₙ, site_from), flavor, false)
     res === nothing &amp;&amp; return nothing
     new_d_from, sign_from = res
@@ -29,35 +29,34 @@ end</code></pre><pre class="documenter-example-output"><code class="nohighlight 
     res === nothing &amp;&amp; return nothing
     new_d_to, sign_to = res
 
-    jw = isodd(sum(parity(read(temp, y)) for y in 1:(site_to-1); init=0) +
-               sum(parity(read(temp, y)) for y in 1:(site_from-1); init=0))
+    # Jordan-Wigner strings: `eachdigit(temp, k)` yields exactly the first `k` digits
+    jw = isodd(sum(parity(d) for d in eachdigit(temp, site_to - 1); init=0) +
+               sum(parity(d) for d in eachdigit(temp, site_from - 1); init=0))
     rep_s, rep_fac = representative(write(temp, site_to, new_d_to), ba)
-    haskey(b, rep_s) || return nothing
 
-    m = b[rep_s]
+    m = state_index(ba, rep_s)
+    m === nothing &amp;&amp; return nothing
+
     fac = -t * sign_from * sign_to * (jw ? -1 : 1) * sqrt(ba.norms[m] / Nₙ) * rep_fac
     push!(I, m); push!(J, n); push!(V, fac)
 end
 
 function build_hamiltonian(N, ba; t=1.0, U=0.0)
     hilbert_dim = length(ba.states)
-    b = Dict(ba.states .=&gt; 1:hilbert_dim)
     I_vec, J_vec, V_vec = Int[], Int[], ComplexF64[]
 
-    for sₙ in ba.states
-        n = b[sₙ]
+    for (n, sₙ) in enumerate(ba.states)
         Nₙ = ba.norms[n]
 
-        for x in 1:N
-            d = read(sₙ, x)
+        for d in eachdigit(sₙ, N)
             push!(I_vec, n); push!(J_vec, n); push!(V_vec, U * has(d, 1) * has(d, 0))
         end
 
         for x in 1:N
             x1 = mod1(x + 1, N)
             for flavor in (0, 1)
-                hop!(I_vec, J_vec, V_vec, b, ba, sₙ, n, Nₙ, x1, x, flavor, t)
-                hop!(I_vec, J_vec, V_vec, b, ba, sₙ, n, Nₙ, x, x1, flavor, t)
+                hop!(I_vec, J_vec, V_vec, ba, sₙ, n, Nₙ, x1, x, flavor, t)
+                hop!(I_vec, J_vec, V_vec, ba, sₙ, n, Nₙ, x, x1, flavor, t)
             end
         end
     end
@@ -105,4 +104,4 @@ for (i, U) in enumerate(Us)
     hlines!(ax, [lieb_wu_e0_per_site(U)]; color=Cycled(i), linestyle=:dash)
 end
 axislegend(ax; position=:rb)
-fig</code></pre><img src="fb3ab7c7.svg" alt="Example block output"/><p>Solid points connected by lines are the finite-size ground-state energies per site; dashed horizontal lines are the corresponding Lieb-Wu thermodynamic-limit values. As <span>$N$</span> grows, the finite-size energies visibly approach their Lieb-Wu limits. See <code>test/fhm_lieb_wu.jl</code> in the package repository for a more exhaustive validation of this construction, including an exact, assertion-checked cross-check against the free-fermion (<span>$U=0$</span>) limit and the momentum-sector dimensions. For the analogous construction with spinless fermions, see the <a href="../tv_chain_bethe_hulthen/#Spinless-fermion-t-V-chain-vs.-the-exact-Bethe-Hulthén-solution">t-V chain vs. Bethe-Hulthén example</a>.</p><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-Lieb_1968"><a class="tag is-link" href="#citeref-Lieb_1968">Lieb_1968</a>E. H. Lieb and F. Y. Wu, <em>Absence of Mott Transition in an Exact Solution of the Short-Range, One-Band Model in One Dimension</em>, <a href="https://doi.org/10.1103/PhysRevLett.20.1445">Phys. Rev. Lett. <strong>20</strong>, 1445 (1968)</a>.</li><li class="footnote" id="footnote-Lieb_1989"><a class="tag is-link" href="#citeref-Lieb_1989">Lieb_1989</a>E. H. Lieb, <em>Two Theorems on the Hubbard Model</em>, <a href="https://doi.org/10.1103/PhysRevLett.62.1201">Phys. Rev. Lett. <strong>62</strong>, 1201 (1989)</a>.</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../1d_bhm_phase_diagram/">« Phase diagram of the Bose-Hubbard chain</a><a class="docs-footer-nextpage" href="../tv_chain_bethe_hulthen/">Spinless-fermion t-V chain vs. the exact Bethe-Hulthén solution »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Friday 31 July 2026 20:41">Friday 31 July 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+fig</code></pre><img src="fb3ab7c7.svg" alt="Example block output"/><p>Solid points connected by lines are the finite-size ground-state energies per site; dashed horizontal lines are the corresponding Lieb-Wu thermodynamic-limit values. As <span>$N$</span> grows, the finite-size energies visibly approach their Lieb-Wu limits. See <code>test/fhm_lieb_wu.jl</code> in the package repository for a more exhaustive validation of this construction, including an exact, assertion-checked cross-check against the free-fermion (<span>$U=0$</span>) limit and the momentum-sector dimensions. For the analogous construction with spinless fermions, see the <a href="../tv_chain_bethe_hulthen/#Spinless-fermion-t-V-chain-vs.-the-exact-Bethe-Hulthén-solution">t-V chain vs. Bethe-Hulthén example</a>.</p><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-Lieb_1968"><a class="tag is-link" href="#citeref-Lieb_1968">Lieb_1968</a>E. H. Lieb and F. Y. Wu, <em>Absence of Mott Transition in an Exact Solution of the Short-Range, One-Band Model in One Dimension</em>, <a href="https://doi.org/10.1103/PhysRevLett.20.1445">Phys. Rev. Lett. <strong>20</strong>, 1445 (1968)</a>.</li><li class="footnote" id="footnote-Lieb_1989"><a class="tag is-link" href="#citeref-Lieb_1989">Lieb_1989</a>E. H. Lieb, <em>Two Theorems on the Hubbard Model</em>, <a href="https://doi.org/10.1103/PhysRevLett.62.1201">Phys. Rev. Lett. <strong>62</strong>, 1201 (1989)</a>.</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../1d_bhm_phase_diagram/">« Phase diagram of the Bose-Hubbard chain</a><a class="docs-footer-nextpage" href="../tv_chain_bethe_hulthen/">Spinless-fermion t-V chain vs. the exact Bethe-Hulthén solution »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Monday 3 August 2026 21:18">Monday 3 August 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

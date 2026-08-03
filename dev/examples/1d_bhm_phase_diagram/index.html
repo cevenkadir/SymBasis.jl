@@ -71,14 +71,11 @@ for (id_t, t) in enumerate(tₛ)
                 J_vec = Int64[]
                 V_vec = ComplexF64[]
 
-                b = Dict(ba.states .=&gt; 1:hilbert_dim)
-                for sₙ in ba.states
-                    n = b[sₙ]
+                for (n, sₙ) in enumerate(ba.states)
                     Nₙ = ba.norms[n]
 
                     # diagonal interaction term
-                    for xᵢ in 1:N
-                        n_xᵢ = read(sₙ, xᵢ)
+                    for n_xᵢ in eachdigit(sₙ, N)
                         if n_xᵢ &gt; 0
                             push!(I_vec, n)
                             push!(J_vec, n)
@@ -98,8 +95,8 @@ for (id_t, t) in enumerate(tₛ)
                             temp_s₁ = inc(temp_s₁, xᵢ)
                             rep_s₁, rep_fac₁ = representative(temp_s₁, ba)
 
-                            if haskey(b, rep_s₁)
-                                m = b[rep_s₁]
+                            m = state_index(ba, rep_s₁)
+                            if m !== nothing
                                 Nₘ = ba.norms[m]
                                 ladder_fac₁ = sqrt(n_xᵢ + 1) * sqrt(n_xᵢ₊₁)
                                 all_fac = -t * ladder_fac₁ * sqrt(Nₘ / Nₙ) * rep_fac₁
@@ -115,8 +112,8 @@ for (id_t, t) in enumerate(tₛ)
                             temp_s₂ = inc(temp_s₂, xᵢ₊₁)
                             rep_s₂, rep_fac₂ = representative(temp_s₂, ba)
 
-                            if haskey(b, rep_s₂)
-                                m = b[rep_s₂]
+                            m = state_index(ba, rep_s₂)
+                            if m !== nothing
                                 Nₘ = ba.norms[m]
                                 ladder_fac₂ = sqrt(n_xᵢ) * sqrt(n_xᵢ₊₁ + 1)
                                 all_fac = -t * ladder_fac₂ * sqrt(Nₘ / Nₙ) * rep_fac₂
@@ -185,10 +182,10 @@ h_opalg = (h_opalg + h_opalg&#39;) / 2</code></pre><pre class="documenter-exampl
 ⎢⠀⠀⠀⠀⠀⠐⠀⠠⠈⠀⠀⠀⠀⠀⠱⡆⠟⢅⠀⎥
 ⎣⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠀⠀⠀⠀⎦</code></pre><p>As with the manual construction above, the normalization factors <span>$\sqrt{N_m/N_n}$</span> are only Hermitian up to floating-point round-off, so we disable <code>sparse</code>&#39;s built-in exact-equality Hermiticity check and symmetrize explicitly. Up to that round-off, <code>h_opalg</code> reproduces the same matrix as the manual <code>I_vec</code>/<code>J_vec</code>/<code>V_vec</code> construction above, and can be substituted directly for it inside the sweep over <span>$(t, N, n, k, p)$</span> if the more declarative <code>OperatorAlgebra</code> style is preferred.</p><h3 id="Extracting-the-phase-boundaries"><a class="docs-heading-anchor" href="#Extracting-the-phase-boundaries">Extracting the phase boundaries</a><a id="Extracting-the-phase-boundaries-1"></a><a class="docs-heading-anchor-permalink" href="#Extracting-the-phase-boundaries" title="Permalink"></a></h3><p>The upper and lower chemical-potential boundaries of the first Mott lobe are obtained from the ground-state energies in the three sectors <span>$n \in \{N-1, N, N+1\}$</span>:</p><pre><code class="language-julia hljs">ed_μ_plusₛ = (evalₛ[:, :, 3] .- evalₛ[:, :, 2]) ./ U
 ed_μ_minusₛ = (evalₛ[:, :, 2] .- evalₛ[:, :, 1]) ./ U</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">4×3 Matrix{Float64}:
-  1.94049e-16  -5.99166e-17  -8.9642e-17
-  0.139657      0.149096      0.153527
-  0.0985248     0.124565      0.14164
- -0.0389188    -0.00985089    0.00904728</code></pre><h2 id="Plotting-the-phase-diagram"><a class="docs-heading-anchor" href="#Plotting-the-phase-diagram">Plotting the phase diagram</a><a id="Plotting-the-phase-diagram-1"></a><a class="docs-heading-anchor-permalink" href="#Plotting-the-phase-diagram" title="Permalink"></a></h2><pre><code class="language-julia hljs">using CairoMakie
+  6.47543e-16   1.77859e-17  1.28473e-15
+  0.139657      0.149096     0.153527
+  0.0985248     0.124565     0.14164
+ -0.0389188    -0.00985089   0.00904728</code></pre><h2 id="Plotting-the-phase-diagram"><a class="docs-heading-anchor" href="#Plotting-the-phase-diagram">Plotting the phase diagram</a><a id="Plotting-the-phase-diagram-1"></a><a class="docs-heading-anchor-permalink" href="#Plotting-the-phase-diagram" title="Permalink"></a></h2><pre><code class="language-julia hljs">using CairoMakie
 
 fig = Figure()
 ax = Axis(fig[1, 1]; xlabel=L&quot;t/U&quot;, ylabel=L&quot;\mu/U&quot;)
@@ -201,4 +198,4 @@ lines!(ax, pt_tₛ ./ U, pt_μ_plusₛ; color=:black, linestyle=:dash, label=L&q
 lines!(ax, pt_tₛ ./ U, pt_μ_minusₛ; color=:black, linestyle=:dash)
 
 axislegend(ax; position=:rt, merge=true)
-fig</code></pre><img src="af033761.svg" alt="Example block output"/><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-Freericks_1994"><a class="tag is-link" href="#citeref-Freericks_1994">Freericks_1994</a>J. K. Freericks and H. Monien, <em>Phase diagram of the Bose-Hubbard Model</em>, <a href="https://doi.org/10.1209/0295-5075/26/7/012">Europhys. Lett. <strong>26</strong>, 545 (1994)</a>.</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../pxp/">« Quantum many-body scars in the PXP chain</a><a class="docs-footer-nextpage" href="../fhm_lieb_wu/">Fermi-Hubbard chain vs. the exact Lieb-Wu solution »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Friday 31 July 2026 20:41">Friday 31 July 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+fig</code></pre><img src="af033761.svg" alt="Example block output"/><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-Freericks_1994"><a class="tag is-link" href="#citeref-Freericks_1994">Freericks_1994</a>J. K. Freericks and H. Monien, <em>Phase diagram of the Bose-Hubbard Model</em>, <a href="https://doi.org/10.1209/0295-5075/26/7/012">Europhys. Lett. <strong>26</strong>, 545 (1994)</a>.</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../pxp/">« Quantum many-body scars in the PXP chain</a><a class="docs-footer-nextpage" href="../fhm_lieb_wu/">Fermi-Hubbard chain vs. the exact Lieb-Wu solution »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Monday 3 August 2026 21:18">Monday 3 August 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

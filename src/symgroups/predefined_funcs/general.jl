@@ -564,6 +564,21 @@ function _candidate_states(
     return _sector_states_from_counts(cycles, BaseInt{T,Ti,B}, Int(N))
 end
 
+"""
+    _sector_states_from_counts(cycles, ::Type{BaseInt{T,Ti,B}}, N::Int) where {T,Ti,B}
+
+Every `N`-digit state whose digit-count signature is admitted by at least one of `cycles`,
+ascending and duplicate-free — the concrete enumeration behind [`_candidate_states`](@ref)
+for the digit-count checks.
+
+Distinct signatures describe disjoint sectors, and
+[`_fixed_popcount_block`](@ref)/[`_fixed_counts_block`](@ref) each emit their block in
+ascending order, so the blocks are merged rather than concatenated and sorted.
+
+Returns `nothing` when direct enumeration is declined, which tells the caller to fall back to
+a full `Bᴺ` scan. That happens when the digit string does not fit strictly inside `T`, or when
+some sector holds more states than an `Int` can index.
+"""
 function _sector_states_from_counts(
     cycles, ::Type{BaseInt{T,Ti,B}}, N::Int
 ) where {T,Ti,B}

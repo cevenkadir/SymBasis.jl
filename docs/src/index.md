@@ -57,6 +57,14 @@ or in package mode (press `]` in the REPL):
 pkg> add SymBasis
 ```
 
+SymBasis precompiles its common construction flows, so the first `basis` call in a session is
+fast. That work is redone on every rebuild, which is noticeable when developing against a
+`dev`ed checkout. To skip it, add to the `LocalPreferences.toml` of your environment:
+```toml
+[SymBasis]
+precompile_workload = false
+```
+
 ## Quick example
 You can determine the basis with zero total magnetization for a spin-1/2 system with 4 sites as follows:
 ```julia

@@ -116,26 +116,47 @@ using PrecompileTools: @setup_workload, @compile_workload
         sz = sym(TotalMagnetization(0 // 1, N), spin)
         tr = sym(Translational(0, perm), spin)
         rf = sym(SpatialReflection(1, refl), spin)
+        sz_tr = sz ∘ tr
         basis(spin, N, sz)
-        b = basis(spin, N, sz ∘ tr)
+        b = basis(spin, N, sz_tr)
         basis(spin, N, sz ∘ tr ∘ rf)
+        basis(spin, N, sz_tr; is_sorted=true)
         st = first(b.states)
-        representative(st, sz ∘ tr)
+        representative(st, sz_tr)
         state_index(b, st)
+        is_commutative(b, sz_tr)
 
         # Bosons (B > 2) with particle-number conservation.
         bos = dof_object(Boson(2))
         basis(bos, N, sym(TotalBosonicNumber(2, N), bos))
 
-        # Spinless fermions: number conservation plus a fermionic-phase symmetry.
+        # Spinless fermions: number conservation, alone and with a fermionic-phase symmetry.
         fer = dof_object(SpinlessFermion())
         nf = sym(TotalSpinlessFermionicNumber(2, N), fer)
+        basis(fer, N, nf)
         basis(fer, N, nf ∘ sym(Translational(0, perm), fer))
 
         # Full basis without symmetries, and the digit helpers.
         basis(spin, N)
         for d in eachdigit(st, N)
             d
+        end
+        pos = 1
+        flip(st, pos)
+        inc(st, pos)
+        dec(st, pos)
+        permute(st, perm)
+        num_digits_in_base(2, 2)
+        bint(spin)
+        for s in BaseIntRange(st, st, st)
+            s
+        end
+
+        # The `show` methods: these fire on the first REPL display of any returned value,
+        # and `Basis` alone is the largest single first-call cost in the package.
+        for x in (b, sz, sz_tr, spin, st, BaseIntRange(st, st, st))
+            show(devnull, MIME"text/plain"(), x)
+            show(devnull, x)
         end
     end
 end

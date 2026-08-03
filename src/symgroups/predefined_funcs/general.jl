@@ -597,15 +597,39 @@ function _sector_states_from_counts(
     blocks = Vector{BaseInt{T,Ti,B}}[]
     for sig in sigs
         sum(sig) == N || continue # no N-digit state can match such a signature
-        block = BaseInt{T,Ti,B}[]
-        if B == 2
-            _append_fixed_popcount_states!(block, BaseInt{T,Ti,2}, N, sig[2])
+        block = if B == 2
+            _fixed_popcount_block(BaseInt{T,Ti,2}, N, sig[2])
         else
-            _append_fixed_counts_states!(block, BaseInt{T,Ti,B}, N, sig)
+            _fixed_counts_block(BaseInt{T,Ti,B}, N, sig)
         end
         isempty(block) || push!(blocks, block)
     end
     return _merge_sorted_blocks(blocks, BaseInt{T,Ti,B})
+end
+
+# Below this many states a block is filled on the calling thread: the spawns cost more than
+# the work they distribute. Same spirit as `SymBasis.Bases._chunk_length`'s work threshold.
+const _PARALLEL_BLOCK_MIN = 1 << 14
+
+"""
+    _multinomial(N::Int, counts) -> Union{Int,Nothing}
+
+Exact number of `N`-digit strings with digit multiset `counts`, i.e. `N! / ∏ countsⱼ!`,
+accumulated in `Int128` and returned as an `Int`. Returns `nothing` when the result does not
+fit in an `Int`, which lets the callers fall back to the `push!`-grown path instead of
+allocating against a bogus length.
+"""
+function _multinomial(N::Int, counts)
+    total = Int128(1)
+    r = N
+    for c in counts
+        c < 0 && return 0
+        (0 <= c <= r) || return 0
+        total *= Int128(binomial(r, c))
+        total > Int128(typemax(Int)) && return nothing
+        r -= c
+    end
+    return Int(total)
 end
 
 # Digit-count signatures a cycle admits: a collapsed cycle carries the whole list, a plain
@@ -657,55 +681,148 @@ function _merge_two(a::Vector{V}, b::Vector{V}) where {V}
     return out
 end
 
-# All N-bit values with exactly k ones, via Gosper's hack.
-function _append_fixed_popcount_states!(
-    out::Vector{BaseInt{T,Ti,2}}, ::Type{BaseInt{T,Ti,2}}, N::Int, k::Int
+"""
+    _fixed_popcount_block(::Type{BaseInt{T,Ti,2}}, N::Int, k::Int) where {T,Ti}
+
+All `N`-bit values with exactly `k` ones, ascending, in an exactly-sized vector.
+
+Gosper's hack is inherently sequential, so large blocks are split on the position `p` of the
+highest set bit: those states are `(1 << (p-1)) | <any (k-1)-subset of the low p-1 bits>`,
+they occupy the disjoint range `[2^(p-1), 2^p)`, and ascending `p` yields ascending runs. Each
+run has a known length `binomial(p-1, k-1)`, so the slice offsets are known up front and the
+runs are filled in parallel with no merge and no locking.
+"""
+function _fixed_popcount_block(
+    ::Type{BaseInt{T,Ti,2}}, N::Int, k::Int
 ) where {T,Ti}
-    if k == 0
-        push!(out, BaseInt{T,Ti,2}(zero(T)))
+    k == 0 && return [BaseInt{T,Ti,2}(zero(T))]
+    (0 < k <= N) || return BaseInt{T,Ti,2}[]
+
+    n = binomial(N, k)
+    out = Vector{BaseInt{T,Ti,2}}(undef, n)
+
+    if n < _PARALLEL_BLOCK_MIN || Threads.nthreads() == 1
+        _gosper_fill!(out, 1, N, k, zero(T))
         return out
     end
-    (0 < k <= N) || return out
 
-    sizehint!(out, length(out) + binomial(N, k))
+    offset = 1
+    tasks = map(filter(p -> binomial(p - 1, k - 1) > 0, k:N)) do p
+        lo = offset
+        offset += binomial(p - 1, k - 1)
+        Threads.@spawn _gosper_fill!(out, lo, p - 1, k - 1, one(T) << (p - 1))
+    end
+    foreach(wait, tasks)
+    return out
+end
+
+# Write the `binomial(N, k)` values with `k` ones in the low `N` bits, each OR-ed with
+# `high`, into `out` starting at `idx`. Returns the next free index.
+function _gosper_fill!(
+    out::Vector{BaseInt{T,Ti,2}}, idx::Int, N::Int, k::Int, high::T
+) where {T,Ti}
+    if k == 0
+        @inbounds out[idx] = BaseInt{T,Ti,2}(high)
+        return idx + 1
+    end
     limit = one(T) << N
     v = (one(T) << k) - one(T)
-    while v < limit
-        push!(out, BaseInt{T,Ti,2}(v))
+    @inbounds while v < limit
+        out[idx] = BaseInt{T,Ti,2}(v | high)
+        idx += 1
         c = v & (-v)
         r = v + c
         v = (((r ⊻ v) >> 2) ÷ c) | r
     end
-    return out
+    return idx
 end
 
-# All N-digit base-B values whose digit multiset matches `counts` (multiset permutations).
-function _append_fixed_counts_states!(
-    out::Vector{BaseInt{T,Ti,B}}, ::Type{BaseInt{T,Ti,B}}, N::Int, counts::NTuple{B2,Int}
-) where {T,Ti,B,B2}
-    all(>=(0), counts) || return out
+"""
+    _fixed_counts_block(::Type{BaseInt{T,Ti,B}}, N::Int, counts) where {T,Ti,B}
 
-    # Multinomial coefficient N! / ∏ counts[j]!, estimated in Float64 to avoid overflow
-    # and capped so the hint itself stays modest.
-    est = 1.0
-    r = N
-    for c in counts
-        est *= Float64(binomial(r, c))
-        r -= c
-    end
-    sizehint!(out, length(out) + (est < 1e7 ? round(Int, est) : 10_000_000))
+All `N`-digit base-`B` values whose digit multiset matches `counts` (the multiset
+permutations), ascending, in an exactly-sized vector.
 
+Fixing the most significant digit partitions the block into runs that are each ascending and
+that concatenate in ascending order of that digit, with lengths given by the multinomial of
+the remaining counts. So the slice offsets are known before any work happens and the runs are
+filled in parallel — no merge, no locking, and each task gets its own `remaining` scratch.
+"""
+function _fixed_counts_block(
+    ::Type{BaseInt{T,Ti,B}}, N::Int, counts::NTuple{Bc,Int}
+) where {T,Ti,B,Bc}
+    all(>=(0), counts) || return BaseInt{T,Ti,B}[]
+
+    n = _multinomial(N, counts)
+    # Unrepresentable length: fall back to growing the vector as we go.
+    n === nothing && return _fixed_counts_block_grown(BaseInt{T,Ti,B}, N, counts)
+    n == 0 && return BaseInt{T,Ti,B}[]
+
+    out = Vector{BaseInt{T,Ti,B}}(undef, n)
     pows = T[T(B)^(p - 1) for p in 1:N]
-    remaining = collect(counts)
-    _fixed_counts_rec!(out, remaining, pows, N, zero(T))
+
+    if n < _PARALLEL_BLOCK_MIN || Threads.nthreads() == 1 || N < 1
+        _fixed_counts_fill!(out, 1, collect(counts), pows, N, zero(T))
+        return out
+    end
+
+    offset = 1
+    tasks = Task[]
+    @inbounds for d in 0:(B-1)
+        counts[d+1] > 0 || continue
+        sub = Base.setindex(counts, counts[d+1] - 1, d + 1)
+        m = _multinomial(N - 1, sub)
+        (m === nothing || m == 0) && continue
+        lo = offset
+        offset += m
+        push!(
+            tasks,
+            Threads.@spawn _fixed_counts_fill!(
+                out, lo, collect(sub), pows, N - 1, T(d) * pows[N]
+            )
+        )
+    end
+    foreach(wait, tasks)
     return out
 end
 
 # Fill the digit positions from the most significant one downwards, trying digit values in
 # ascending order. Since the value of a state is `Σ dₚ Bᵖ⁻¹`, that emission order is
 # numerically ascending, which lets `_sector_states_from_counts` merge the per-signature
-# blocks instead of sorting their concatenation.
-function _fixed_counts_rec!(
+# blocks instead of sorting their concatenation. Returns the next free index.
+function _fixed_counts_fill!(
+    out::Vector{BaseInt{T,Ti,B}},
+    idx::Int,
+    remaining::Vector{Int},
+    pows::Vector{T},
+    pos::Int,
+    val::T
+) where {T,Ti,B}
+    if pos < 1
+        @inbounds out[idx] = BaseInt{T,Ti,B}(val)
+        return idx + 1
+    end
+    @inbounds for d in 0:(B-1)
+        if remaining[d+1] > 0
+            remaining[d+1] -= 1
+            idx = _fixed_counts_fill!(out, idx, remaining, pows, pos - 1, val + T(d) * pows[pos])
+            remaining[d+1] += 1
+        end
+    end
+    return idx
+end
+
+# Fallback for the (practically unreachable) case where the block length overflows `Int`.
+function _fixed_counts_block_grown(
+    ::Type{BaseInt{T,Ti,B}}, N::Int, counts::NTuple{Bc,Int}
+) where {T,Ti,B,Bc}
+    out = BaseInt{T,Ti,B}[]
+    pows = T[T(B)^(p - 1) for p in 1:N]
+    _fixed_counts_grow!(out, collect(counts), pows, N, zero(T))
+    return out
+end
+
+function _fixed_counts_grow!(
     out::Vector{BaseInt{T,Ti,B}},
     remaining::Vector{Int},
     pows::Vector{T},
@@ -719,7 +836,7 @@ function _fixed_counts_rec!(
     @inbounds for d in 0:(B-1)
         if remaining[d+1] > 0
             remaining[d+1] -= 1
-            _fixed_counts_rec!(out, remaining, pows, pos - 1, val + T(d) * pows[pos])
+            _fixed_counts_grow!(out, remaining, pows, pos - 1, val + T(d) * pows[pos])
             remaining[d+1] += 1
         end
     end

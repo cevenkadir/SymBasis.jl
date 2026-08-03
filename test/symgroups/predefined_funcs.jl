@@ -1033,5 +1033,62 @@
             sg = sym(TotalSpinfulFermionicNumber(nu, nd, N), dofo_sf)
             @test length(basis(dofo_sf, N, sg).states) == binomial(N, nu) * binomial(N, nd)
         end
+
+        # Blocks past a size threshold are filled in parallel, one task per
+        # most-significant-digit choice writing into its own preallocated slice. A wrong
+        # slice offset would surface only as a race, so compare the parallel fill against
+        # the untouched serial path on blocks that are definitely over the threshold.
+        # Sizes are asserted so the test cannot silently stop exercising that path.
+        @testset "parallel block fill matches the serial fill" begin
+            SG = SymBasis.SymGroups
+            thresh = SG._PARALLEL_BLOCK_MIN
+
+            # Base B > 2: multiset permutations, against `_fixed_counts_block_grown`.
+            for (B, N, counts) in (
+                (4, 10, (3, 3, 2, 2)),   # spinful-shaped
+                (3, 12, (4, 4, 4)),      # spin-1 / boson-shaped
+                (4, 11, (5, 2, 2, 2)),
+            )
+                V = typeof(BaseInt(UInt(0); base=B))
+                @test SG._multinomial(N, counts) > thresh
+                par = SG._fixed_counts_block(V, N, counts)
+                ser = SG._fixed_counts_block_grown(V, N, counts)
+                @test length(par) == SG._multinomial(N, counts)
+                @test par == ser
+                @test issorted(par)
+                @test allunique(par)
+                @test par == SG._fixed_counts_block(V, N, counts)  # deterministic
+            end
+
+            # Base 2: Gosper split on the highest set bit, against a direct filter.
+            for (N, k) in ((18, 9), (17, 8))
+                V = typeof(BaseInt(UInt(0); base=2))
+                @test binomial(N, k) > thresh
+                par = SG._fixed_popcount_block(V, N, k)
+                ref = [V(UInt(v)) for v in 0:(2^N-1) if count_ones(UInt(v)) == k]
+                @test length(par) == binomial(N, k)
+                @test par == ref
+                @test issorted(par)
+                @test par == SG._fixed_popcount_block(V, N, k)     # deterministic
+            end
+
+            # And end to end: the assembled candidate list stays sorted and duplicate-free,
+            # and every candidate still enters the basis for these trivially-acting groups.
+            for (dofo, N, ss) in (
+                (dof_object(SpinfulFermion(1 // 2, 2)), 10,
+                    TotalSpinfulFermionicNumber(4, 5, 10)),
+                (dof_object(Boson(3)), 10, TotalBosonicNumber(12, 10)),
+                (dof_object(SpinlessFermion()), 20, TotalSpinlessFermionicNumber(10, 20)),
+            )
+                sg = sym(ss, dofo)
+                V = typeof(BaseInt(UInt(0); base=length(dofo)))
+                c = candidates(sg, V, N)
+                @test c !== nothing
+                @test issorted(c)
+                @test allunique(c)
+                @test c == candidates(sg, V, N)
+                @test length(basis(dofo, N, sg).states) == length(c)
+            end
+        end
     end
 end

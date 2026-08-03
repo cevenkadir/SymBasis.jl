@@ -1,7 +1,7 @@
 
 using SymBasis.DigitBase: BaseInt, BaseIntRange, base_number_to_string
 using SymBasis.SymGroups: SymGroup, CombSymGroup, _apply_all, _apply_phase_all,
-    _candidate_states
+    _candidate_states, apply_Nₛ
 using SymBasis.DoFObjects: DoFObject
 
 """
@@ -301,11 +301,20 @@ end
 # once per flattened cycle). Returns `false` as soon as some dimension has no valid
 # element, in which case no cycle of the product can be valid for `state₀`.
 # Generated so the per-dimension loops are fully unrolled with no tuple juggling.
+#
+# Dimension `S` (0 for none) is skipped: `basis` sets it when the candidates being scanned
+# came from that dimension's own `_candidate_states`, which returns exactly the states
+# passing its check, so re-testing them there can only ever answer `true`. See the gating in
+# `_candidate_skip_dim`.
 @generated function _fill_valid!(
-    valid::NTuple{D,Any}, checks::NTuple{D,Any}, elems::NTuple{D,Any}, state₀
-) where {D}
+    valid::NTuple{D,Any}, checks::NTuple{D,Any}, elems::NTuple{D,Any}, state₀, ::Val{S}
+) where {D,S}
     body = Expr(:block)
     for i in 1:D
+        if i == S
+            push!(body.args, :(fill!(valid[$i], true)))
+            continue
+        end
         vs, es, chk, ok, anyok = gensym(:vs), gensym(:es), gensym(:chk),
         gensym(:ok), gensym(:anyok)
         push!(body.args, quote
@@ -325,37 +334,69 @@ end
     return body
 end
 
+"""
+    _candidate_skip_dim(apply, elems, candidates) -> Bool
+
+Whether the sector check for a dimension can be skipped for candidates that came from that
+dimension's own [`SymBasis.SymGroups._candidate_states`](@ref).
+
+All three conditions are needed:
+
+- `candidates !== nothing`, so the enumeration was exact rather than a `Bᴺ` fallback;
+- the dimension has exactly one element, so there is no per-element distinction to make —
+  true for the collapsed conserved-quantity groups, false for `SpinInversion`'s two flip
+  cycles, which therefore keep their check;
+- the dimension applies `apply_Nₛ`. This one is easy to miss: the check is evaluated against
+  the *transformed* state, not against `state₀`, so the candidate set's provenance only
+  carries over when the transformation is the identity.
+"""
+@inline function _candidate_skip_dim(apply, elems, candidates)
+    return candidates !== nothing && length(elems) == 1 && apply === apply_Nₛ
+end
+
+# Phase of one stabilizer element, rebuilt from the chosen per-dimension elements. Recursive
+# rather than looped so it unrolls: indexing the heterogeneous `applys`/`phases` tuples with a
+# runtime index would be type-unstable.
+@inline _stab_phase(::Tuple{}, ::Tuple{}, ::Tuple{}, state, ph) = ph
+@inline function _stab_phase(applys::Tuple, phases::Tuple, es::Tuple, state, ph)
+    e = first(es)
+    return _stab_phase(
+        Base.tail(applys), Base.tail(phases), Base.tail(es),
+        first(applys)(e, state), ph * first(phases)(e, state)
+    )
+end
+
 # Nested scan over the valid part of the cycle product, reusing partial applications: the
 # dim-1 transformation of `state₀` is computed once and shared by all combinations of the
-# later dimensions. At the leaf the fully transformed state feeds the orbit dedup and the
-# F accumulation; an early return unwinds the whole nest when a valid cycle maps `state₀`
-# below itself. Generated so all `D` loops are emitted explicitly (a `Base.tail`
-# recursion over tuples of vectors cannot be inlined and allocates per state).
+# later dimensions. At the leaf the fully transformed state feeds the orbit dedup and, when
+# it lands back on `state₀`, records the element indices; an early return unwinds the whole
+# nest when a valid cycle maps `state₀` below itself. Generated so all `D` loops are emitted
+# explicitly (a `Base.tail` recursion over tuples of vectors cannot be inlined and allocates
+# per state).
+#
+# The phase is deliberately *not* evaluated during the descent. It is consumed only for
+# stabilizer elements, but the identity is the first leaf visited and fixes every state, so
+# evaluating it inline made every scanned candidate pay for a phase chain it usually threw
+# away on a later abort. Buffering the indices and resolving them after the nest completes
+# restricts that cost to states that actually survive — at spinful N=14 that is 841 k of
+# 11.78 M. The buffer preserves leaf order, so `F` accumulates in exactly the old order and
+# the floating-point result is bit-identical.
 @generated function _scan_product(
     applys::NTuple{D,Any}, phases::NTuple{D,Any}, elems::NTuple{D,Any},
-    valid::NTuple{D,Any}, factors, state₀, F₀, dedup::_OrbitDedup
+    valid::NTuple{D,Any}, factors, state₀, F₀, dedup::_OrbitDedup,
+    stab::Vector{NTuple{D,Int}}
 ) where {D}
     ks = [Symbol(:k_, i) for i in 1:D]
     sts = [Symbol(:state_, i) for i in 0:D]
     els = [Symbol(:elem_, i) for i in 1:D]
-
-    # The phase is read only when the fully transformed state lands back on `state₀`, i.e.
-    # for stabilizer elements — a handful of leaves out of the whole product. So it is built
-    # here from the per-level element and input state, which are still live at the leaf,
-    # instead of being accumulated on the way down. A state with a stabilizer of size `s`
-    # now rebuilds the chain `s` times rather than reusing the descent's shared prefix, but
-    # `s` is 1 for the overwhelming majority of states and this takes the phase off the hot
-    # path entirely — for fermionic groups the sign was ~two thirds of the whole scan.
-    phase_expr = foldl(
-        (acc, i) -> :($acc * phases[$i]($(els[i]), $(sts[i]))), 1:D; init=1
-    )
 
     body = quote
         _dedup_insert!(dedup, $(sts[D+1]).value)
         if isless($(sts[D+1]), state₀)
             return (zero(F), true)
         elseif $(sts[D+1]) == state₀
-            F += @inbounds(factors[$(ks...)]) * $phase_expr
+            n_stab += 1
+            @inbounds stab[n_stab] = ($(ks...),)
         end
     end
 
@@ -377,7 +418,15 @@ end
     return quote
         $(sts[1]) = state₀
         F = F₀
+        n_stab = 0
         $body
+        @inbounds for t in 1:n_stab
+            ksel = stab[t]
+            # Built explicitly rather than with `ntuple(i -> ...)`: a closure in a
+            # `@generated` function's returned AST is rejected as impure.
+            es = ($([:(elems[$i][ksel[$i]]) for i in 1:D]...),)
+            F += factors[ksel...] * _stab_phase(applys, phases, es, state₀, 1)
+        end
         return (F, false)
     end
 end
@@ -400,13 +449,15 @@ function _basis_impl_csg(
     csg::CombSymGroup{B,T_s,T,Ti,Ts},
     dim_elems::DE,
     F₀::Complex{T_n},
-    eps_norm_type::T_n
-) where {T,Ti,B,T_n<:Real,T_s,Ts,DE<:Tuple}
+    eps_norm_type::T_n,
+    skip_dim::Val{S}
+) where {T,Ti,B,T_n<:Real,T_s,Ts,DE<:Tuple,S}
     n_cycles = length(csg.cycles)
     checks = csg.check
     applys = csg.apply
     phases = csg.phase
     factors = csg.factors
+    D = length(dim_elems)
 
     nthreads = Threads.nthreads()
     chunk_len = _chunk_length(length(all_bints), n_cycles, nthreads)
@@ -419,13 +470,16 @@ function _basis_impl_csg(
             sizehint!(local_states, length(chunk) ÷ n_cycles + 4)
             valid = map(es -> Vector{Bool}(undef, length(es)), dim_elems)
             dedup = _OrbitDedup(T, n_cycles)
+            # Reused across states; an orbit cannot fix `state₀` more often than it has
+            # elements, so `n_cycles` is a hard bound on the stabilizer size.
+            stab = Vector{NTuple{D,Int}}(undef, n_cycles)
 
             for state₀ in chunk
-                _fill_valid!(valid, checks, dim_elems, state₀) || continue
+                _fill_valid!(valid, checks, dim_elems, state₀, skip_dim) || continue
 
                 _dedup_reset!(dedup)
                 local_F, aborted = _scan_product(
-                    applys, phases, dim_elems, valid, factors, state₀, F₀, dedup
+                    applys, phases, dim_elems, valid, factors, state₀, F₀, dedup, stab
                 )
                 aborted && continue
 
@@ -470,10 +524,13 @@ function _basis_impl(
             sizehint!(local_states, length(chunk) ÷ n_cycles + 4)
             local_F = F₀
             dedup = _OrbitDedup(T, n_cycles)
+            # Reused across states; the stabilizer cannot be larger than the group.
+            stab = Vector{Int}(undef, n_cycles)
 
             for state₀ in chunk
-                local_F = F₀
                 _dedup_reset!(dedup)
+                n_stab = 0
+                aborted = false
 
                 @inbounds for idx in 1:n_cycles
                     is_valid_state, temp_state = get_temp_state(idx, state₀)
@@ -482,14 +539,23 @@ function _basis_impl(
                         _dedup_insert!(dedup, temp_state.value)
 
                         if isless(temp_state, state₀)
-                            local_F = F₀
+                            aborted = true
                             break
                         elseif temp_state == state₀
-                            # Only the stabilizer of `state₀` contributes a phase, so it is
-                            # evaluated here rather than alongside every `apply` above.
-                            local_F += sg.factors[idx] * get_phase(idx, state₀)
+                            # Record the stabilizer element; its phase is only worth
+                            # computing if the scan gets past every abort below.
+                            n_stab += 1
+                            stab[n_stab] = idx
                         end
                     end
+                end
+
+                aborted && continue
+
+                local_F = F₀
+                @inbounds for t in 1:n_stab
+                    idx = stab[t]
+                    local_F += sg.factors[idx] * get_phase(idx, state₀)
                 end
 
                 norm₀ = dedup.count * abs2(local_F)
@@ -554,16 +620,27 @@ function basis(
                 (BaseInt(T(0); base=B, Ti=Ti):BaseInt(T(B^N - 1); base=B, Ti=Ti)) :
                 candidates
 
+    # Kept separate from `get_temp_state` so `_basis_impl` can call it only for the cycles
+    # that actually fix `state₀`; `sg.phase` is a pure function of `(cycle, state)`, so the
+    # deferred call sees exactly the arguments the eager one did.
+    get_phase = (idx, state₀) -> sg.phase(sg.cycles[idx], state₀)
+
+    # `candidates` already satisfies the check when it came from this group's own exact
+    # enumeration and the group acts trivially -- see `_candidate_skip_dim`. Branching (as
+    # opposed to picking a closure with `?:`) keeps each call to `_basis_impl` type-stable.
+    if _candidate_skip_dim(sg.apply, sg.cycles, candidates)
+        return _basis_impl(
+            all_bints, length(sg.cycles), sg, F₀, eps_norm_type,
+            (idx, state₀) -> (true, sg.apply(sg.cycles[idx], state₀)),
+            get_phase, is_sorted
+        )
+    end
+
     get_temp_state = (idx, state₀) -> begin
         cycleᵢ = sg.cycles[idx]
         temp_state = sg.apply(cycleᵢ, state₀)
         (sg.check(cycleᵢ, temp_state, c), temp_state)
     end
-
-    # Kept separate from `get_temp_state` so `_basis_impl` can call it only for the cycles
-    # that actually fix `state₀`; `sg.phase` is a pure function of `(cycle, state)`, so the
-    # deferred call sees exactly the arguments the eager one did.
-    get_phase = (idx, state₀) -> sg.phase(sg.cycles[idx], state₀)
 
     return _basis_impl(
         all_bints,
@@ -622,17 +699,27 @@ function basis(
     # remaining dimensions' checks still run on every candidate, so any superset of the
     # valid states gives an identical basis.
     candidates = nothing
+    cand_dim = 0
     for i in 1:ndims(csg.cycles)
         candᵢ = _candidate_states(csg.check[i], dim_elems[i], BaseInt{T,Ti,B}, N)
         if candᵢ !== nothing && (candidates === nothing || length(candᵢ) < length(candidates))
             candidates = candᵢ
+            cand_dim = i
         end
     end
     all_bints = candidates === nothing ?
                 (BaseInt(T(0); base=B, Ti=Ti):BaseInt(T(B^N - 1); base=B, Ti=Ti)) :
                 candidates
 
-    return _basis_impl_csg(all_bints, csg, dim_elems, F₀, eps_norm_type)
+    # Every candidate passes the check of the dimension it came from, so that dimension's
+    # per-state re-test is pure overhead -- but only under the conditions in
+    # `_candidate_skip_dim`. `Val` so `_fill_valid!` can drop the loop at compile time.
+    skip_dim = (cand_dim != 0 && _candidate_skip_dim(
+        csg.apply[cand_dim], dim_elems[cand_dim], candidates)) ? cand_dim : 0
+
+    return _basis_impl_csg(
+        all_bints, csg, dim_elems, F₀, eps_norm_type, Val(skip_dim)
+    )
 end
 
 """

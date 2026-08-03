@@ -45,6 +45,14 @@ or open the Julia REPL and run the following command:
 julia> import Pkg; Pkg.add("SymBasis")
 ```
 
+SymBasis precompiles its common construction flows, so the first `basis` call in a session is
+fast. That work is redone on every rebuild, which is noticeable when developing against a
+`dev`ed checkout. To skip it, add to the `LocalPreferences.toml` of your environment:
+```toml
+[SymBasis]
+precompile_workload = false
+```
+
 ## Documentation
 For detailed information on using this package, check out the [stable documentation](https://cevenkadir.github.io/SymBasis.jl/stable/).
 

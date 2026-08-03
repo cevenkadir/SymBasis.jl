@@ -209,7 +209,7 @@ function basis(
     norm_type::DataType=Float64,
     is_sorted::Bool=false
 ) where {B,T_s,T,Ti}
-    states = collect(BaseInt(T(0); base=B, Ti=Ti):BaseInt(T(B^N - 1); base=B, Ti=Ti))
+    states = collect(BaseInt(T(0); base=B, Ti=Ti):BaseInt(T(B^N-1); base=B, Ti=Ti))
     norms = ones(norm_type, length(states))
     # The scan is over an ascending range, so the output is sorted by construction and
     # `is_sorted` needs no extra work.

@@ -216,70 +216,75 @@ function basis(
     return Basis(states, norms)
 end
 
-# Tracker for the number of distinct states visited in one symmetry orbit. Small groups
-# use a linear buffer; large groups (≥ 32 cycles, e.g. 2D lattices) switch to an
-# open-addressing table with a generation stamp so no per-state reset is needed.
+"""
+    _OrbitDedup{T}
+
+Counts the distinct states visited in one symmetry orbit, reset between orbits and reused
+for the whole chunk.
+
+Small groups scan a linear buffer. Groups of 32 or more cycles (2D lattices, say) switch to
+an open-addressing table, where each slot carries the `generation` it was last written in
+rather than a validity flag — so resetting is an increment instead of a `fill!` over the
+whole table.
+"""
 mutable struct _OrbitDedup{T}
-    linear::Vector{T}
     use_hash::Bool
-    tbl_vals::Vector{T}
-    tbl_stamp::Vector{Int32}
-    gen::Int32
+    seen::Vector{T}       # linear mode: the states of the current orbit
+    slots::Vector{T}      # hash mode: open-addressing table, `mask + 1` entries
+    stamps::Vector{Int32} # hash mode: generation each slot was last written in
+    generation::Int32
     mask::Int
     count::Int
 end
 
 function _OrbitDedup(::Type{T}, n_cycles::Int) where {T}
-    if n_cycles >= 32
-        sz = max(8, nextpow(2, 2 * n_cycles))
-        return _OrbitDedup{T}(T[], true, Vector{T}(undef, sz), zeros(Int32, sz),
-            Int32(0), sz - 1, 0)
-    else
-        return _OrbitDedup{T}(Vector{T}(undef, n_cycles), false, T[], Int32[],
-            Int32(0), 0, 0)
-    end
+    n_cycles < 32 && return _OrbitDedup{T}(
+        false, Vector{T}(undef, n_cycles), T[], Int32[], Int32(0), 0, 0
+    )
+    n_slots = max(8, nextpow(2, 2 * n_cycles))
+    return _OrbitDedup{T}(
+        true, T[], Vector{T}(undef, n_slots), zeros(Int32, n_slots), Int32(0), n_slots - 1, 0
+    )
 end
 
 @inline function _dedup_reset!(d::_OrbitDedup)
     d.count = 0
     if d.use_hash
-        if d.gen == typemax(Int32)
-            fill!(d.tbl_stamp, Int32(0))
-            d.gen = Int32(0)
+        if d.generation == typemax(Int32)
+            fill!(d.stamps, Int32(0))
+            d.generation = Int32(0)
         end
-        d.gen += Int32(1)
+        d.generation += Int32(1)
     end
     return d
 end
 
+# murmur3 finalizer
+@inline function _mix64(v)
+    z = v % UInt64
+    z ⊻= z >>> 33
+    z *= 0xff51afd7ed558ccd
+    z ⊻= z >>> 33
+    return z
+end
+
 @inline function _dedup_insert!(d::_OrbitDedup{T}, v::T) where {T}
     if d.use_hash
-        z = v % UInt64
-        z ⊻= z >>> 33
-        z *= 0xff51afd7ed558ccd
-        z ⊻= z >>> 33
-        i = (Int(z & 0x7fffffffffffffff) & d.mask) + 1
-        @inbounds while true
-            if d.tbl_stamp[i] != d.gen
-                d.tbl_stamp[i] = d.gen
-                d.tbl_vals[i] = v
-                d.count += 1
-                return d
-            elseif d.tbl_vals[i] == v
-                return d
-            end
+        i = (Int(_mix64(v) & 0x7fffffffffffffff) & d.mask) + 1
+        @inbounds while d.stamps[i] == d.generation
+            d.slots[i] == v && return nothing
             i = (i & d.mask) + 1
         end
+        @inbounds d.stamps[i] = d.generation
+        @inbounds d.slots[i] = v
     else
-        buf = d.linear
-        n = d.count
-        @inbounds for k in 1:n
-            buf[k] == v && return d
+        @inbounds for k in 1:d.count
+            d.seen[k] == v && return nothing
         end
-        d.count = n + 1
-        @inbounds buf[n+1] = v
-        return d
+        @inbounds d.seen[d.count+1] = v
     end
+    d.count += 1
+    return nothing
 end
 
 """
@@ -290,22 +295,17 @@ dimension's distinct symmetry elements. `cycles` is built from `Base.product`, s
 dim-`i` component of the cycle at CartesianIndex `I` depends only on `I[i]`.
 """
 function _dim_elements(cycles::AbstractArray{TT,D}) where {TT<:Tuple,D}
-    f = first(CartesianIndices(cycles))
+    corner = first(CartesianIndices(cycles)).I
     return ntuple(Val(D)) do i
-        [cycles[CartesianIndex(ntuple(j -> j == i ? k : f[j], Val(D)))][i]
-         for k in axes(cycles, i)]
+        [cycles[Base.setindex(corner, k, i)...][i] for k in axes(cycles, i)]
     end
 end
 
-# Evaluate each dimension's check once per distinct element of that dimension (instead of
-# once per flattened cycle). Returns `false` as soon as some dimension has no valid
-# element, in which case no cycle of the product can be valid for `state₀`.
+# Evaluate each dimension's check once per distinct element of that dimension (instead of once
+# per flattened cycle). Returns `false` as soon as some dimension has no valid element, in
+# which case no cycle of the product can be valid for `state₀`. Dimension `S` (0 for none) is
+# taken as already satisfied -- see `_candidates_satisfy_check`.
 # Generated so the per-dimension loops are fully unrolled with no tuple juggling.
-#
-# Dimension `S` (0 for none) is skipped: `basis` sets it when the candidates being scanned
-# came from that dimension's own `_candidate_states`, which returns exactly the states
-# passing its check, so re-testing them there can only ever answer `true`. See the gating in
-# `_candidate_skip_dim`.
 @generated function _fill_valid!(
     valid::NTuple{D,Any}, checks::NTuple{D,Any}, elems::NTuple{D,Any}, state₀, ::Val{S}
 ) where {D,S}
@@ -335,52 +335,33 @@ end
 end
 
 """
-    _candidate_skip_dim(apply, elems, candidates) -> Bool
+    _candidates_satisfy_check(apply, elems, candidates) -> Bool
 
-Whether the sector check for a dimension can be skipped for candidates that came from that
-dimension's own [`SymBasis.SymGroups._candidate_states`](@ref).
+Whether every candidate already passes the check of the dimension that produced it, making
+that dimension's per-state re-test pure overhead. Requires the candidates to come from an
+exact [`SymBasis.SymGroups._candidate_states`](@ref) enumeration (not the `Bᴺ` fallback) and
+that dimension to hold a single element.
 
-All three conditions are needed:
-
-- `candidates !== nothing`, so the enumeration was exact rather than a `Bᴺ` fallback;
-- the dimension has exactly one element, so there is no per-element distinction to make —
-  true for the collapsed conserved-quantity groups, false for `SpinInversion`'s two flip
-  cycles, which therefore keep their check;
-- the dimension applies `apply_Nₛ`. This one is easy to miss: the check is evaluated against
-  the *transformed* state, not against `state₀`, so the candidate set's provenance only
-  carries over when the transformation is the identity.
+Also requires `apply_Nₛ`, which is easy to miss: the check is evaluated against the
+*transformed* state, so the candidate set's provenance only carries over when the
+transformation is the identity.
 """
-@inline function _candidate_skip_dim(apply, elems, candidates)
+@inline function _candidates_satisfy_check(apply, elems, candidates)
     return candidates !== nothing && length(elems) == 1 && apply === apply_Nₛ
-end
-
-# Phase of one stabilizer element, rebuilt from the chosen per-dimension elements. Recursive
-# rather than looped so it unrolls: indexing the heterogeneous `applys`/`phases` tuples with a
-# runtime index would be type-unstable.
-@inline _stab_phase(::Tuple{}, ::Tuple{}, ::Tuple{}, state, ph) = ph
-@inline function _stab_phase(applys::Tuple, phases::Tuple, es::Tuple, state, ph)
-    e = first(es)
-    return _stab_phase(
-        Base.tail(applys), Base.tail(phases), Base.tail(es),
-        first(applys)(e, state), ph * first(phases)(e, state)
-    )
 end
 
 # Nested scan over the valid part of the cycle product, reusing partial applications: the
 # dim-1 transformation of `state₀` is computed once and shared by all combinations of the
-# later dimensions. At the leaf the fully transformed state feeds the orbit dedup and, when
-# it lands back on `state₀`, records the element indices; an early return unwinds the whole
-# nest when a valid cycle maps `state₀` below itself. Generated so all `D` loops are emitted
-# explicitly (a `Base.tail` recursion over tuples of vectors cannot be inlined and allocates
-# per state).
+# later dimensions. At the leaf the fully transformed state feeds the orbit dedup and, when it
+# lands back on `state₀`, appends its element indices to `stab`; an early return unwinds the
+# whole nest when a valid cycle maps `state₀` below itself. Generated so all `D` loops are
+# emitted explicitly (a `Base.tail` recursion over tuples of vectors cannot be inlined and
+# allocates per state).
 #
-# The phase is deliberately *not* evaluated during the descent. It is consumed only for
-# stabilizer elements, but the identity is the first leaf visited and fixes every state, so
-# evaluating it inline made every scanned candidate pay for a phase chain it usually threw
-# away on a later abort. Buffering the indices and resolving them after the nest completes
-# restricts that cost to states that actually survive — at spinful N=14 that is 841 k of
-# 11.78 M. The buffer preserves leaf order, so `F` accumulates in exactly the old order and
-# the floating-point result is bit-identical.
+# Phases are resolved from `stab` only after the nest completes, so candidates that abort
+# never pay for one. That matters because the identity is the first leaf visited and fixes
+# every state, making the phase otherwise unavoidable for all of them. `stab` is in leaf
+# order, so `F` accumulates exactly as it would have inline and the result is bit-identical.
 @generated function _scan_product(
     applys::NTuple{D,Any}, phases::NTuple{D,Any}, elems::NTuple{D,Any},
     valid::NTuple{D,Any}, factors, state₀, F₀, dedup::_OrbitDedup,
@@ -422,23 +403,23 @@ end
         $body
         @inbounds for t in 1:n_stab
             ksel = stab[t]
-            # Built explicitly rather than with `ntuple(i -> ...)`: a closure in a
-            # `@generated` function's returned AST is rejected as impure.
+            # Splatted rather than `ntuple(i -> ...)`: a closure in a `@generated` function's
+            # returned AST is rejected as impure.
             es = ($([:(elems[$i][ksel[$i]]) for i in 1:D]...),)
-            F += factors[ksel...] * _stab_phase(applys, phases, es, state₀, 1)
+            F += factors[ksel...] * last(_apply_phase_all(applys, phases, es, state₀, 1))
         end
         return (F, false)
     end
 end
 
-# Split a scan range into chunks for `Threads.@spawn`. Oversubscribing to ~4 chunks per
-# thread balances an uneven density of valid states across the range, but it only pays once
-# there is enough work to amortize the extra spawns: a scan that finishes in microseconds
-# loses more to task overhead than it gains. The relevant measure is total work, not the
-# number of candidates -- each candidate is scanned against every cycle of the group -- so
-# the chunk count is driven by `n * n_cycles` and floored at one chunk per thread.
 const _WORK_PER_CHUNK = 256
 
+# Split a scan range into chunks for `Threads.@spawn`. Oversubscribing to ~4 chunks per thread
+# balances an uneven density of valid states across the range, but it only pays once there is
+# enough work to amortize the extra spawns: a scan that finishes in microseconds loses more to
+# task overhead than it gains. The relevant measure is total work, not the number of
+# candidates -- each candidate is scanned against every cycle of the group -- so the chunk
+# count is driven by `n * n_cycles` and floored at one chunk per thread.
 function _chunk_length(n::Integer, n_cycles::Integer, nthreads::Integer)
     n_chunks = clamp(cld(n * n_cycles, _WORK_PER_CHUNK), nthreads, 4 * nthreads)
     return max(1, cld(n, n_chunks))
@@ -625,10 +606,8 @@ function basis(
     # deferred call sees exactly the arguments the eager one did.
     get_phase = (idx, state₀) -> sg.phase(sg.cycles[idx], state₀)
 
-    # `candidates` already satisfies the check when it came from this group's own exact
-    # enumeration and the group acts trivially -- see `_candidate_skip_dim`. Branching (as
-    # opposed to picking a closure with `?:`) keeps each call to `_basis_impl` type-stable.
-    if _candidate_skip_dim(sg.apply, sg.cycles, candidates)
+    # Branching, rather than picking a closure with `?:`, keeps each call type-stable.
+    if _candidates_satisfy_check(sg.apply, sg.cycles, candidates)
         return _basis_impl(
             all_bints, length(sg.cycles), sg, F₀, eps_norm_type,
             (idx, state₀) -> (true, sg.apply(sg.cycles[idx], state₀)),
@@ -711,10 +690,8 @@ function basis(
                 (BaseInt(T(0); base=B, Ti=Ti):BaseInt(T(B^N - 1); base=B, Ti=Ti)) :
                 candidates
 
-    # Every candidate passes the check of the dimension it came from, so that dimension's
-    # per-state re-test is pure overhead -- but only under the conditions in
-    # `_candidate_skip_dim`. `Val` so `_fill_valid!` can drop the loop at compile time.
-    skip_dim = (cand_dim != 0 && _candidate_skip_dim(
+    # `Val` so `_fill_valid!` can drop the skipped dimension's loop at compile time.
+    skip_dim = (cand_dim != 0 && _candidates_satisfy_check(
         csg.apply[cand_dim], dim_elems[cand_dim], candidates)) ? cand_dim : 0
 
     return _basis_impl_csg(

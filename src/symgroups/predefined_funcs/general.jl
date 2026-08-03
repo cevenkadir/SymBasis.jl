@@ -231,18 +231,6 @@ end
 
 Base.hash(w::WeightedCounts, h::UInt) = hash(w.sigs, hash(w.targets, hash(w.weights, h)))
 
-@inline _any_exceeds(::Tuple{}, ::Tuple{}) = false
-@inline function _any_exceeds(sums::Tuple, targets::Tuple)
-    return first(sums) > first(targets) ||
-           _any_exceeds(Base.tail(sums), Base.tail(targets))
-end
-
-@inline function _add_weights(
-    sums::NTuple{K,Int}, weights::NTuple{K,NTuple{B,Int}}, d::Int
-) where {K,B}
-    return ntuple(k -> sums[k] + @inbounds(weights[k][d]), Val(K))
-end
-
 """
     _check_wc(
         state::SymBasis.DigitBase.BaseInt{T,Ti,B},
@@ -265,8 +253,8 @@ monotone, so the walk bails out as soon as one of them overshoots its target.
     v = state.value
     for _ in 1:N
         d = Int(v % BB) + 1
-        sums = _add_weights(sums, weights, d)
-        _any_exceeds(sums, targets) && return false
+        sums = map((s, w) -> s + @inbounds(w[d]), sums, weights)
+        any(map(>, sums, targets)) && return false
         v ÷= BB
     end
     return sums == targets
@@ -302,15 +290,13 @@ function _weighted_count_cycle(
 
     sigs = [_digit_targets(p, Val(B)) for p in cycles]
     weights = ntuple(k -> ntuple(j -> Int(weight_lists[k][j]), Val(B)), Val(K))
-    targets = ntuple(k -> _weighted_sum(sigs[1], weights[k]), Val(K))
-    for sig in sigs
-        ntuple(k -> _weighted_sum(sig, weights[k]), Val(K)) == targets || return nothing
-    end
+    quantities(sig) = ntuple(k -> sum(map(*, sig, weights[k])), Val(K))
+
+    targets = quantities(sigs[1])
+    all(sig -> quantities(sig) == targets, sigs) || return nothing
 
     return (; wc=WeightedCounts(weights, targets, sigs), N=Int(N))
 end
-
-@inline _weighted_sum(sig::NTuple{B,Int}, w::NTuple{B,Int}) where {B} = sum(map(*, sig, w))
 
 """
     check_Nₛ(
@@ -593,16 +579,24 @@ function _sector_states_from_counts(
         end
     end
 
+    # No N-digit state can match a signature whose digits do not add up to N.
+    sigs = filter(sig -> sum(sig) == N, collect(sigs))
+
+    # Sizing every block first means the fills below need no bail-out branch, and a sector too
+    # large to index falls back to the caller's full `Bᴺ` scan instead of being half-built.
+    lengths = map(sig -> _block_length(Val(B), N, sig), sigs)
+    any(isnothing, lengths) && return nothing
+
     # Each signature block comes out in ascending order, so the blocks only need merging.
     blocks = Vector{BaseInt{T,Ti,B}}[]
-    for sig in sigs
-        sum(sig) == N || continue # no N-digit state can match such a signature
+    for (sig, n) in zip(sigs, lengths)
+        n > 0 || continue
         block = if B == 2
-            _fixed_popcount_block(BaseInt{T,Ti,2}, N, sig[2])
+            _fixed_popcount_block(BaseInt{T,Ti,2}, N, sig[2], n)
         else
-            _fixed_counts_block(BaseInt{T,Ti,B}, N, sig)
+            _fixed_counts_block(BaseInt{T,Ti,B}, N, sig, n)
         end
-        isempty(block) || push!(blocks, block)
+        push!(blocks, block)
     end
     return _merge_sorted_blocks(blocks, BaseInt{T,Ti,B})
 end
@@ -612,24 +606,45 @@ end
 const _PARALLEL_BLOCK_MIN = 1 << 14
 
 """
-    _multinomial(N::Int, counts) -> Union{Int,Nothing}
+    _block_length(::Val{B}, N::Int, sig) -> Union{Int,Nothing}
 
-Exact number of `N`-digit strings with digit multiset `counts`, i.e. `N! / ∏ countsⱼ!`,
-accumulated in `Int128` and returned as an `Int`. Returns `nothing` when the result does not
-fit in an `Int`, which lets the callers fall back to the `push!`-grown path instead of
-allocating against a bogus length.
+How many `N`-digit base-`B` states have digit-count signature `sig`: the multinomial
+`N! / ∏ sigⱼ!`, which for `B == 2` is just `binomial(N, sig[2])`. A signature no state can
+have gives `0`.
+
+Accumulated in `Int128` and returned as an `Int`, or as `nothing` when the count exceeds
+`typemax(Int)`. Such a sector could never be materialized anyway, and `nothing` lets
+[`_sector_states_from_counts`](@ref) decline the whole enumeration rather than allocate
+against a wrapped length.
 """
-function _multinomial(N::Int, counts)
+function _block_length(::Val{B}, N::Int, sig) where {B}
     total = Int128(1)
-    r = N
-    for c in counts
-        c < 0 && return 0
-        (0 <= c <= r) || return 0
-        total *= Int128(binomial(r, c))
+    remaining = N
+    for c in sig
+        (0 <= c <= remaining) || return 0
+        total *= Int128(binomial(remaining, c))
         total > Int128(typemax(Int)) && return nothing
-        r -= c
+        remaining -= c
     end
     return Int(total)
+end
+
+# Fill a block that splits into consecutive runs, `fill_run!(i, offset)` writing run `i` at
+# `out[offset]`. Runs are laid out back to back in order, so every offset is known before any
+# work starts and the runs can be filled concurrently with no merging and no locking. Below
+# `_PARALLEL_BLOCK_MIN` the spawns would cost more than the work they distribute.
+function _fill_runs!(fill_run!::F, out::Vector, lengths) where {F}
+    offsets = cumsum(lengths) .- lengths .+ 1
+    if length(out) < _PARALLEL_BLOCK_MIN || Threads.nthreads() == 1
+        for i in eachindex(lengths)
+            lengths[i] > 0 && fill_run!(i, offsets[i])
+        end
+    else
+        @sync for i in eachindex(lengths)
+            lengths[i] > 0 && Threads.@spawn fill_run!(i, offsets[i])
+        end
+    end
+    return out
 end
 
 # Digit-count signatures a cycle admits: a collapsed cycle carries the whole list, a plain
@@ -682,48 +697,39 @@ function _merge_two(a::Vector{V}, b::Vector{V}) where {V}
 end
 
 """
-    _fixed_popcount_block(::Type{BaseInt{T,Ti,2}}, N::Int, k::Int) where {T,Ti}
+    _fixed_popcount_block(::Type{BaseInt{T,Ti,2}}, N::Int, k::Int, n::Int) where {T,Ti}
 
-All `N`-bit values with exactly `k` ones, ascending, in an exactly-sized vector.
+The `n == binomial(N, k)` values with exactly `k` ones in `N` bits, ascending.
 
-Gosper's hack is inherently sequential, so large blocks are split on the position `p` of the
+Gosper's hack is inherently sequential, so the block is split by the position `p` of the
 highest set bit: those states are `(1 << (p-1)) | <any (k-1)-subset of the low p-1 bits>`,
-they occupy the disjoint range `[2^(p-1), 2^p)`, and ascending `p` yields ascending runs. Each
-run has a known length `binomial(p-1, k-1)`, so the slice offsets are known up front and the
-runs are filled in parallel with no merge and no locking.
+they occupy the disjoint range `[2^(p-1), 2^p)`, and ascending `p` yields ascending runs.
 """
 function _fixed_popcount_block(
-    ::Type{BaseInt{T,Ti,2}}, N::Int, k::Int
+    ::Type{BaseInt{T,Ti,2}}, N::Int, k::Int, n::Int
 ) where {T,Ti}
-    k == 0 && return [BaseInt{T,Ti,2}(zero(T))]
-    (0 < k <= N) || return BaseInt{T,Ti,2}[]
-
-    n = binomial(N, k)
     out = Vector{BaseInt{T,Ti,2}}(undef, n)
-
-    if n < _PARALLEL_BLOCK_MIN || Threads.nthreads() == 1
-        _gosper_fill!(out, 1, N, k, zero(T))
+    if k == 0
+        @inbounds out[1] = BaseInt{T,Ti,2}(zero(T))
         return out
     end
 
-    offset = 1
-    tasks = map(filter(p -> binomial(p - 1, k - 1) > 0, k:N)) do p
-        lo = offset
-        offset += binomial(p - 1, k - 1)
-        Threads.@spawn _gosper_fill!(out, lo, p - 1, k - 1, one(T) << (p - 1))
+    high_positions = k:N
+    lengths = [binomial(p - 1, k - 1) for p in high_positions]
+    return _fill_runs!(out, lengths) do i, idx
+        p = high_positions[i]
+        _gosper_fill!(out, idx, p - 1, k - 1, one(T) << (p - 1))
     end
-    foreach(wait, tasks)
-    return out
 end
 
-# Write the `binomial(N, k)` values with `k` ones in the low `N` bits, each OR-ed with
-# `high`, into `out` starting at `idx`. Returns the next free index.
+# Write the `binomial(N, k)` values with `k` ones in the low `N` bits, each OR-ed with `high`,
+# into `out` starting at `idx`.
 function _gosper_fill!(
     out::Vector{BaseInt{T,Ti,2}}, idx::Int, N::Int, k::Int, high::T
 ) where {T,Ti}
     if k == 0
         @inbounds out[idx] = BaseInt{T,Ti,2}(high)
-        return idx + 1
+        return out
     end
     limit = one(T) << N
     v = (one(T) << k) - one(T)
@@ -734,56 +740,38 @@ function _gosper_fill!(
         r = v + c
         v = (((r ⊻ v) >> 2) ÷ c) | r
     end
-    return idx
+    return out
 end
 
 """
-    _fixed_counts_block(::Type{BaseInt{T,Ti,B}}, N::Int, counts) where {T,Ti,B}
+    _fixed_counts_block(::Type{BaseInt{T,Ti,B}}, N::Int, counts, n::Int) where {T,Ti,B}
 
-All `N`-digit base-`B` values whose digit multiset matches `counts` (the multiset
-permutations), ascending, in an exactly-sized vector.
+The `n` `N`-digit base-`B` values whose digit multiset matches `counts` — the multiset
+permutations — ascending.
 
-Fixing the most significant digit partitions the block into runs that are each ascending and
-that concatenate in ascending order of that digit, with lengths given by the multinomial of
-the remaining counts. So the slice offsets are known before any work happens and the runs are
-filled in parallel — no merge, no locking, and each task gets its own `remaining` scratch.
+Fixing the most significant digit splits the block into runs that are each ascending and that
+concatenate in ascending order of that digit, so the runs need no merging. Each run gets its
+own `remaining` scratch, since the fill mutates it as it descends.
 """
 function _fixed_counts_block(
-    ::Type{BaseInt{T,Ti,B}}, N::Int, counts::NTuple{Bc,Int}
+    ::Type{BaseInt{T,Ti,B}}, N::Int, counts::NTuple{Bc,Int}, n::Int
 ) where {T,Ti,B,Bc}
-    all(>=(0), counts) || return BaseInt{T,Ti,B}[]
-
-    n = _multinomial(N, counts)
-    # Unrepresentable length: fall back to growing the vector as we go.
-    n === nothing && return _fixed_counts_block_grown(BaseInt{T,Ti,B}, N, counts)
-    n == 0 && return BaseInt{T,Ti,B}[]
-
     out = Vector{BaseInt{T,Ti,B}}(undef, n)
-    pows = T[T(B)^(p - 1) for p in 1:N]
-
-    if n < _PARALLEL_BLOCK_MIN || Threads.nthreads() == 1 || N < 1
-        _fixed_counts_fill!(out, 1, collect(counts), pows, N, zero(T))
+    if N < 1
+        @inbounds out[1] = BaseInt{T,Ti,B}(zero(T))
         return out
     end
 
-    offset = 1
-    tasks = Task[]
-    @inbounds for d in 0:(B-1)
-        counts[d+1] > 0 || continue
-        sub = Base.setindex(counts, counts[d+1] - 1, d + 1)
-        m = _multinomial(N - 1, sub)
-        (m === nothing || m == 0) && continue
-        lo = offset
-        offset += m
-        push!(
-            tasks,
-            Threads.@spawn _fixed_counts_fill!(
-                out, lo, collect(sub), pows, N - 1, T(d) * pows[N]
-            )
-        )
+    pows = T[T(B)^(p - 1) for p in 1:N]
+    lead_digits = 0:(B-1)
+    # Of the `n` permutations, the fraction carrying digit `d` in the leading position is
+    # `counts[d+1] / N`.
+    lengths = [n * counts[d+1] ÷ N for d in lead_digits]
+    return _fill_runs!(out, lengths) do i, idx
+        d = lead_digits[i]
+        remaining = collect(Base.setindex(counts, counts[d+1] - 1, d + 1))
+        _fixed_counts_fill!(out, idx, remaining, pows, N - 1, T(d) * pows[N])
     end
-    foreach(wait, tasks)
-    return out
 end
 
 # Fill the digit positions from the most significant one downwards, trying digit values in
@@ -812,36 +800,6 @@ function _fixed_counts_fill!(
     return idx
 end
 
-# Fallback for the (practically unreachable) case where the block length overflows `Int`.
-function _fixed_counts_block_grown(
-    ::Type{BaseInt{T,Ti,B}}, N::Int, counts::NTuple{Bc,Int}
-) where {T,Ti,B,Bc}
-    out = BaseInt{T,Ti,B}[]
-    pows = T[T(B)^(p - 1) for p in 1:N]
-    _fixed_counts_grow!(out, collect(counts), pows, N, zero(T))
-    return out
-end
-
-function _fixed_counts_grow!(
-    out::Vector{BaseInt{T,Ti,B}},
-    remaining::Vector{Int},
-    pows::Vector{T},
-    pos::Int,
-    val::T
-) where {T,Ti,B}
-    if pos < 1
-        push!(out, BaseInt{T,Ti,B}(val))
-        return nothing
-    end
-    @inbounds for d in 0:(B-1)
-        if remaining[d+1] > 0
-            remaining[d+1] -= 1
-            _fixed_counts_grow!(out, remaining, pows, pos - 1, val + T(d) * pows[pos])
-            remaining[d+1] += 1
-        end
-    end
-    return nothing
-end
 # END -- candidate-state enumeration for sector-restricted checks
 
 

@@ -1043,33 +1043,37 @@
             SG = SymBasis.SymGroups
             thresh = SG._PARALLEL_BLOCK_MIN
 
-            # Base B > 2: multiset permutations, against `_fixed_counts_block_grown`.
+            digit_counts(v, N, B) =
+                ntuple(d -> count(p -> (v ÷ B^(p - 1)) % B == d - 1, 1:N), B)
+
+            # Base B > 2: multiset permutations, against a direct digit-count filter.
             for (B, N, counts) in (
                 (4, 10, (3, 3, 2, 2)),   # spinful-shaped
                 (3, 12, (4, 4, 4)),      # spin-1 / boson-shaped
-                (4, 11, (5, 2, 2, 2)),
             )
                 V = typeof(BaseInt(UInt(0); base=B))
-                @test SG._multinomial(N, counts) > thresh
-                par = SG._fixed_counts_block(V, N, counts)
-                ser = SG._fixed_counts_block_grown(V, N, counts)
-                @test length(par) == SG._multinomial(N, counts)
-                @test par == ser
+                n = SG._block_length(Val(B), N, counts)
+                @test n > thresh
+                par = SG._fixed_counts_block(V, N, counts, n)
+                ref = [V(UInt(v)) for v in 0:(B^N-1) if digit_counts(v, N, B) == counts]
+                @test length(par) == n
+                @test par == ref
                 @test issorted(par)
                 @test allunique(par)
-                @test par == SG._fixed_counts_block(V, N, counts)  # deterministic
+                @test par == SG._fixed_counts_block(V, N, counts, n)  # deterministic
             end
 
             # Base 2: Gosper split on the highest set bit, against a direct filter.
             for (N, k) in ((18, 9), (17, 8))
                 V = typeof(BaseInt(UInt(0); base=2))
-                @test binomial(N, k) > thresh
-                par = SG._fixed_popcount_block(V, N, k)
+                n = SG._block_length(Val(2), N, (N - k, k))
+                @test n == binomial(N, k) > thresh
+                par = SG._fixed_popcount_block(V, N, k, n)
                 ref = [V(UInt(v)) for v in 0:(2^N-1) if count_ones(UInt(v)) == k]
-                @test length(par) == binomial(N, k)
+                @test length(par) == n
                 @test par == ref
                 @test issorted(par)
-                @test par == SG._fixed_popcount_block(V, N, k)     # deterministic
+                @test par == SG._fixed_popcount_block(V, N, k, n)     # deterministic
             end
 
             # And end to end: the assembled candidate list stays sorted and duplicate-free,

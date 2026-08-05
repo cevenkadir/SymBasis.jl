@@ -55,7 +55,8 @@ function _perm_cycle(
     dofo::DoFObject{B,T_s,T,Ti}
 ) where {B,T_s,T,Ti}
     ip = Base.invperm(perm)
-    wrapped = perm_wrapper(perm, B)
+    # `T`, not the permutation's own `Ti`: the wrapper is applied to `BaseInt{T,Ti,2}` states.
+    wrapped = perm_wrapper(perm, B, T)
     if dofo.type == :SpinfulFermion
         parity = ntuple(d -> isodd(length(dofo.ldof[d])), B)
         if B == 2

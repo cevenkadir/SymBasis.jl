@@ -161,6 +161,36 @@ end
     return value ÷ B^k
 end
 
+# The largest `N`-digit value in base `B`, i.e. the upper end of the full state range. `B` is
+# an `Int` type parameter, so the naive `T(B^N - 1)` evaluates `B^N` in `Int` arithmetic and
+# overflows before it is ever converted -- capping base 2 at `N = 63` even when `T` is wider
+# than a machine word. Doing the arithmetic in `T` from the start lifts the cap to `T`'s own
+# width, and is bit-identical for every `(T, B, N)` that already fit.
+@inline function _max_value(::Type{T}, ::Val{B}, N::Integer) where {T<:Integer,B}
+    N <= _max_digits(T, Val(B)) || throw(ArgumentError(
+        "a $N-digit base-$B state does not fit in $T (at most " *
+        "$(_max_digits(T, Val(B))) digits); use a wider storage type"
+    ))
+    return T(B)^N - one(T)
+end
+
+# The largest `N` for which `B^N` -- not merely `B^N - 1` -- is representable in `T`. The
+# one-past-the-end value is what the surrounding code actually needs: it is the exclusive
+# bound of the `BaseIntRange` scan and the `limit` of the Gosper walk in
+# `SymBasis.SymGroups._gosper_fill!`. A state space that exactly saturates `T` (`N = 64` for
+# `UInt`, say) therefore is not usable even though its maximum state value is, and silently
+# wraps `limit` to zero if it is not rejected up front.
+function _max_digits(::Type{T}, ::Val{B}) where {T<:Integer,B}
+    n = 0
+    v = one(T)
+    lim = typemax(T) ÷ T(B)
+    while v <= lim
+        v *= T(B)
+        n += 1
+    end
+    return n
+end
+
 # An ordered walk of `n` digits starting at position `start`. Walking from position 1 -- by
 # far the common case -- needs no repositioning at all, so it must not pay for one.
 @inline function _walk_from(b::BaseInt{T,Ti,B}, start::Integer, n::Integer) where {T,Ti,B}

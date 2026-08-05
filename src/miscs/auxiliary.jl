@@ -287,22 +287,43 @@ end
 
 """
     perm_wrapper(perm::AbstractVector{T_lsi}, base::Integer) where {T_lsi<:Integer}
+    perm_wrapper(
+        perm::AbstractVector{<:Integer}, base::Integer, ::Type{T}
+    ) where {T<:Integer}
 
 Wrap the permutation `perm` in a `BitPermutations.BitPermutation` if the specified `base` is
 2, otherwise return `perm` as is.
+
+`T` is the integer type the *states* being permuted are stored in, which is what the
+resulting `BitPermutation` must be parameterized on: `SymBasis.SymGroups.apply_perm` applies
+it to a [`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,2}`, and that method only matches when the
+two agree. It is a separate argument because the permutation vector's own element type is an
+indexing type (`Ti`, typically `Int`) with no relation to the state storage type -- deriving
+the wrapper type from the vector instead silently restricted every permutation symmetry to
+DoF-objects left at the default `T = UInt`.
+
+The two-argument form keeps the previous behaviour of deriving the type from the permutation
+vector, for callers that permute `UInt`-backed states.
 
 # Arguments
 - `perm::AbstractVector{T_lsi}`: The permutation to be wrapped.
 - `base::Integer`: The base to determine whether to wrap the permutation in a
     `BitPermutations.BitPermutation`.
+- `::Type{T}`: The integer type the permuted states are stored in.
 
 # Returns
-- `Union{BitPermutations.BitPermutation{unsigned(T_lsi)}, AbstractVector{T_lsi}}`: The
+- `Union{BitPermutations.BitPermutation{unsigned(T)}, AbstractVector{T_lsi}}`: The
     wrapped permutation if `base` is 2, or the original permutation otherwise.
 """
 function perm_wrapper(perm::AbstractVector{T_lsi}, base::Integer) where {T_lsi<:Integer}
+    return perm_wrapper(perm, base, T_lsi)
+end
+
+function perm_wrapper(
+    perm::AbstractVector{<:Integer}, base::Integer, ::Type{T}
+) where {T<:Integer}
     if base == 2
-        return BitPermutation{unsigned(T_lsi)}(perm)
+        return BitPermutation{unsigned(T)}(perm)
     else
         return perm
     end

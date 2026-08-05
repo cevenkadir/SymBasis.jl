@@ -1,5 +1,5 @@
 
-using SymBasis.DigitBase: BaseInt, BaseIntRange, base_number_to_string
+using SymBasis.DigitBase: BaseInt, BaseIntRange, base_number_to_string, _max_value
 using SymBasis.SymGroups: SymGroup, CombSymGroup, _apply_all, _apply_phase_all,
     _candidate_states, apply_Nₛ
 using SymBasis.DoFObjects: DoFObject
@@ -209,7 +209,9 @@ function basis(
     norm_type::DataType=Float64,
     is_sorted::Bool=false
 ) where {B,T_s,T,Ti}
-    states = collect(BaseInt(T(0); base=B, Ti=Ti):BaseInt(T(B^N-1); base=B, Ti=Ti))
+    states = collect(
+        BaseInt(T(0); base=B, Ti=Ti):BaseInt(_max_value(T, Val(B), N); base=B, Ti=Ti)
+    )
     norms = ones(norm_type, length(states))
     # The scan is over an ascending range, so the output is sorted by construction and
     # `is_sorted` needs no extra work.
@@ -598,7 +600,7 @@ function basis(
     c = true
     candidates = _candidate_states(sg.check, sg.cycles, BaseInt{T,Ti,B}, N)
     all_bints = candidates === nothing ?
-                (BaseInt(T(0); base=B, Ti=Ti):BaseInt(T(B^N - 1); base=B, Ti=Ti)) :
+                (BaseInt(T(0); base=B, Ti=Ti):BaseInt(_max_value(T, Val(B), N); base=B, Ti=Ti)) :
                 candidates
 
     # Kept separate from `get_temp_state` so `_basis_impl` can call it only for the cycles
@@ -687,7 +689,7 @@ function basis(
         end
     end
     all_bints = candidates === nothing ?
-                (BaseInt(T(0); base=B, Ti=Ti):BaseInt(T(B^N - 1); base=B, Ti=Ti)) :
+                (BaseInt(T(0); base=B, Ti=Ti):BaseInt(_max_value(T, Val(B), N); base=B, Ti=Ti)) :
                 candidates
 
     # `Val` so `_fill_valid!` can drop the skipped dimension's loop at compile time.

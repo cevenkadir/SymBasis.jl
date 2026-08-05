@@ -1687,4 +1687,53 @@ end
             end
         end
     end
+
+    @testset "non-default storage types" begin
+        # The `T` keyword used to be honoured only for symmetries that never permute sites:
+        # the `BitPermutation` was built from the permutation vector's element type, so any
+        # `T` other than `UInt` failed to dispatch in `apply_perm`.
+        N = 8
+        @testset "T = $T" for T in (UInt16, UInt32, UInt64, UInt128)
+            dofo = dof_object(Spin(1 // 2; T=T))
+            ref = dof_object(Spin(1 // 2))
+
+            sg_U1 = sym(TotalMagnetization(0, N), dofo)
+            sg_T = sym(Translational(0, mod1.((1:N) .+ 1, N)), dofo)
+            sg_P = sym(SpatialReflection(1, reverse(1:N)), dofo)
+
+            ref_U1 = sym(TotalMagnetization(0, N), ref)
+            ref_T = sym(Translational(0, mod1.((1:N) .+ 1, N)), ref)
+            ref_P = sym(SpatialReflection(1, reverse(1:N)), ref)
+
+            for (csg, ref_csg) in (
+                (sg_U1, ref_U1),
+                (sg_U1 ∘ sg_T, ref_U1 ∘ ref_T),
+                (sg_U1 ∘ sg_T ∘ sg_P, ref_U1 ∘ ref_T ∘ ref_P),
+            )
+                b = basis(dofo, N, csg)
+                expected = basis(ref, N, ref_csg)
+                @test [s.value for s in b.states] == [s.value for s in expected.states]
+                @test b.norms == expected.norms
+                csg isa CombSymGroup && @test is_commutative(b, csg)
+            end
+        end
+    end
+
+    @testset "state space wider than a machine word" begin
+        # `B^N` was evaluated in `Int` before being converted, so the range bound overflowed
+        # at N = 64 regardless of how wide `T` was.
+        @testset "N = $N fits in UInt128" for N in (64, 70)
+            dofo = dof_object(Spin(1 // 2; T=UInt128))
+            csg = sym(TotalMagnetization(-N // 2 + 1, N), dofo)
+            b = basis(dofo, N, csg)
+            @test length(b.states) == N
+            @test all(s -> count_ones(s.value) == 1, b.states)
+        end
+
+        # A state space that exactly saturates `T` is still unusable -- `B^N` is needed as a
+        # one-past-the-end sentinel -- but must say so rather than silently yield nothing.
+        @test_throws ArgumentError basis(dof_object(Spin(1 // 2; T=UInt64)), 64)
+        @test_throws ArgumentError basis(dof_object(Spin(1 // 2; T=UInt128)), 128)
+        @test length(basis(dof_object(Spin(1 // 2; T=UInt16)), 15).states) == 2^15
+    end
 end

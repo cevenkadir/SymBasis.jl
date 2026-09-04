@@ -27,10 +27,20 @@
         @test r2.step == bi"1"10
         @test r2.last == bi"10"10
 
+        # "40"5 (=20) is not reachable from 1 in steps of 2, so the constructor snaps `last`
+        # down to the nearest reachable value, "34"5 (=19), exactly as `Base` ranges do
+        # (e.g. `last(1:2:20) == 19`).
         r3 = bi"1"5:bi"2"5:bi"40"5
         @test r3.first == bi"1"5
         @test r3.step == bi"2"5
-        @test r3.last == bi"40"5
+        @test r3.last == bi"34"5
+        @test last(r3) == bi"34"5
+
+        # Base-2 case matching the reported issue: 0:2:7 must not keep an unreachable
+        # "111" (=7) as its last element -- the reachable value is "110" (=6).
+        r4 = bi"0"2:bi"10"2:bi"111"2
+        @test r4.last == bi"110"2
+        @test last(r4) == bi"110"2
     end
 
     @testset "Base.length for BaseIntRange" begin

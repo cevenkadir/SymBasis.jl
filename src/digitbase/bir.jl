@@ -36,7 +36,13 @@ end
 function Base.:(:)(a::TB, s::TB, b::TB) where {T,Ti,B,TB<:BaseInt{T,Ti,B}}
     s.value <= 0 && throw(ArgumentError("step must be positive, got $(s.value)"))
     a.value > b.value && return BaseIntStepRange(a, s, a)
-    return BaseIntRange{T,Ti,B}(a, s, b)
+
+    # `b` need not itself be reachable from `a` by whole steps (e.g. `0:2:7`); snap it down
+    # to the last value that is, exactly as `Base` ranges do (`last(0:2:7) == 6`), so every
+    # other method can simply trust `r.last`.
+    n = (b.value - a.value) ÷ s.value
+    last_val = a.value + n * s.value
+    return BaseIntRange{T,Ti,B}(a, s, BaseInt{T,Ti,B}(last_val))
 end
 
 function Base.length(r::BaseIntRange)
@@ -77,6 +83,10 @@ function Base.eltype(::Type{<:BaseIntRange{T,Ti,B}}) where {T,Ti,B}
 end
 Base.IteratorSize(::Type{<:BaseIntRange}) = Base.HasLength()
 Base.IteratorEltype(::Type{<:BaseIntRange}) = Base.HasEltype()
+
+Base.first(r::BaseIntRange) = r.first
+Base.last(r::BaseIntRange) = r.last
+Base.step(r::BaseIntRange) = r.step
 
 Base.firstindex(::BaseIntRange) = 1
 function Base.getindex(r::BaseIntRange{T,Ti,B}, x::Ti) where {T,Ti,B}

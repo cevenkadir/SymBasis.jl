@@ -5,16 +5,15 @@ using SymBasis.Miscs: combos_boson_sum
 
 A concrete subtype of [`SymBasis.SymGroups.AbstractSymSpec`](@ref) representing a bosonic
 particle number conservation specification. The type parameter `T_b` represents the target
-total number of particles, while `T_N` represents the total number of DoF-objects in the
-system.
+total particle number quantum number, while `T_N` represents the number of sites.
 
 # Fields
-- `n_particles::T_b`: The target total number of particles.
-- `N::T_N`: The total number of DoF-objects in the system.
+- `n_particles::T_b`: The target total particle number quantum number.
+- `N::T_N`: The number of sites.
 
 # Constructor Arguments
-- `n_particles::T_b`: The target total number of particles.
-- `N::T_N`: The total number of DoF-objects in the system.
+- `n_particles::T_b`: The target total particle number quantum number.
+- `N::T_N`: The number of sites.
 
 # Returns
 - [`SymBasis.SymGroups.TotalBosonicNumber`](@ref): An instance of
@@ -51,7 +50,7 @@ of signatures; with a single signature the plain `N0`, …, `N(B-1)` cycle is ke
 
 # Arguments
 - `ss::TotalBosonicNumber{T_b,T_N}`: The particle number conservation specification,
-    containing the target total number of particles and the total number of DoF-objects.
+    containing the target total particle number quantum number and the number of sites.
 - `dofo::DoFObject{B,T_b,T,Ti}`: The bosonic DoF-object for which to create the symmetry
     group.
 

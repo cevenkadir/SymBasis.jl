@@ -837,11 +837,11 @@ translational symmetry specification. The type parameter `T_k` represents the mo
 quantum number, while `Ti` represents the type of the permutation indices.
 
 # Fields
-- `k::T_k`: The momentum number.
+- `k::T_k`: The momentum quantum number.
 - `perm::AbstractVector{Ti}`: The permutation vector defining the translation.
 
 # Constructor Arguments
-- `k::T_k`: The momentum number.
+- `k::T_k`: The momentum quantum number.
 - `perm::AbstractVector{Ti}`: The permutation vector defining the translation.
 
 # Returns
@@ -928,11 +928,11 @@ reflection symmetry specification. The type parameter `T_p` represents the parit
 number, while `Ti` represents the type of the permutation indices.
 
 # Fields
-- `p::T_p`: The parity number (either `-1` or `1`).
+- `p::T_p`: The parity quantum number (either `-1` or `1`).
 - `perm::AbstractVector{Ti}`: The permutation vector defining the spatial reflection.
 
 # Constructor Arguments
-- `p::T_p`: The parity number (either `-1` or `1`).
+- `p::T_p`: The parity quantum number (either `-1` or `1`).
 - `perm::AbstractVector{Ti}`: The permutation vector defining the spatial reflection.
 
 # Returns
@@ -1015,14 +1015,14 @@ end
 
 A concrete subtype of [`SymBasis.SymGroups.AbstractSymSpec`](@ref) representing the
 specification of rotational symmetry of space. The type parameter `T_r` represents the
-spatial rotation number, while `Ti` represents the type of the permutation indices.
+rotation quantum number, while `Ti` represents the type of the permutation indices.
 
 # Fields
-- `r::T_r`: The spatial rotation number.
+- `r::T_r`: The rotation quantum number.
 - `perm::AbstractVector{Ti}`: The permutation vector defining the rotation.
 
 # Constructor Arguments
-- `r::T_r`: The spatial rotation number.
+- `r::T_r`: The rotation quantum number.
 - `perm::AbstractVector{Ti}`: The permutation vector defining the rotation.
 
 # Returns

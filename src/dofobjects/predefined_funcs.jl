@@ -1,10 +1,8 @@
 """
     AbstractDoFSpec{T,Ti}
 
-An abstract type representing a specification for degrees of freedom (DoF) objects. This
-type serves as a base for concrete DoF specifications, such as
-[`SymBasis.DoFObjects.Spin`](@ref), which define predefined
-specific types of DoF objects.
+An abstract type representing a specification for degrees of freedom (DoF) objects. Concrete
+DoF specifications, such as [`SymBasis.DoFObjects.Spin`](@ref), are subtypes of this type.
 """
 abstract type AbstractDoFSpec{T,Ti} end
 

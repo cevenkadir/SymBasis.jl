@@ -11,14 +11,14 @@
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://cevenkadir.github.io/SymBasis.jl/stable/) [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://cevenkadir.github.io/SymBasis.jl/dev/) [![Build Status](https://github.com/cevenkadir/SymBasis.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/cevenkadir/SymBasis.jl/actions/workflows/CI.yml?query=branch%3Amain) [![Coverage](https://codecov.io/gh/cevenkadir/SymBasis.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/cevenkadir/SymBasis.jl) [![Downloads](https://img.shields.io/badge/dynamic/json?url=http%3A%2F%2Fjuliapkgstats.com%2Fapi%2Fv1%2Fmonthly_downloads%2FSymBasis&query=total_requests&suffix=%2Fmonth&label=Downloads)](https://juliapkgstats.com/pkg/SymBasis)
 </div>
 
-SymBasis.jl is a Julia package for determining the bases conserving the symmetries of a system with a discrete number of degrees of freedom, which is useful for quantum many-body problems. This package offers an easy-to-use interface to generate any basis with one symmetry or multiple symmetries, without the need for users to understand the underlying algorithms. Compared to other similar packages, in SymBasis.jl, you can easily define your custom symmetries (or use predefined ones) and generate the corresponding basis, which is mostly unsupported by other packages.
+SymBasis.jl is a Julia package for building the bases that conserve the symmetries of a system with a discrete number of degrees of freedom — useful for quantum many-body problems. You generate a basis with one symmetry or several without having to understand the enumeration algorithms underneath. Most similar packages only expose a fixed menu of symmetries; SymBasis.jl lets you define your own alongside the predefined ones.
 
 ## Key features
-- **Easy-to-use interface**: Users can generate bases with symmetries without needing to understand the underlying algorithms.
-- **Custom base positional numbering**: Users can specify the base positional numbering for the basis states and alter these (integer) numbers.
-- **Any discrete degrees of freedom**: Users can define DoF-objects for any discrete degrees of freedom, such as spins, bosons, spinless and spinful fermions, or even custom objects like flag emojis of countries.
-- **Support for multiple symmetries**: Users can generate bases that conserve multiple symmetries.
-- **Custom symmetries**: Users can define their own symmetries and generate the corresponding basis.
+- **Easy-to-use interface**: generate bases with symmetries without needing to understand the underlying algorithms.
+- **Custom base positional numbering**: specify the base positional numbering for the basis states, and alter those (integer) numbers directly.
+- **Any discrete degrees of freedom**: define DoF-objects for spins, bosons, spinless and spinful fermions, or even custom objects like flag emojis of countries.
+- **Multiple symmetries at once**: generate bases that conserve several symmetries simultaneously.
+- **Custom symmetries**: define your own symmetries and generate the corresponding basis.
 
 ## Predefined symmetries
 SymBasis.jl provides predefined symmetry groups for commonly used symmetries, including:
@@ -116,7 +116,7 @@ Basis{BaseInt{UInt64, Int64, 2},Float64} with 6 states
 ```
 
 ## Important notice
-This project is still under active development. While it includes an extensive test suite and is developed with high scientific rigor, you should always benchmark your own code. Please report any issues you encounter via the [GitHub issue tracker](https://github.com/cevenkadir/SymBasis.jl/issues/new).
+This project is still under active development. It has an extensive test suite, but you should still benchmark your own code rather than take correctness for granted. Please report any issues you encounter via the [GitHub issue tracker](https://github.com/cevenkadir/SymBasis.jl/issues/new).
 
 ## Citation
 If you use this package in your work, 

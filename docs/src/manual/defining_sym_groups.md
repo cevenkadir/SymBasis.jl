@@ -101,9 +101,9 @@ Some symmetries explicitly depend on the DoF-object, such as total magnetization
 ##### Total magnetization symmetry
 Total magnetization symmetry is a symmetry where the system is invariant under the total magnetization operator. In a system with $N$ sites, the total magnetization operator $\hat{S}^z$ acts on a state $\vert a(S^z) \rangle$ as follows:
 ```math
-\hat{S}^z \vert a(S^z) \rangle = \sum_{i=1}^{N} S_i^z \vert a(S^z) \rangle = S^z \vert a(S^z) \rangle\,,
+\hat{S}^z \vert a(S^z) \rangle = \sum_{i=1}^{N} \hat{S}_i^z \vert a(S^z) \rangle = S^z \vert a(S^z) \rangle\,,
 ```
-where $S_i^z$ is the magnetization of the $i$-th site, and $S^z$ is the total magnetization quantum number.
+where $\hat{S}_i^z$ is the magnetization operator of the $i$-th site, and $S^z$ is the total magnetization quantum number.
 You can define a total magnetization symmetry group for a system with a certain number of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function and the [`TotalMagnetization`](@ref SymBasis.SymGroups.TotalMagnetization) type as follows:
 ```@example
 using SymBasis
@@ -118,11 +118,11 @@ sg = sym(TotalMagnetization(Sz, N), dofo)
 ##### Spin-multipole symmetry
 Spin-multipole symmetry is a symmetry where the system is invariant under the conserved spin-multipole operator $\hat{Q}_{\alpha_1, \cdots, \alpha_M}$, where $\alpha_j$ is the $j$-th spatial dimension index and $M$ is the rank of the multipole operator ($M=1$ gives dipole, $M=2$ gives quadrupole, and so on). The operator gives rise to an $\mathbb{R}^{D \times D \times \cdots \times D}$ array of quantum numbers of rank $M$. In a system with $N$ sites, $\hat{Q}_{\alpha_1, \cdots, \alpha_M}$ acts on a state $\vert a(Q_{\alpha_1, \cdots, \alpha_M}) \rangle$ as follows:
 ```math
-\hat{Q}_{\alpha_1, \cdots, \alpha_M} \vert a(Q_{\alpha_1, \cdots, \alpha_M}) \rangle = \left[ \sum_{i=1}^N \left(\prod_{j=1}^M w_{i, \alpha_j} \right) S_i^z \right] \vert a(Q_{\alpha_1, \cdots, \alpha_M}) \rangle = Q_{\alpha_1, \cdots, \alpha_M} \vert a(Q_{\alpha_1, \cdots, \alpha_M}) \rangle\,,
+\hat{Q}_{\alpha_1, \cdots, \alpha_M} \vert a(Q_{\alpha_1, \cdots, \alpha_M}) \rangle = \left[ \sum_{i=1}^N \left(\prod_{j=1}^M w_{i, \alpha_j} \right) \hat{S}_i^z \right] \vert a(Q_{\alpha_1, \cdots, \alpha_M}) \rangle = Q_{\alpha_1, \cdots, \alpha_M} \vert a(Q_{\alpha_1, \cdots, \alpha_M}) \rangle\,,
 ```
 where $w_{i, \alpha_j}$ is the weight of site $i$ at its $j$-th spatial dimension. For example, the dipole moment operator $\hat{Q}_\alpha$ for dipole conservation is:
 ```math
-\hat{Q}_\alpha = \sum_{i=1}^N w_{i, \alpha} S_i^z\,.
+\hat{Q}_\alpha = \sum_{i=1}^N w_{i, \alpha} \hat{S}_i^z\,.
 ```
 You can define a multipole symmetry group for a system with a certain number of sites using the [`sym`](@ref SymBasis.SymGroups.sym) function and the [`SpinMultipole`](@ref SymBasis.SymGroups.SpinMultipole) type as follows:
 ```@example

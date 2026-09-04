@@ -25,8 +25,7 @@ apply these operations, and factors associated with each symmetry cycle.
 - `apply::Function`: A function to apply the symmetry operations.
 - `phase::Function`: A function to compute the phase of symmetry operations.
 - `factors::AbstractVector{T_f}`: A vector of factors associated with each symmetry cycle.
-- `N::Int`: The total number of the DoF-objects in the system. This is used to check
-    the validity of the symmetry operations.
+- `N::Int`: The number of sites. Used to check the validity of the symmetry operations.
 
 # Constructor Arguments
 - `dofo::`[`SymBasis.DoFObjects.DoFObject`](@ref)`{B,T_s,T,Ti}`: The DoF-object on which the
@@ -37,8 +36,7 @@ apply these operations, and factors associated with each symmetry cycle.
 - `apply::Function`: A function to apply the symmetry operations.
 - `phase::Function`: A function to compute the phase of symmetry operations.
 - `factors::AbstractVector{T_f}`: A vector of factors associated with each symmetry cycle.
-- `N::Integer`: The total number of the DoF-objects in the system. This is used to check the
-    validity of the symmetry operations.
+- `N::Integer`: The number of sites. Used to check the validity of the symmetry operations.
 
 # Returns
 - `SymGroup{B,T_s,T,Ti,T_f}`: A new `SymGroup` instance initialized with the provided
@@ -123,8 +121,7 @@ layout (array of vectors of named tuples, and vectors of functions) and converts
     each set of symmetry operations.
 - `factors::AbstractArray{T_f}`: An array of factors associated with each combined symmetry
     cycle.
-- `N::Int`: The total number of the DoF-objects in the system. This is used to check
-    the validity of the symmetry operations.
+- `N::Int`: The number of sites. Used to check the validity of the symmetry operations.
 
 # Constructor Arguments
 - `dofo::`[`SymBasis.DoFObjects.DoFObject`](@ref)`{B,T_s,T,Ti}`: The DoF-object on which the
@@ -139,8 +136,7 @@ layout (array of vectors of named tuples, and vectors of functions) and converts
     each set of symmetry operations.
 - `factors::AbstractArray{T_f}`: An array of factors associated with each combined symmetry
     cycle.
-- `N::Integer`: The total number of the DoF-objects in the system. This is used to check the
-    validity of the symmetry operations.
+- `N::Integer`: The number of sites. Used to check the validity of the symmetry operations.
 
 A legacy outer constructor also accepts the array-of-vectors/vector-of-functions layout
 (`cycles::AbstractArray{<:AbstractVector{<:NamedTuple}}`,

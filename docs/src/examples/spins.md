@@ -3,7 +3,7 @@
 This page collects two spin bases that go beyond the one-dimensional spin-1/2 cases already covered in the [basis construction](@ref "Basis construction") manual page: a higher spin, and a two-dimensional lattice with several point-group symmetries resolved at once. For a worked application that combines four symmetries at once and then checks that the resulting sectors really are irreducible, see [level statistics as a completeness test](@ref "Level statistics as a completeness test for symmetry resolution").
 
 ## Spin-1 objects on a chain with total magnetization symmetry
-In this example, we will construct a basis for a system of spin-1 objects on a chain with total magnetization symmetry. We will first define the DoF-object for spin-1 and then define the symmetry group for total magnetization. Finally, we will generate the basis that resolves the total magnetization symmetry for a system of 4 spin-1 objects.
+Here we build a basis for spin-1 objects on a chain with total magnetization symmetry: define the DoF-object for spin-1, define the symmetry group for total magnetization, then generate the basis that resolves it for a system of 4 spin-1 objects.
 ```@example spin_one_chain_Sz_sym
 using SymBasis
 
@@ -18,7 +18,7 @@ b = basis(dofo, N, sg_Sz) # generate the basis that resolves the total magnetiza
 This will generate a basis that consists of the basis states with total magnetization quantum number $S^z = 0$ for a system of 4 spin-1 objects. Note that a spin-1 site has three local states, so the basis states are stored as base-3 integers rather than the base-2 ones used for spin-1/2.
 
 ## Spin-1/2 objects on a 2D square lattice with total magnetization, translational, and spatial reflection symmetries
-In this example, we will construct a basis for a system of spin-1/2 objects on a 2D square lattice with total magnetization, translational, and spatial reflection symmetries. We will first define the DoF-object for spin-1/2, then define the symmetry groups for total magnetization, translational, and spatial reflection symmetries, and finally combine the symmetry groups to generate the basis that resolves all three symmetries for a system of 12 spin-1/2 objects on a 2D square lattice.
+This example is a system of spin-1/2 objects on a 2D square lattice with total magnetization, translational, and spatial reflection symmetries all resolved at once. We define the DoF-object for spin-1/2, define the symmetry groups for each of the three symmetries, then combine them to generate the basis for a system of 12 spin-1/2 objects on the lattice.
 ```@example spin_one_square_lattice_Sz_translational_reflection_syms
 using SymBasis
 

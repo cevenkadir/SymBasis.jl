@@ -21,7 +21,7 @@ The general recipe is the same for every model:
 
 As a concrete example, consider the transverse-field Ising chain with periodic boundary conditions,
 ```math
-H = J\sum_{i} Z_i Z_{i+1} + h\sum_i X_i~,
+\hat{H} = J\sum_{i} \hat{Z}_i \hat{Z}_{i+1} + h\sum_i \hat{X}_i~,
 ```
 resolved in the momentum-$k=0$ sector of a translationally-invariant spin-1/2 chain:
 ```@example ising
@@ -38,7 +38,7 @@ T_sg = sym(Translational(0, mod1.((1:N) .+ 1, N)), dofo)
 ba = basis(dofo, N, T_sg)
 ```
 
-The diagonal $ZZ$ term is read off directly from each state's digits (digit `0`/`1` corresponds to eigenvalue $+1$/$-1$ of $Z$), and the off-diagonal $X$ term flips one site at a time and maps the result back to its representative:
+The diagonal $\hat{Z}\hat{Z}$ term is read off directly from each state's digits (digit `0`/`1` corresponds to eigenvalue $+1$/$-1$ of $\hat{Z}$), and the off-diagonal $\hat{X}$ term flips one site at a time and maps the result back to its representative:
 ```@example ising
 using SparseArrays
 

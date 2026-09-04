@@ -2,9 +2,9 @@
 
 The PXP model describes a chain of Rydberg atoms subject to a nearest-neighbor blockade constraint: two adjacent atoms cannot both be in the excited (Rydberg) state $|r\rangle$ simultaneously. The Hamiltonian acts on the constrained Hilbert space and flips the state of each atom conditioned on both of its neighbors being in the ground state $\ket{g}$:
 ```math
-H = \sum_{i} P_{i-1} X_i P_{i+1}\,,
+\hat{H} = \sum_{i} \hat{P}_{i-1} \hat{X}_i \hat{P}_{i+1}\,,
 ```
-where $P_i = \ket{g}\!\!\bra{g}_i$ is the projector onto the ground state and $X_i = \ket{g}\!\!\bra{r}_i + \ket{r}\!\!\bra{g}_i$.
+where $\hat{P}_i = \ket{g}\!\!\bra{g}_i$ is the projector onto the ground state and $\hat{X}_i = \ket{g}\!\!\bra{r}_i + \ket{r}\!\!\bra{g}_i$.
 
 This model is known to exhibit quantum many-body scars[^Turner_2018]: special high-energy eigenstates that have anomalously large overlap with the $\mathbb{Z}_2$ period-2 density-wave initial
 state $\ket{r g r g \cdots}$, leading to persistent oscillations when the system is initialized in that state.

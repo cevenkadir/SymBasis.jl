@@ -162,15 +162,15 @@ end
 
 A concrete subtype of [`SymBasis.SymGroups.AbstractSymSpec`](@ref) representing a total
 magnetization symmetry specification. The type parameter `T_s` represents the target total
-magnetization value, while `T_N` represents the total number of DoF-objects in the system.
+magnetization quantum number, while `T_N` represents the number of sites.
 
 # Fields
-- `mag::T_s`: The target total magnetization value for the symmetry specification.
-- `N::T_N`: The total number of DoF-objects in the system.
+- `mag::T_s`: The target total magnetization quantum number for the symmetry specification.
+- `N::T_N`: The number of sites.
 
 # Constructor Arguments
-- `mag::T_s`: The target total magnetization value for the symmetry specification.
-- `N::T_N`: The total number of DoF-objects in the system.
+- `mag::T_s`: The target total magnetization quantum number for the symmetry specification.
+- `N::T_N`: The number of sites.
 
 # Returns
 - `TotalMagnetization{T_s,T_N}`: An instance of `TotalMagnetization` representing the
@@ -194,8 +194,8 @@ Convenience constructor for `TotalMagnetization` that accepts an integer magneti
 and converts it to a rational number.
 
 # Arguments
-- `mag::Integer`: The target total magnetization value as an integer.
-- `N`: The total number of DoF-objects in the system.
+- `mag::Integer`: The target total magnetization quantum number as an integer.
+- `N`: The number of sites.
 
 # Returns
 - [`SymBasis.SymGroups.TotalMagnetization`](@ref): An instance of `TotalMagnetization` with
@@ -210,8 +210,9 @@ Convenience constructor for `TotalMagnetization` that accepts a floating-point m
 value and converts it to a rational number.
 
 # Arguments
-- `mag::AbstractFloat`: The target total magnetization value as a floating-point number.
-- `N`: The total number of DoF-objects in the system.
+- `mag::AbstractFloat`: The target total magnetization quantum number as a floating-point
+    number.
+- `N`: The number of sites.
 
 # Returns
 - [`SymBasis.SymGroups.TotalMagnetization`](@ref): An instance of `TotalMagnetization` with
@@ -278,20 +279,22 @@ A concrete subtype of [`SymBasis.SymGroups.AbstractSymSpec`](@ref) representing 
 multipole symmetry specification.
 
 # Fields
-- `qₛ::AbstractArray{T_q,RANK}`: The target multipole values for the symmetry specification.
+- `qₛ::AbstractArray{T_q,RANK}`: The target multipole quantum numbers for the symmetry
+    specification.
 - `weights::AbstractMatrix{T_w}`: The weights used to compute the multipole sum from the
     spin projections.
-- `N::T_N`: The total number of DoF-objects in the system.
+- `N::T_N`: The number of sites.
 - `atol::T_tol`: The absolute tolerance for comparing the computed multipole sum to the
     target values.
 - `rtol::T_tol`: The relative tolerance for comparing the computed multipole sum to the
     target values.
 
 # Constructor Arguments
-- `qₛ::AbstractArray{T_q,RANK}`: The target multipole values for the symmetry specification.
+- `qₛ::AbstractArray{T_q,RANK}`: The target multipole quantum numbers for the symmetry
+    specification.
 - `weights::AbstractMatrix{T_w}`: The weights used to compute the multipole sum from the
     spin projections.
-- `N::T_N`: The total number of DoF-objects in the system.
+- `N::T_N`: The number of sites.
 
 # Constructor Keyword Arguments
 - `atol::T_tol=0.0`: The absolute tolerance for comparing the computed multipole sum to the
@@ -334,16 +337,16 @@ end
     ) where {T_q<:Real,T_w<:Real}
 
 Convenience constructor for [`SymBasis.SymGroups.SpinMultipole`](@ref) that accepts a single
-target multipole value `q` and a vector of weights, and constructs the full `qₛ` array by
-filling it with `q` values. The `rank` keyword argument specifies the rank of the multipole,
-which determines the number of dimensions in the `qₛ` array. The remaining keyword arguments
-are passed to the main constructor.
+target multipole quantum number `q` and a vector of weights, and constructs the full `qₛ`
+array by filling it with `q` values. The `rank` keyword argument specifies the rank of the
+multipole, which determines the number of dimensions in the `qₛ` array. The remaining
+keyword arguments are passed to the main constructor.
 
 # Arguments
-- `q::T_q`: The target multipole value for the symmetry specification.
+- `q::T_q`: The target multipole quantum number for the symmetry specification.
 - `weights::AbstractVector{T_w}`: The weights used to compute the multipole sum from the
     spin projections.
-- `N`: The total number of DoF-objects in the system.
+- `N`: The number of sites.
 
 # Keyword Arguments
 - `rank::Integer=1`: The rank of the multipole, which determines the number of dimensions in
@@ -406,15 +409,15 @@ end
 
 A concrete subtype of [`SymBasis.SymGroups.AbstractSymSpec`](@ref) representing a spin
 inversion symmetry specification. The type parameter `T_z` represents the spin inversion
-quantum number, while `T_N` represents the total number of DoF-objects in the system.
+quantum number, while `T_N` represents the number of sites.
 
 # Fields
 - `z::T_z`: The parity quantum number (either `-1` or `1`).
-- `N::T_N`: The total number of DoF-objects in the system.
+- `N::T_N`: The number of sites.
 
 # Constructor Arguments
 - `z::T_z`: The parity quantum number (either `-1` or `1`).
-- `N::T_N`: The total number of DoF-objects in the system.
+- `N::T_N`: The number of sites.
 
 # Returns
 - `SpinInversion{T_z,T_N}`: An instance of `SpinInversion` representing the specified spin

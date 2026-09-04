@@ -32,7 +32,7 @@ end
 @assert tot_dim == binomial(L_dim, L_dim ÷ 2)
 ```
 
-The momentum and spin-inversion sectors partition the $S^z = 0$ space exactly. And this tells us **nothing at all** about whether each block is irreducible: dimensions add up correctly whether or not two independent blocks happen to be sitting inside one of them. That is the gap this page fills.
+The momentum and spin-inversion sectors partition the $\hat{S}^z = 0$ space exactly. And this tells us **nothing at all** about whether each block is irreducible: dimensions add up correctly whether or not two independent blocks happen to be sitting inside one of them. That is the gap this page fills.
 
 ## The observable
 
@@ -189,7 +189,7 @@ d_fld
     (; digit=d_one, Sᶻ=dofo.ldof[d_one+1],
         Op_SPIN_Z=real(sparse(Op(SPIN_Z, 1), ba_one)[1, 1]))
     ```
-    Inside a two-site $S^zS^z$ product the sign appears twice and cancels, which is why the
+    Inside a two-site $\hat{S}^z\hat{S}^z$ product the sign appears twice and cancels, which is why the
     bond Hamiltonian above needs no correction. A single-site term is not protected: dropping
     the minus sign in `H_fld` flips the sign of every field and changes the physics without
     raising any error.
@@ -245,8 +245,8 @@ nothing # hide
 ```
 
 Two further constraints on the model parameters, both of which would look like bugs if ignored:
-- **Spin inversion needs $S^z = 0$.** [`SpinInversion`](@ref SymBasis.SymGroups.SpinInversion) enforces this internally — its `sym` method enumerates only configurations with vanishing total magnetization — so composing it with `TotalMagnetization(0, L)` is redundant, but kept above for readability.
-- **Avoid $\Delta = 1$.** At the isotropic point SU(2) symmetry produces exact multiplet degeneracies across $S^z$ sectors. Either resolve total $S$, or stay off $\Delta = 1$; this page does the latter.
+- **Spin inversion needs $\hat{S}^z = 0$.** [`SpinInversion`](@ref SymBasis.SymGroups.SpinInversion) enforces this internally — its `sym` method enumerates only configurations with vanishing total magnetization — so composing it with `TotalMagnetization(0, L)` is redundant, but kept above for readability.
+- **Avoid $\Delta = 1$.** At the isotropic point SU(2) symmetry produces exact multiplet degeneracies across $\hat{S}^z$ sectors. Either resolve total $S$, or stay off $\Delta = 1$; this page does the latter.
 
 !!! warning "GOE, not GUE, at k ≠ 0, π"
     The $k \neq 0, \pi$ blocks are genuinely *complex* Hermitian, which invites the guess that they should follow GUE. They do not. Reflection composed with complex conjugation is an antiunitary symmetry that maps a single $k$ block to itself and squares to $+1$, so these sectors are GOE like all the others. Expecting $0.5996$ here and finding $0.53$ would look exactly like a broken projection.
@@ -255,7 +255,7 @@ Two further constraints on the model parameters, both of which would look like b
 
 Start where the symmetry machinery is not involved at all. The random-field Heisenberg chain[^Luitz_2015]
 ```math
-\hat{H} = \sum_i \vec{S}_i \cdot \vec{S}_{i+1} + \sum_i h_i \hat{S}^z_i,
+\hat{H} = \sum_i \hat{\vec{S}}_i \cdot \hat{\vec{S}}_{i+1} + \sum_i h_i \hat{S}^z_i,
 \qquad h_i \sim \mathcal{U}[-W, W]
 ```
 has disorder that breaks translation, reflection and SU(2), leaving **only** the U(1) magnetization. Resolution is therefore trivially complete, which isolates the $r$ machinery — edge trimming, averaging, degeneracy counting — from everything else. It should give GOE at small $W$ and cross over to Poisson at large $W$.
@@ -329,8 +329,8 @@ The inference runs in both directions, which is the reason to do this check at a
 
 Now the actual test. Model B is the XXZ chain with next-nearest-neighbor couplings,
 ```math
-\hat{H} = \sum_i \left( S^x_i S^x_{i+1} + S^y_i S^y_{i+1} + \Delta S^z_i S^z_{i+1} \right)
-        + J_2 \sum_i \left( S^x_i S^x_{i+2} + S^y_i S^y_{i+2} + \Delta_2 S^z_i S^z_{i+2} \right),
+\hat{H} = \sum_i \left( \hat{S}^x_i \hat{S}^x_{i+1} + \hat{S}^y_i \hat{S}^y_{i+1} + \Delta \hat{S}^z_i \hat{S}^z_{i+1} \right)
+        + J_2 \sum_i \left( \hat{S}^x_i \hat{S}^x_{i+2} + \hat{S}^y_i \hat{S}^y_{i+2} + \Delta_2 \hat{S}^z_i \hat{S}^z_{i+2} \right),
 ```
 with $\Delta = \Delta_2 = 0.8$ and $J_2 = 1$. The $J_2$ term destroys integrability, so a fully resolved sector should be GOE[^Poilblanc_1993].
 

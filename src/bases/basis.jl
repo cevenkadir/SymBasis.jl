@@ -192,7 +192,7 @@ Generates the full basis for a DoF-object without symmetry considerations.
 # Arguments
 - `dofo::`[`SymBasis.DoFObjects.DoFObject`](@ref)`{B,T_s,T,Ti}`: The DoF-object for which
     the basis is to be generated.
-- `N::Integer`: The number of sites or particles.
+- `N::Integer`: The number of sites.
 
 # Keyword Arguments
 - `norm_type::DataType=Float64`: The data type for the norms of the basis states. Default is
@@ -575,7 +575,7 @@ Generates the symmetry-resolved basis for a DoF-object under the action of a sym
 # Arguments
 - `dofo::`[`SymBasis.DoFObjects.DoFObject`](@ref)`{B,T_s,T,Ti}`: The DoF-object for which
     the basis is to be generated.
-- `N::Integer`: The number of sites or particles.
+- `N::Integer`: The number of sites.
 - `sg::`[`SymBasis.SymGroups.SymGroup`](@ref)`{B,T_s,T,Ti,Ts}`: The symmetry group to be
     resolved.
 
@@ -650,7 +650,7 @@ Generates the symmetry-resolved basis for a DoF-object under the action of a com
 # Arguments
 - `dofo::`[`SymBasis.DoFObjects.DoFObject`](@ref)`{B,T_s,T,Ti}`: The DoF-object for which
     the basis is to be generated.
-- `N::Integer`: The number of sites or particles.
+- `N::Integer`: The number of sites.
 - `csg::`[`SymBasis.SymGroups.CombSymGroup`](@ref)`{B,T_s,T,Ti,Ts}`: The combined symmetry
     group to be resolved.
 

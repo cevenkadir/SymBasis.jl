@@ -7,21 +7,18 @@ using SymBasis.Miscs: combos_dof_sum_weighted
 
 A concrete subtype of [`SymBasis.SymGroups.AbstractSymSpec`](@ref) representing a total
 spinless fermionic number symmetry specification. The type parameter `T_b` represents the
-target total number of fermions, while `T_N` represents the total number of DoF-objects in
-the system.
+target total fermion number quantum number, while `T_N` represents the number of sites.
 
 This symmetry selects the subspace with fixed total fermion number, i.e. states whose
 binary occupations sum to `n_particles`.
 
 # Fields
-- `n_particles::T_b`: The target total number of spinless fermions for the symmetry
-    specification.
-- `N::T_N`: The total number of DoF-objects in the system.
+- `n_particles::T_b`: The target total fermion number quantum number.
+- `N::T_N`: The number of sites.
 
 # Constructor Arguments
-- `n_particles::T_b`: The target total number of spinless fermions for the symmetry
-    specification.
-- `N::T_N`: The total number of DoF-objects in the system.
+- `n_particles::T_b`: The target total fermion number quantum number.
+- `N::T_N`: The number of sites.
 
 # Returns
 - `TotalSpinlessFermionicNumber{T_b,T_N}`: An instance of `TotalSpinlessFermionicNumber`
@@ -218,9 +215,9 @@ DoF-object (exactly 2 distinct spin projections). Selects the subspace with fixe
 spin-up count `n_up` and spin-down count `n_down` separately.
 
 # Fields
-- `n_up::T_b`: The target number of spin-up fermions.
-- `n_down::T_b`: The target number of spin-down fermions.
-- `N::T_N`: The total number of DoF-objects (sites) in the system.
+- `n_up::T_b`: The target spin-up fermion number quantum number.
+- `n_down::T_b`: The target spin-down fermion number quantum number.
+- `N::T_N`: The number of sites.
 """
 struct TotalSpinfulFermionicNumber{T_b<:Integer,T_N<:Integer} <: AbstractSymSpec
     n_up::T_b
@@ -364,7 +361,7 @@ when `n_up == n_down`.
 
 # Fields
 - `z::T_z`: The spin-inversion parity quantum number (either `-1` or `1`).
-- `N::T_N`: The total number of DoF-objects (sites) in the system.
+- `N::T_N`: The number of sites.
 """
 struct FermionicSpinInversion{T_z<:Integer,T_N<:Integer} <: AbstractSymSpec
     z::T_z

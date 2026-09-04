@@ -2,9 +2,9 @@
 
 The Bose-Hubbard model is the paradigmatic lattice model for strongly-correlated bosons. On a one-dimensional chain with $N$ sites and periodic boundary conditions, it reads
 ```math
-H = -t \sum_{i=1}^{N} \left( b_i^\dagger b_{i+1} + \mathrm{h.c.} \right) + \frac{U}{2} \sum_{i=1}^{N} \hat{n}_i(\hat{n}_i - 1) - \mu \sum_{i=1}^{N} \hat{n}_i\,,
+\hat{H} = -t \sum_{i=1}^{N} \left( \hat{b}_i^\dagger \hat{b}_{i+1} + \mathrm{h.c.} \right) + \frac{U}{2} \sum_{i=1}^{N} \hat{n}_i(\hat{n}_i - 1) - \mu \sum_{i=1}^{N} \hat{n}_i\,,
 ```
-where $b_i^\dagger$ ($b_i$) creates (annihilates) a boson on site $i$, $\hat{n}_i = b_i^\dagger b_i$ is the local number operator, $t$ is the hopping amplitude, $U$ is the on-site repulsion, and $\mu$ is the chemical potential. Competition between kinetic energy ($t$) and interaction energy ($U$) drives a quantum phase transition between a gapped **Mott insulator** at integer filling and a gapless **superfluid**. The phase boundary in the $(t/U, \mu/U)$ plane forms characteristic lobes, one for each integer occupation $n_0$.
+where $\hat{b}_i^\dagger$ ($\hat{b}_i$) creates (annihilates) a boson on site $i$, $\hat{n}_i = \hat{b}_i^\dagger \hat{b}_i$ is the local number operator, $t$ is the hopping amplitude, $U$ is the on-site repulsion, and $\mu$ is the chemical potential. Competition between kinetic energy ($t$) and interaction energy ($U$) drives a quantum phase transition between a gapped **Mott insulator** at integer filling and a gapless **superfluid**. The phase boundary in the $(t/U, \mu/U)$ plane forms characteristic lobes, one for each integer occupation $n_0$.
 
 In this example we map out the first Mott lobe ($n_0 = 1$) using two approaches: an analytic mean-field approximation and finite-size exact diagonalization (ED) using a particle-number-conserved basis built with SymBasis.jl.
 

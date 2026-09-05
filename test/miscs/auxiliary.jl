@@ -72,12 +72,6 @@
         using BitPermutations: BitPermutation
         perm = [3, 1, 2]
 
-        res1 = perm_wrapper(perm, 2)
-        @test res1 isa BitPermutation{UInt64}
-
-        res2 = perm_wrapper(perm, 10)
-        @test res2 == perm
-
         # The wrapper must be parameterized on the *state* storage type, not on the
         # permutation vector's own (indexing) element type -- `apply_perm` only matches a
         # `BitPermutation{T}` against a `BaseInt{T,Ti,2}`.

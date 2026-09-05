@@ -346,6 +346,10 @@ function check_Nₛ(
     return prev_bool && _check_wc(state, p.wc, p.N)
 end
 
+# `check_Nₛ` restricts states purely by digit-count signature, so its sector can be
+# enumerated directly -- see `_enumerates_by_digit_count`.
+_enumerates_by_digit_count(::typeof(check_Nₛ)) = true
+
 """
     _check_Nₛ(
         state::SymBasis.DigitBase.BaseInt{T,Ti,B},
@@ -498,6 +502,10 @@ function check_flip(
     return prev_bool && _check_wc(state, p.wc, p.N)
 end
 
+# `check_flip` restricts states purely by digit-count signature, so its sector can be
+# enumerated directly -- see `_enumerates_by_digit_count`.
+_enumerates_by_digit_count(::typeof(check_flip)) = true
+
 """
     apply_flip(
         p::NamedTuple{is_flipped::Bool, sites::T_site, N0::TN, N1::TN, N::TN},
@@ -543,25 +551,29 @@ end
 
 # START -- candidate-state enumeration for sector-restricted checks
 """
+    _enumerates_by_digit_count(check) -> Bool
+
+Whether `check` restricts states purely by digit-count signature, so its sector can be
+enumerated directly via [`_sector_states_from_counts`](@ref) instead of scanned over the
+full `Bᴺ` range. This is a trait: it defaults to `false` and is declared `true` next to
+each `check_*` function that supports it (`check_Nₛ`, `check_flip`), so a future
+conserved-quantity check opts in at its own definition instead of a dispatch table having
+to be edited elsewhere.
+"""
+_enumerates_by_digit_count(::Function) = false
+
+"""
     _candidate_states(check, cycles, ::Type{BaseInt{T,Ti,B}}, N) where {T,Ti,B}
 
 Return a sorted `Vector` of all states that can pass `check` for at least one cycle in
-`cycles`, or `nothing` when the check does not admit direct enumeration. Used by
-`SymBasis.Bases.basis` to skip the full `B^N` scan: any state outside the returned
-superset fails `check` for every cycle and therefore never enters the basis, so replacing
-the full range by this set leaves the result unchanged.
+`cycles`, or `nothing` when the check does not admit direct enumeration (see
+[`_enumerates_by_digit_count`](@ref)). Used by `SymBasis.Bases.basis` to skip the full
+`B^N` scan: any state outside the returned superset fails `check` for every cycle and
+therefore never enters the basis, so replacing the full range by this set leaves the
+result unchanged.
 """
-_candidate_states(check, cycles, ::Type{BaseInt{T,Ti,B}}, N) where {T,Ti,B} = nothing
-
-function _candidate_states(
-    ::typeof(check_Nₛ), cycles, ::Type{BaseInt{T,Ti,B}}, N
-) where {T,Ti,B}
-    return _sector_states_from_counts(cycles, BaseInt{T,Ti,B}, Int(N))
-end
-
-function _candidate_states(
-    ::typeof(check_flip), cycles, ::Type{BaseInt{T,Ti,B}}, N
-) where {T,Ti,B}
+function _candidate_states(check, cycles, ::Type{BaseInt{T,Ti,B}}, N) where {T,Ti,B}
+    _enumerates_by_digit_count(check) || return nothing
     return _sector_states_from_counts(cycles, BaseInt{T,Ti,B}, Int(N))
 end
 

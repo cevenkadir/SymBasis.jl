@@ -233,20 +233,6 @@ function CombSymGroup(
     )
 end
 
-# Recursive traversal of the per-dimension function tuples of a CombSymGroup, so each
-# call site is resolved at compile time (a runtime index into a heterogeneous tuple would
-# be type-unstable in the hot loop).
-@inline _check_all(checks::Tuple{}, cycle::Tuple{}, state, ok::Bool) = ok
-@inline function _check_all(checks::Tuple, cycle::Tuple, state, ok::Bool)
-    ok || return false
-    return _check_all(
-        Base.tail(checks),
-        Base.tail(cycle),
-        state,
-        first(checks)(first(cycle), state, ok)
-    )
-end
-
 # Apply every dimension's element without computing any phase. Used by `representative`,
 # which discards the phase of all but the winning cycle, so evaluating it during the scan
 # is pure waste — for fermionic groups it was ~90% of the call.

@@ -273,10 +273,7 @@ function sym(
 
     # `N_up` and `N_down` are two weighted digit-count constraints, so every admissible
     # signature collapses into a single cycle checked in one pass over the digits.
-    collapsed = _weighted_count_cycle(
-        all_sigsₛ, (up_weights, down_weights), Val(B), ss.N
-    )
-    cyclesₛ = collapsed === nothing ? all_sigsₛ : [collapsed]
+    cyclesₛ = _counts_cycles(all_sigsₛ, (up_weights, down_weights), Val(B), ss.N)
 
     Nud_sym = SymGroup(
         dofo,

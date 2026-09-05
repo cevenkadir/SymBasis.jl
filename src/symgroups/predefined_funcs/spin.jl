@@ -253,10 +253,7 @@ function sym(
 
     # Digit `d` is the projection `d - s`, so fixing the total magnetization fixes `Σ d`:
     # one weighted digit-count constraint, hence a single cycle for all its signatures.
-    collapsed = _weighted_count_cycle(
-        all_spin_sumₛ, (collect(0:(B-1)),), Val(B), ss.N
-    )
-    cyclesₛ = collapsed === nothing ? all_spin_sumₛ : [collapsed]
+    cyclesₛ = _counts_cycles(all_spin_sumₛ, (collect(0:(B-1)),), Val(B), ss.N)
 
     Sz_sym = SymGroup(
         dofo,
@@ -473,10 +470,7 @@ function sym(
 
     # Collapse the zero-magnetization signatures into one weighted digit-count constraint,
     # leaving two cycles (unflipped and flipped) instead of two per signature.
-    collapsed = _weighted_count_cycle(
-        all_spin_sumₛ, (collect(0:(B-1)),), Val(B), ss.N
-    )
-    sumsₛ = collapsed === nothing ? all_spin_sumₛ : [collapsed]
+    sumsₛ = _counts_cycles(all_spin_sumₛ, (collect(0:(B-1)),), Val(B), ss.N)
 
     Z_sym = SymGroup(
         dofo,

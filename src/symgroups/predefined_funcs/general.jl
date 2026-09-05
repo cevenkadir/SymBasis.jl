@@ -300,6 +300,30 @@ function _weighted_count_cycle(
 end
 
 """
+    _counts_cycles(
+        cycles,
+        weight_lists::NTuple{K,<:AbstractVector{<:Integer}},
+        ::Val{B},
+        N::Integer
+    ) where {K,B}
+
+`cycles` collapsed into a single [`SymBasis.SymGroups.WeightedCounts`](@ref) cycle via
+[`_weighted_count_cycle`](@ref), or `cycles` itself when that collapse declines. Every `sym`
+method wrapping a digit-count sector (`TotalBosonicNumber`, `TotalMagnetization`,
+`SpinInversion`, `TotalSpinfulFermionicNumber`) needs this same fallback, so it lives here
+once instead of being retyped at each call site.
+"""
+function _counts_cycles(
+    cycles,
+    weight_lists::NTuple{K,<:AbstractVector{<:Integer}},
+    ::Val{B},
+    N::Integer
+) where {K,B}
+    collapsed = _weighted_count_cycle(cycles, weight_lists, Val(B), N)
+    return collapsed === nothing ? cycles : [collapsed]
+end
+
+"""
     check_Nₛ(
         p::NamedTuple{names,NT},
         state::SymBasis.DigitBase.BaseInt,

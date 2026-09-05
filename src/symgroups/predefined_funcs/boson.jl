@@ -67,10 +67,7 @@ function sym(
 
     # Digit `d` carries `d` bosons, so the sector is one weighted digit-count constraint and
     # all its signatures collapse into a single cycle.
-    collapsed = _weighted_count_cycle(
-        all_boson_sumₛ, (collect(0:(B-1)),), Val(B), ss.N
-    )
-    cyclesₛ = collapsed === nothing ? all_boson_sumₛ : [collapsed]
+    cyclesₛ = _counts_cycles(all_boson_sumₛ, (collect(0:(B-1)),), Val(B), ss.N)
 
     N_sym = SymGroup(
         dofo,

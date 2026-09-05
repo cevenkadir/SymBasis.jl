@@ -35,7 +35,11 @@ end
 
 function Base.:(:)(a::TB, s::TB, b::TB) where {T,Ti,B,TB<:BaseInt{T,Ti,B}}
     s.value <= 0 && throw(ArgumentError("step must be positive, got $(s.value)"))
-    a.value > b.value && return BaseIntStepRange(a, s, a)
+
+    # `first.value > last.value` is the canonical empty representation that `length`,
+    # `iterate`, and `getindex` already treat as zero elements, so an empty range needs no
+    # special case here beyond keeping `b` (rather than `a`) as `last`.
+    a.value > b.value && return BaseIntRange{T,Ti,B}(a, s, b)
 
     # `b` need not itself be reachable from `a` by whole steps (e.g. `0:2:7`); snap it down
     # to the last value that is, exactly as `Base` ranges do (`last(0:2:7) == 6`), so every

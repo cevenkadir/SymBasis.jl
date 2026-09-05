@@ -41,6 +41,12 @@
         r4 = bi"0"2:bi"10"2:bi"111"2
         @test r4.last == bi"110"2
         @test last(r4) == bi"110"2
+
+        # Descending 3-argument range (first > last) must build a valid, empty
+        # BaseIntRange instead of erroring.
+        r5 = bi"1"4:bi"1"4:bi"0"4
+        @test length(r5) == 0
+        @test collect(r5) == BaseInt{UInt64,Int64,4}[]
     end
 
     @testset "Base.length for BaseIntRange" begin

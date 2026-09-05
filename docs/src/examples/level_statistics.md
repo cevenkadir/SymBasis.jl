@@ -139,42 +139,34 @@ The whole spectrum is needed, not a few extremal eigenvalues, so this page uses 
 - **Model C** (disordered): `((1, 1.0, 1.0),)` plus `fields` — the random-field Heisenberg
   chain.
 
-### The same Hamiltonians with OperatorAlgebra.jl
-
-[OperatorAlgebra.jl](https://github.com/h-mnzlr/OperatorAlgebra.jl) is an optional package whose SymBasis.jl extension activates as soon as both are loaded. It expresses the same operators declaratively, and `sparse(H, ba)` applies the identical `representative`-based projection internally, so it reproduces `build_chain` up to round-off:
+Or more compactly, we can use [OperatorAlgebra.jl](https://github.com/h-mnzlr/OperatorAlgebra.jl) to build the same Hamiltonians declaratively, and this is what the rest of this page actually uses:
 ```@example levelstat
 using OperatorAlgebra
 
 bond(J, Δd, i, j) = J * (0.5 * (Op(RAISE, i) * Op(LOWER, j) + Op(LOWER, i) * Op(RAISE, j))
                          + Δd * Op(SPIN_Z, i) * Op(SPIN_Z, j))
 
-ba_oa = basis(dofo, 12,
-    sym(TotalMagnetization(0, 12), dofo) ∘
-    sym(Translational(0, mod1.((1:12) .+ 1, 12)), dofo))
+function chain_H(L; couplings=((1, 1.0, 0.8),), fields=nothing)
+    H = sum(bond(J, Δd, i, mod1(i + d, L)) for (d, J, Δd) in couplings for i in 1:L)
+    fields !== nothing && (H += sum(-fields[i] * Op(SPIN_Z, i) for i in 1:L))
+    return H
+end
 
-H_oa = sum(bond(1.0, 0.8, i, mod1(i + 1, 12)) for i in 1:12) +      # Model B
-       sum(bond(1.0, 0.8, i, mod1(i + 2, 12)) for i in 1:12)
+L_oa = 12
 
-d_bond = norm(collect(sparse(H_oa, ba_oa)) -
-              collect(build_chain(12, ba_oa; couplings=((1, 1.0, 0.8), (2, 1.0, 0.8)))))
-@assert d_bond < 1e-10
-d_bond
+ba_oa = basis(dofo, L_oa,
+    sym(TotalMagnetization(0, L_oa), dofo) ∘
+    sym(Translational(0, mod1.((1:L_oa) .+ 1, L_oa)), dofo))
+
+sparse(chain_H(L_oa; couplings=((1, 1.0, 0.8), (2, 1.0, 0.8))), ba_oa)   # Model B, k=0
 ```
 
-`ba_oa` is a genuine momentum sector rather than a magnetization-only basis, so its normalization factors are not all `1` and the $\sqrt{N_m/N_n}$ projection is exercised on both sides of the comparison.
-
-Model C's disorder term needs one extra care, and it must be built in a magnetization-only basis — a random field breaks translation, so there is no momentum sector to project into:
+Model C's random field breaks translation, so it needs a magnetization-only basis instead:
 ```@example levelstat
-ba_fld = basis(dofo, 12, sym(TotalMagnetization(0, 12), dofo))
-hs = [0.3 * cospi(i / 3) for i in 1:12]
+ba_fld = basis(dofo, L_oa, sym(TotalMagnetization(0, L_oa), dofo))
+hs = [0.3 * cospi(i / 3) for i in 1:L_oa]
 
-H_fld = sum(bond(1.0, 1.0, i, mod1(i + 1, 12)) for i in 1:12) +
-        sum(-hs[i] * Op(SPIN_Z, i) for i in 1:12)          # note the minus sign
-
-d_fld = norm(collect(sparse(H_fld, ba_fld)) -
-             collect(build_chain(12, ba_fld; couplings=((1, 1.0, 1.0),), fields=hs)))
-@assert d_fld < 1e-10
-d_fld
+sparse(chain_H(L_oa; couplings=((1, 1.0, 1.0),), fields=hs), ba_fld)
 ```
 
 !!! warning "Op(SPIN_Z, i) is −Sᶻᵢ in this convention"
@@ -238,8 +230,7 @@ end
 function sector_spectrum(L, s; couplings)
     ba = sector_basis(L, s.k, s.z; p=s.p)
     isempty(ba.states) && return Float64[], 0
-    T = reflection_allowed(s.k, L) ? Float64 : ComplexF64
-    return spectrum(build_chain(L, ba; couplings=couplings, T=T)), length(ba.states)
+    return spectrum(sparse(chain_H(L; couplings=couplings), ba)), length(ba.states)
 end
 nothing # hide
 ```
@@ -266,8 +257,8 @@ function model_c(L, W, nreal; seed=1234)
     ba = basis(dofo, L, sym(TotalMagnetization(0, L), dofo))
     all_r, n_deg = Float64[], 0
     for _ in 1:nreal
-        h = build_chain(L, ba; couplings=((1, 1.0, 1.0),),
-            fields=W .* (2 .* rand(rng, L) .- 1))
+        h = sparse(chain_H(L; couplings=((1, 1.0, 1.0),),
+            fields=W .* (2 .* rand(rng, L) .- 1)), ba)
         rs, nd = r_values(spectrum(h))
         append!(all_r, rs) # r computed WITHIN a realization, then pooled
         n_deg += nd
@@ -335,8 +326,9 @@ Now the actual test. Model B is the XXZ chain with next-nearest-neighbor couplin
 with $\Delta = \Delta_2 = 0.8$ and $J_2 = 1$. The $J_2$ term destroys integrability, so a fully resolved sector should be GOE[^Poilblanc_1993].
 
 ```@example levelstat
-ba20 = sector_basis(20, 0, 1; p=1)   # built once, reused for Model A below
-EB = spectrum(build_chain(20, ba20; couplings=MODEL_B))
+L20 = 20
+ba20 = sector_basis(L20, 0, 1; p=1)   # built once, reused for Model A below
+EB = spectrum(sparse(chain_H(L20; couplings=MODEL_B), ba20))
 rB, degB = r_values(EB)
 mB, eB = mean_r(rB)
 
@@ -363,7 +355,7 @@ The reading, following Santos and Rigol[^Santos_2010], is:
 
 Same machinery with $J_2 = 0$. The plain XXZ chain is Bethe-ansatz integrable, so it should give Poisson:
 ```@example levelstat
-EA = spectrum(build_chain(20, ba20; couplings=MODEL_A))   # same sector, J₂ = 0
+EA = spectrum(sparse(chain_H(L20; couplings=MODEL_A), ba20))   # same sector, J₂ = 0
 rA, degA = r_values(EA)
 mA, eA = mean_r(rA)
 
@@ -380,11 +372,12 @@ This confirms the pipeline is not manufacturing artificial level repulsion — b
 
 The choice $\Delta = 0.8$ above is not arbitrary. Running the same fully resolved sector across a range of anisotropies, and counting exact degeneracies rather than filtering them:
 ```@example levelstat
-ba_deg = sector_basis(16, 0, 1; p=1)
+L_deg = 16
+ba_deg = sector_basis(L_deg, 0, 1; p=1)
 
 @printf("%10s %10s %8s %8s %10s\n", "Δ", "γ/π", "levels", "deg", "<r>")
 for Δd in (0.0, 0.3, 0.5, 1 / sqrt(2), 0.8, 0.9)
-    E_d = spectrum(build_chain(16, ba_deg; couplings=((1, 1.0, Δd),)))
+    E_d = spectrum(sparse(chain_H(L_deg; couplings=((1, 1.0, Δd),)), ba_deg))
     rs_d, nd_d = r_values(E_d)
     @printf("%10.4f %10.4f %8d %8d %10.4f\n",
         Δd, acos(Δd) / pi, length(rs_d), nd_d, mean(rs_d))

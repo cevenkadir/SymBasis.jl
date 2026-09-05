@@ -122,12 +122,11 @@ for (n, sₙ) in enumerate(ba.states)
 
                 all_fac = sqrt(Nₘ / Nₙ) * rep_fac
 
+                # push only (m, n): the flip is self-inverse, so the outer loop already
+                # supplies the reverse (n, m) entry when it later visits state m itself;
+                # pushing both here would double-count every off-diagonal element
                 push!(I_vec, m)
                 push!(J_vec, n)
-                push!(V_vec, all_fac)
-
-                push!(I_vec, n)
-                push!(J_vec, m)
                 push!(V_vec, all_fac)
             end
         end

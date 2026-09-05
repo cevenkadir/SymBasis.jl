@@ -71,6 +71,24 @@ ba = half_filled_sector(8, 0)
 length(ba.states)
 ```
 
+Or more compactly, we can use [OperatorAlgebra.jl](https://github.com/h-mnzlr/OperatorAlgebra.jl) to construct the Hamiltonian: `fermion(...)` tags a site as anticommuting, and `sparse(H, ba)` threads the Jordan-Wigner string through automatically (same idea as the [PXP example](@ref "Quantum many-body scars in the PXP chain")):
+
+```@example tv_chain
+using OperatorAlgebra
+
+cdag(i) = fermion(Op(RAISE, i))
+c(i) = fermion(Op(LOWER, i))
+
+tv_H(N; t=1.0, V=0.0) = sum(
+    -t * (cdag(i) * c(mod1(i + 1, N)) + cdag(mod1(i + 1, N)) * c(i))
+    for i in 1:N
+) + sum(V * Op(OCC_PART, i) * Op(OCC_PART, mod1(i + 1, N)) for i in 1:N)
+
+sparse(tv_H(8; t=1.0, V=2.0), ba)
+```
+
+Tagging site `i` as fermionic is what makes the extension drag a $Z$-string across every lower-numbered site, matching the `cispi(...)` sign computed by hand above.
+
 ## Ground-state energy per site vs. the Bethe-Hulthén target
 
 ```@example tv_chain
@@ -97,7 +115,7 @@ V = 2t
 e0_per_site = Dict{Int,Float64}()
 for L in Ls
     bases = [half_filled_sector(L, K) for K in 0:(L-1)]
-    E0 = minimum(ground_energy(build_hamiltonian(L, ba; t=t, V=V)) for ba in bases)
+    E0 = minimum(ground_energy(sparse(tv_H(L; t=t, V=V), ba)) for ba in bases)
     e0_per_site[L] = E0 / L
 end
 ```

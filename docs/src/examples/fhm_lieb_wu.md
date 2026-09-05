@@ -98,6 +98,58 @@ ba = half_filled_sector(8, 0)
 length(ba.states)
 ```
 
+Or more compactly, we can use [OperatorAlgebra.jl](https://github.com/h-mnzlr/OperatorAlgebra.jl) to construct the Hamiltonian. Its `fermion(...)` tag assumes one mode per site by default, but a `SpinfulFermion` digit packs two (spin-down and spin-up), so real occupation parity is `[0, 1, 1, 0]`, not `[0, 1, 0, 1]`. Its `ExchangeStyle` trait covers that: a custom `Fermionic` site with its own `site_parity` fixes `normal_order`, `apply`, and `sparse` alike.
+
+```@example fhm_lieb_wu
+using OperatorAlgebra
+
+struct SpinfulFermionSite{Tid} <: OperatorAlgebra.AbstractSite{Tid}
+    site::Tid
+end
+OperatorAlgebra.exchange_style(::SpinfulFermionSite) = OperatorAlgebra.Fermionic()
+OperatorAlgebra.site_parity(::SpinfulFermionSite, dim::Int) = [isodd(length(dofo.ldof[d+1])) for d in 0:dim-1]
+sf(i) = SpinfulFermionSite(i)
+```
+
+`site_parity` reads occupation counts from `dofo.ldof` instead of `count_ones(d)`, which happens to agree for 2 flavors but breaks for 3, since digits are ordered by occupation count, not by bit pattern.
+
+These matrices act within a single site's Fock space, so they're used as plain `Op(mat, sf(i))`: wrapping them in `fermion(...)` would swap `SpinfulFermionSite` for the 2-level default and undo the fix above. We build them from `dofo.ldof` too, the same way `test/fhm.jl` does: inserting flavor `m` into `occ` gives the new digit, with a sign counting how many occupied projections below `m` it crosses (the same convention as `apply_flavor`'s `sign = (flavor == 1 && has(d, 0)) ? -1 : 1`, just read off the occupation lists instead of bit tricks):
+
+```@example fhm_lieb_wu
+ms_up, ms_down = 1 // 2, -1 // 2
+occ_of = Dict(dofo.ldof[d+1] => d for d in 0:(length(dofo)-1))
+
+function flavor_matrices(dofo, occ_of, m)
+    B = length(dofo)
+    cdag_mat = zeros(ComplexF64, B, B)
+    for d in 0:(B-1)
+        occ = dofo.ldof[d+1]
+        m in occ && continue                      # already occupied: c†_m annihilates the state
+        sign = isodd(count(<(m), occ)) ? -1 : 1    # anticommute past every occupied mode below m
+        cdag_mat[occ_of[sort(vcat(occ, m))]+1, d+1] = sign
+    end
+    return cdag_mat, collect(cdag_mat')
+end
+
+cdag_up_mat, c_up_mat = flavor_matrices(dofo, occ_of, ms_up)
+cdag_down_mat, c_down_mat = flavor_matrices(dofo, occ_of, ms_down)
+n_up_mat = Diagonal(ComplexF64[count(==(ms_up), occ) for occ in dofo.ldof]) |> Matrix
+n_down_mat = Diagonal(ComplexF64[count(==(ms_down), occ) for occ in dofo.ldof]) |> Matrix
+
+cdag_up(i) = Op(cdag_up_mat, sf(i))
+c_up(i) = Op(c_up_mat, sf(i))
+cdag_down(i) = Op(cdag_down_mat, sf(i))
+c_down(i) = Op(c_down_mat, sf(i))
+
+hubbard_H(N; t=1.0, U=0.0) = sum(
+    -t * (cdag_up(i) * c_up(mod1(i + 1, N)) + cdag_up(mod1(i + 1, N)) * c_up(i) +
+          cdag_down(i) * c_down(mod1(i + 1, N)) + cdag_down(mod1(i + 1, N)) * c_down(i))
+    for i in 1:N
+) + sum(U * Op(n_up_mat, sf(i)) * Op(n_down_mat, sf(i)) for i in 1:N)
+
+sparse(hubbard_H(8; t=1.0, U=4.0), ba)
+```
+
 ## Ground-state energy per site vs. the Lieb-Wu integral
 
 ```@example fhm_lieb_wu

@@ -339,6 +339,30 @@ function Base.show(io::IO, ::MIME"text/plain", g::CombSymGroup)
     show(io, g)
 end
 
+# Per-dimension data of a `SymGroup`/`CombSymGroup`, normalized to the tuple-per-dimension
+# shape `∘` composes: a `SymGroup`'s single cycle/check/apply/phase becomes a 1-tuple, so
+# `_compose` below can concatenate either operand identically instead of each `∘` method
+# hand-flattening its own combination of plain values and tuples.
+_normalize(sg::SymGroup) =
+    (map(c -> (c,), sg.cycles), (sg.check,), (sg.apply,), (sg.phase,), sg.factors)
+_normalize(csg::CombSymGroup) = (csg.cycles, csg.check, csg.apply, csg.phase, csg.factors)
+
+# Shared composition core for all four `∘` methods below: concatenate the normalized
+# per-dimension tuples and take the outer product of cycles and factors.
+function _compose(a::Union{SymGroup,CombSymGroup}, b::Union{SymGroup,CombSymGroup}, dofo, N)
+    cyclesₐ, checkₐ, applyₐ, phaseₐ, factorsₐ = _normalize(a)
+    cyclesᵦ, checkᵦ, applyᵦ, phaseᵦ, factorsᵦ = _normalize(b)
+    return CombSymGroup(
+        dofo,
+        map(x -> (x[1]..., x[2]...), Base.product(cyclesₐ, cyclesᵦ)),
+        (checkₐ..., checkᵦ...),
+        (applyₐ..., applyᵦ...),
+        (phaseₐ..., phaseᵦ...),
+        map(x -> *(x...), Base.product(factorsₐ, factorsᵦ)),
+        N
+    )
+end
+
 """
     ∘(
         sg1::SymGroup{B,T_s,T,Ti,<:T_f},
@@ -364,15 +388,7 @@ function Base.:(∘)(
 ) where {B,T_s,T,Ti,T_f<:Number}
     @assert sg1.dofo == sg2.dofo
     @assert sg1.N == sg2.N
-    return CombSymGroup(
-        sg1.dofo,
-        collect(Base.product(sg1.cycles, sg2.cycles)),
-        (sg1.check, sg2.check),
-        (sg1.apply, sg2.apply),
-        (sg1.phase, sg2.phase),
-        map(x -> *(x...), Base.product(sg1.factors, sg2.factors)),
-        sg1.N
-    )
+    return _compose(sg1, sg2, sg1.dofo, sg1.N)
 end
 
 """
@@ -399,15 +415,7 @@ function Base.:(∘)(
 ) where {B,T_s,T,Ti,T_f<:Number}
     @assert csg.dofo == sg.dofo
     @assert csg.N == sg.N
-    return CombSymGroup(
-        csg.dofo,
-        map(x -> (x[1]..., x[2]), Base.product(csg.cycles, sg.cycles)),
-        (csg.check..., sg.check),
-        (csg.apply..., sg.apply),
-        (csg.phase..., sg.phase),
-        map(x -> *(x...), Base.product(csg.factors, sg.factors)),
-        csg.N
-    )
+    return _compose(csg, sg, csg.dofo, csg.N)
 end
 
 """
@@ -434,15 +442,7 @@ function Base.:(∘)(
 ) where {B,T_s,T,Ti,T_f<:Number}
     @assert csg.dofo == sg.dofo
     @assert csg.N == sg.N
-    return CombSymGroup(
-        csg.dofo,
-        map(x -> (x[1], x[2]...), Base.product(sg.cycles, csg.cycles)),
-        (sg.check, csg.check...),
-        (sg.apply, csg.apply...),
-        (sg.phase, csg.phase...),
-        map(x -> *(x...), Base.product(sg.factors, csg.factors)),
-        csg.N
-    )
+    return _compose(sg, csg, csg.dofo, csg.N)
 end
 
 """
@@ -470,13 +470,5 @@ function Base.:(∘)(
 ) where {B,T_s,T,Ti,T_f<:Number}
     @assert csg1.dofo == csg2.dofo
     @assert csg1.N == csg2.N
-    return CombSymGroup(
-        csg1.dofo,
-        map(x -> (x[1]..., x[2]...), Base.product(csg1.cycles, csg2.cycles)),
-        (csg1.check..., csg2.check...),
-        (csg1.apply..., csg2.apply...),
-        (csg1.phase..., csg2.phase...),
-        map(x -> *(x...), Base.product(csg1.factors, csg2.factors)),
-        csg1.N
-    )
+    return _compose(csg1, csg2, csg1.dofo, csg1.N)
 end

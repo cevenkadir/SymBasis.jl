@@ -919,7 +919,7 @@ function representative(
     state::BaseInt{T,Ti,B}, basis::Basis{BaseInt{T,Ti,B},T_n}
 ) where {T,Ti,B,T_n}
     if basis.sg isa Nothing
-        return state
+        return state, one(T_n)
     else
         return representative(state, basis.sg)
     end

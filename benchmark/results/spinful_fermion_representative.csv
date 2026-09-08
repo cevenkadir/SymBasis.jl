@@ -1,2 +1,2 @@
 N,config,nsamples,symbasis_mean_seconds_per_call,symbasis_std_seconds_per_call,xdiag_mean_seconds_per_call,xdiag_std_seconds_per_call
-12,U1+T(k=0)+P(p=1),10000,1.41532178e-6,6.624877694602705e-9,NA,NA
+12,U1+T(k=0)+P(p=1),10000,1.41700643e-6,2.981334193518809e-9,NA,NA

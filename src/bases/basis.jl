@@ -673,6 +673,12 @@ function basis(
     F₀ = zero(Complex{norm_type})
     eps_norm_type = eps(norm_type)
 
+    # An empty constituent sector (e.g. an unreachable total magnetization) leaves the
+    # whole cycle product empty. There are then no basis states, and the enumeration
+    # below would index into a zero-sized dimension. This mirrors the single-`SymGroup`
+    # path, where an empty candidate set already yields an empty basis.
+    isempty(csg.cycles) && return Basis(BaseInt{T,Ti,B}[], norm_type[], csg)
+
     # Per-dimension distinct symmetry elements, recovered once from the cycle product.
     dim_elems = _dim_elements(csg.cycles)
 

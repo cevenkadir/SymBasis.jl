@@ -49,18 +49,19 @@ end
 """
     Base.copy(b::SymBasis.DigitBase.BaseInt{T,Ti,B}) where {T,Ti,B}
 
-Create a copy of the [`SymBasis.DigitBase.BaseInt`](@ref) instance `b`.
+Return a copy of the [`SymBasis.DigitBase.BaseInt`](@ref) instance `b`.
+
+[`SymBasis.DigitBase.BaseInt`](@ref) is immutable, so the copy is `b` itself.
 
 # Arguments
 - `b::`[`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: The
     [`SymBasis.DigitBase.BaseInt`](@ref) instance to copy.
 
 # Returns
-- [`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: A new [`SymBasis.DigitBase.BaseInt`](@ref)
-    instance with the same value as `b`.
+- [`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: The instance `b`.
 """
 function Base.copy(b::BaseInt{T,Ti,B}) where {T,Ti,B}
-    return BaseInt{T,Ti,B}(b.value |> copy)
+    return b
 end
 
 """
@@ -244,7 +245,7 @@ Flip the digits at the specified positions in the base-`B` representation of the
     instance with the specified digits flipped.
 """
 function flip(b::BaseInt{T,Ti,B}, pos::AbstractVector{Ti}) where {T,Ti,B}
-    new_b = b |> copy
+    new_b = b
 
     for posᵢ in pos
         new_b = flip(new_b, posᵢ)
@@ -351,7 +352,7 @@ integer `b`.
     instance with the specified digits incremented.
 """
 function inc(b::BaseInt{T,Ti,B}, pos::AbstractVector{Ti}) where {T,Ti,B}
-    new_b = b |> copy
+    new_b = b
 
     for posᵢ in pos
         new_b = inc(new_b, posᵢ)
@@ -423,7 +424,7 @@ integer `b`.
     instance with the specified digits decremented.
 """
 function dec(b::BaseInt{T,Ti,B}, pos::AbstractVector{Ti}) where {T,Ti,B}
-    new_b = b |> copy
+    new_b = b
 
     for posᵢ in pos
         new_b = dec(new_b, posᵢ)
@@ -598,7 +599,7 @@ function permute(
     pos::AbstractVector{Ti},
     perm::AbstractVector{<:Integer}
 ) where {T,Ti,B}
-    new_b = b |> copy
+    new_b = b
 
     for posᵢ in pos
         new_b = permute(new_b, posᵢ, perm)
@@ -833,7 +834,7 @@ function Base.write(
     pos::AbstractVector{Ti},
     d::AbstractVector{<:Integer}
 ) where {T,Ti,B}
-    new_b = b |> copy
+    new_b = b
 
     for i in eachindex(pos)
         new_b = write(new_b, pos[i], d[i])

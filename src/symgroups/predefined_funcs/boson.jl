@@ -27,7 +27,7 @@ struct TotalBosonicNumber{T_b<:Integer,T_N<:Integer} <: AbstractSymSpec
     function TotalBosonicNumber(
         n_particles::T_b, N::T_N
     ) where {T_b,T_N}
-        @assert n_particles >= 0 "Number of particles must be non-negative."
+        n_particles >= 0 || throw(ArgumentError("Number of particles must be non-negative, got $n_particles"))
 
         return new{T_b,T_N}(n_particles, N)
     end
@@ -61,7 +61,8 @@ function sym(
     ss::TotalBosonicNumber{T_b,T_N},
     dofo::DoFObject{B,T_b,T,Ti}
 ) where {B,T_b,T,Ti,T_N}
-    @assert dofo.type == :Boson
+    dofo.type == :Boson ||
+        throw(ArgumentError("expected a Boson DoF-object, got $(dofo.type)"))
 
     all_boson_sumₛ = combos_boson_sum(dofo.ldof[end], ss.n_particles, ss.N)
 

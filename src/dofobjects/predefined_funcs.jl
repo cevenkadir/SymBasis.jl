@@ -32,8 +32,9 @@ struct Spin{Ts<:Rational,T,Ti} <: AbstractDoFSpec{T,Ti}
     s::Ts
 
     function Spin(s::Ts; T::Type=UInt, Ti::Type=Int) where {Ts}
-        @assert numerator(s) > 0
-        @assert denominator(s) == 1 || denominator(s) == 2
+        numerator(s) > 0 || throw(ArgumentError("Spin s must be positive, got $s"))
+        (denominator(s) == 1 || denominator(s) == 2) ||
+            throw(ArgumentError("Spin s must be an integer or half-integer, got $s"))
 
         return new{Ts,T,Ti}(s)
     end
@@ -84,7 +85,7 @@ struct Boson{Tb<:Unsigned,T,Ti} <: AbstractDoFSpec{T,Ti}
     max_occupancy::Tb
 
     function Boson(max_occupancy::Tb; T::Type=UInt, Ti::Type=Int) where {Tb}
-        @assert max_occupancy > 0
+        max_occupancy > 0 || throw(ArgumentError("max_occupancy must be positive, got $max_occupancy"))
 
         return new{Tb,T,Ti}(max_occupancy)
     end
@@ -209,8 +210,9 @@ struct SpinfulFermion{Ts<:Rational,Tsf<:Unsigned,T,Ti} <: AbstractDoFSpec{T,Ti}
     max_occupancy::Tsf
 
     function SpinfulFermion(s::Ts, max_occupancy::Tsf; T::Type=UInt, Ti::Type=Int) where {Ts,Tsf}
-        @assert numerator(s) > 0
-        @assert denominator(s) == 1 || denominator(s) == 2
+        numerator(s) > 0 || throw(ArgumentError("Spin s must be positive, got $s"))
+        (denominator(s) == 1 || denominator(s) == 2) ||
+            throw(ArgumentError("Spin s must be an integer or half-integer, got $s"))
 
         return new{Ts,Tsf,T,Ti}(s, max_occupancy)
     end

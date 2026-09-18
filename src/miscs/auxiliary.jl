@@ -185,7 +185,8 @@ function combos_dof_sum_weighted(
     n::T_n
 ) where {K,T_n<:Int}
     n_ldof = length(weight_lists[1])
-    @assert all(==(n_ldof), length.(weight_lists))
+    all(==(n_ldof), length.(weight_lists)) ||
+        throw(ArgumentError("all weight lists must have the same length"))
 
     names = NTuple{n_ldof,Symbol}(Symbol("N$j") for j in 0:(n_ldof-1))
     NT = NamedTuple{names,NTuple{n_ldof,T_n}}

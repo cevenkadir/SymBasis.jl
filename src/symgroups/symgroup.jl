@@ -68,7 +68,8 @@ struct SymGroup{
         factors::AbstractVector{T_f},
         N::Integer
     ) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
-        @assert length(cycles) == length(factors)
+        length(cycles) == length(factors) ||
+            throw(ArgumentError("cycles and factors must have the same length, got $(length(cycles)) and $(length(factors))"))
         return new{
             B,T_s,T,Ti,T_f,
             typeof(cycles),typeof(check),typeof(apply),typeof(phase),typeof(factors)
@@ -174,10 +175,14 @@ struct CombSymGroup{
         factors::AbstractArray{T_f},
         N::Integer
     ) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
-        @assert size(cycles) == size(factors)
-        @assert ndims(cycles) == length(check)
-        @assert ndims(cycles) == length(apply)
-        @assert ndims(cycles) == length(phase)
+        size(cycles) == size(factors) ||
+            throw(ArgumentError("cycles and factors must have the same size, got $(size(cycles)) and $(size(factors))"))
+        ndims(cycles) == length(check) ||
+            throw(ArgumentError("length of check ($(length(check))) must equal ndims(cycles) ($(ndims(cycles)))"))
+        ndims(cycles) == length(apply) ||
+            throw(ArgumentError("length of apply ($(length(apply))) must equal ndims(cycles) ($(ndims(cycles)))"))
+        ndims(cycles) == length(phase) ||
+            throw(ArgumentError("length of phase ($(length(phase))) must equal ndims(cycles) ($(ndims(cycles)))"))
         return new{
             B,T_s,T,Ti,T_f,
             typeof(cycles),typeof(check),typeof(apply),typeof(phase),typeof(factors)
@@ -386,8 +391,8 @@ function Base.:(∘)(
     sg1::SymGroup{B,T_s,T,Ti,<:T_f},
     sg2::SymGroup{B,T_s,T,Ti,<:T_f}
 ) where {B,T_s,T,Ti,T_f<:Number}
-    @assert sg1.dofo == sg2.dofo
-    @assert sg1.N == sg2.N
+    sg1.dofo == sg2.dofo || throw(ArgumentError("cannot compose symmetry groups acting on different DoF-objects"))
+    sg1.N == sg2.N || throw(ArgumentError("cannot compose symmetry groups with different N: $(sg1.N) vs $(sg2.N)"))
     return _compose(sg1, sg2, sg1.dofo, sg1.N)
 end
 
@@ -413,8 +418,8 @@ function Base.:(∘)(
     csg::CombSymGroup{B,T_s,T,Ti,<:T_f},
     sg::SymGroup{B,T_s,T,Ti,<:T_f}
 ) where {B,T_s,T,Ti,T_f<:Number}
-    @assert csg.dofo == sg.dofo
-    @assert csg.N == sg.N
+    csg.dofo == sg.dofo || throw(ArgumentError("cannot compose symmetry groups acting on different DoF-objects"))
+    csg.N == sg.N || throw(ArgumentError("cannot compose symmetry groups with different N: $(csg.N) vs $(sg.N)"))
     return _compose(csg, sg, csg.dofo, csg.N)
 end
 
@@ -440,8 +445,8 @@ function Base.:(∘)(
     sg::SymGroup{B,T_s,T,Ti,<:T_f},
     csg::CombSymGroup{B,T_s,T,Ti,<:T_f}
 ) where {B,T_s,T,Ti,T_f<:Number}
-    @assert csg.dofo == sg.dofo
-    @assert csg.N == sg.N
+    csg.dofo == sg.dofo || throw(ArgumentError("cannot compose symmetry groups acting on different DoF-objects"))
+    csg.N == sg.N || throw(ArgumentError("cannot compose symmetry groups with different N: $(csg.N) vs $(sg.N)"))
     return _compose(sg, csg, csg.dofo, csg.N)
 end
 
@@ -468,7 +473,7 @@ function Base.:(∘)(
     csg1::CombSymGroup{B,T_s,T,Ti,<:T_f},
     csg2::CombSymGroup{B,T_s,T,Ti,<:T_f}
 ) where {B,T_s,T,Ti,T_f<:Number}
-    @assert csg1.dofo == csg2.dofo
-    @assert csg1.N == csg2.N
+    csg1.dofo == csg2.dofo || throw(ArgumentError("cannot compose symmetry groups acting on different DoF-objects"))
+    csg1.N == csg2.N || throw(ArgumentError("cannot compose symmetry groups with different N: $(csg1.N) vs $(csg2.N)"))
     return _compose(csg1, csg2, csg1.dofo, csg1.N)
 end

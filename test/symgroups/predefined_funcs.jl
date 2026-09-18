@@ -307,8 +307,8 @@
         @test ss7.qₛ == reshape([1 // 4], 1, 1)
         @test ss7.weights == ones(Rational{Int}, 4, 1)
 
-        # AssertionError: 0-dimensional qₛ (RANK=0)
-        @test_throws AssertionError SpinMultipole(fill(1 // 2), ones(Rational{Int}, 4, 1), 4)
+        # ArgumentError: 0-dimensional qₛ (RANK=0)
+        @test_throws ArgumentError SpinMultipole(fill(1 // 2), ones(Rational{Int}, 4, 1), 4)
         # ArgumentError: non-square qₛ (size (2,3) → D=2 but second dim is 3)
         @test_throws ArgumentError SpinMultipole(
             Rational{Int}[1 0 0; 0 1 0], ones(Rational{Int}, 4, 2), 4
@@ -317,8 +317,8 @@
         @test_throws ArgumentError SpinMultipole(
             Rational{Int}[1 2; 3 1], ones(Rational{Int}, 4, 2), 4
         )
-        # AssertionError: weights rows ≠ N
-        @test_throws AssertionError SpinMultipole([1 // 2], ones(Rational{Int}, 3, 1), 4)
+        # ArgumentError: weights rows ≠ N
+        @test_throws ArgumentError SpinMultipole([1 // 2], ones(Rational{Int}, 3, 1), 4)
     end
 
     @testset "sym of SpinMultipole" begin
@@ -357,7 +357,7 @@
 
         # Non-Spin DoFObject should throw
         dofo4 = DoFObject(:Emoji, (:🥳, :🙈))
-        @test_throws AssertionError sym(ss1, dofo4)
+        @test_throws ArgumentError sym(ss1, dofo4)
     end
 
     @testset "SpinInversion constructor" begin
@@ -370,8 +370,8 @@
         @test p2.N == 6
 
         # Invalid parity quantum number should throw
-        @test_throws AssertionError SpinInversion(0, 4)
-        @test_throws AssertionError SpinInversion(2, 4)
+        @test_throws ArgumentError SpinInversion(0, 4)
+        @test_throws ArgumentError SpinInversion(2, 4)
     end
 
     @testset "sym of SpinInversion" begin
@@ -425,8 +425,8 @@
         @test t1.k == 1
         @test t1.perm == [2, 3, 1]
 
-        @test_throws AssertionError Translational(0, [1, 2, 3])
-        @test_throws AssertionError Translational(0, [2, 2, 1])
+        @test_throws ArgumentError Translational(0, [1, 2, 3])
+        @test_throws ArgumentError Translational(0, [2, 2, 1])
     end
 
     @testset "sym of Translational" begin
@@ -547,9 +547,9 @@
         @test p1.p == -1
         @test p1.perm == [4, 3, 2, 1]
 
-        @test_throws AssertionError SpatialReflection(0, [4, 3, 2, 1])
-        @test_throws AssertionError SpatialReflection(1, [1, 2, 3, 4])
-        @test_throws AssertionError SpatialReflection(1, [2, 2, 3, 1])
+        @test_throws ArgumentError SpatialReflection(0, [4, 3, 2, 1])
+        @test_throws ArgumentError SpatialReflection(1, [1, 2, 3, 4])
+        @test_throws ArgumentError SpatialReflection(1, [2, 2, 3, 1])
     end
 
     @testset "sym of SpatialReflection" begin
@@ -652,9 +652,9 @@
         @test r2.perm == [3, 6, 9, 2, 5, 8, 1, 4, 7]
 
         # Identity permutation not allowed
-        @test_throws AssertionError Rotational(1, 1:4 |> collect)
+        @test_throws ArgumentError Rotational(1, 1:4 |> collect)
         # Duplicate elements not allowed
-        @test_throws AssertionError Rotational(1, 1:9 |> collect)
+        @test_throws ArgumentError Rotational(1, 1:9 |> collect)
     end
 
     @testset "sym of Rotational" begin
@@ -748,9 +748,9 @@
         @test pnc4.n_particles == 2
         @test pnc4.N == 3
 
-        # Invalid: negative particles should throw AssertionError
-        @test_throws AssertionError TotalBosonicNumber(-1, 4)
-        @test_throws AssertionError TotalBosonicNumber(-10, 5)
+        # Invalid: negative particles should throw ArgumentError
+        @test_throws ArgumentError TotalBosonicNumber(-1, 4)
+        @test_throws ArgumentError TotalBosonicNumber(-10, 5)
     end
 
     @testset "sym of TotalBosonicNumber" begin
@@ -821,8 +821,8 @@
         @test pnf3.n_particles == 2
         @test pnf3.N == 6
 
-        @test_throws AssertionError TotalSpinlessFermionicNumber(-1, 4)
-        @test_throws AssertionError TotalSpinlessFermionicNumber(5, 4)
+        @test_throws ArgumentError TotalSpinlessFermionicNumber(-1, 4)
+        @test_throws ArgumentError TotalSpinlessFermionicNumber(5, 4)
     end
 
     @testset "sym of TotalSpinlessFermionicNumber" begin
@@ -850,7 +850,7 @@
         @test all(isone, N_sym2.factors)
 
         # The spinless fermion number symmetry is only valid on :SpinlessFermion dofo.
-        @test_throws AssertionError sym(TotalSpinlessFermionicNumber(1, 2), dof_object(Boson(1)))
+        @test_throws ArgumentError sym(TotalSpinlessFermionicNumber(1, 2), dof_object(Boson(1)))
     end
 
     @testset "TotalSpinfulFermionicNumber constructor" begin
@@ -869,9 +869,9 @@
         @test pnf3.n_down == 0
         @test pnf3.N == 3
 
-        @test_throws AssertionError TotalSpinfulFermionicNumber(-1, 0, 2)
-        @test_throws AssertionError TotalSpinfulFermionicNumber(0, -1, 2)
-        @test_throws AssertionError TotalSpinfulFermionicNumber(2, 2, 3)
+        @test_throws ArgumentError TotalSpinfulFermionicNumber(-1, 0, 2)
+        @test_throws ArgumentError TotalSpinfulFermionicNumber(0, -1, 2)
+        @test_throws ArgumentError TotalSpinfulFermionicNumber(2, 2, 3)
     end
 
     @testset "sym of TotalSpinfulFermionicNumber" begin
@@ -908,11 +908,11 @@
         @test all(isone, N_sym2.factors)
 
         # Only valid on a :SpinfulFermion dofo.
-        @test_throws AssertionError sym(TotalSpinfulFermionicNumber(1, 1, 2), dof_object(SpinlessFermion()))
+        @test_throws ArgumentError sym(TotalSpinfulFermionicNumber(1, 1, 2), dof_object(SpinlessFermion()))
 
         # Only valid on a spin-1/2 SpinfulFermion (exactly 2 distinct projections).
         dofo_spin1 = dof_object(SpinfulFermion(1 // 1, 2))
-        @test_throws AssertionError sym(TotalSpinfulFermionicNumber(1, 1, 2), dofo_spin1)
+        @test_throws ArgumentError sym(TotalSpinfulFermionicNumber(1, 1, 2), dofo_spin1)
     end
 
     @testset "FermionicSpinInversion constructor" begin
@@ -925,8 +925,8 @@
         @test z2.N == 6
 
         # Invalid parity quantum number should throw
-        @test_throws AssertionError FermionicSpinInversion(0, 4)
-        @test_throws AssertionError FermionicSpinInversion(2, 4)
+        @test_throws ArgumentError FermionicSpinInversion(0, 4)
+        @test_throws ArgumentError FermionicSpinInversion(2, 4)
     end
 
     @testset "sym of FermionicSpinInversion" begin
@@ -957,7 +957,7 @@
         @test Z_sym1.phase(cyc, state) == -1
 
         # Only valid on a :SpinfulFermion dofo.
-        @test_throws AssertionError sym(FermionicSpinInversion(1, 2), dof_object(Boson(1)))
+        @test_throws ArgumentError sym(FermionicSpinInversion(1, 2), dof_object(Boson(1)))
     end
 
     @testset "sector-state enumeration" begin

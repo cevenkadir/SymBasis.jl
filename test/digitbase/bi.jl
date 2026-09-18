@@ -13,6 +13,17 @@
         @test typeof(b3) == BaseInt{UInt16,Int8,10}
     end
 
+    @testset "Argument validation for BaseInt" begin
+        @test_throws ArgumentError BaseInt(5; base=1)
+        @test_throws ArgumentError BaseInt(5; base=0)
+        # digit out of range for the base is caught at macro expansion
+        @test_throws ArgumentError macroexpand(@__MODULE__, :(@bi_str "123" 3))
+        # perm out of range / wrong length
+        b = BaseInt(UInt(10); base=2, Ti=Int)
+        @test_throws ArgumentError permute(b, [1, 2, 5, 3])
+        @test_throws ArgumentError permute(b, [0, 1, 2, 3])
+    end
+
     @testset "Macro bi_str for BaseInt" begin
         b = bi"101"2
         @test b.value == 5

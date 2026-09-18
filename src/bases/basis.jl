@@ -58,7 +58,8 @@ struct Basis{
         norms::AbstractVector{T_n},
         sg::Union{SymGroup,CombSymGroup,Nothing}=nothing
     ) where {T,T_n<:Number}
-        @assert length(states) == length(norms) "Length of states and norms must be equal"
+        length(states) == length(norms) ||
+            throw(ArgumentError("Length of states and norms must be equal, got $(length(states)) and $(length(norms))"))
         return new{T,T_n,typeof(states),typeof(norms),typeof(sg)}(
             states, norms, sg, issorted(states)
         )

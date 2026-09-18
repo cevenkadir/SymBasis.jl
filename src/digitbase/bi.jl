@@ -35,7 +35,7 @@ struct BaseInt{T<:Integer,Ti<:Integer,B}
     value::T
 
     function BaseInt(value::T; base::Integer=2, Ti=Int) where T<:Integer
-        @assert base >= 2 "Base must be at least 2, got $base"
+        base >= 2 || throw(ArgumentError("Base must be at least 2, got $base"))
         return new{T,Ti,base}(value)
     end
 
@@ -79,8 +79,8 @@ number in the specified base `B`.
 """
 macro bi_str(str::String, base::Integer)
     digit_values = [parse(Int, string(c)) for c in str]
-    @assert all(x -> 0 <= x < base, digit_values) """entered numbers do not
-    follow given base"""
+    all(x -> 0 <= x < base, digit_values) ||
+        throw(ArgumentError("entered digits $digit_values do not follow given base $base"))
     return BaseInt(evalpoly(base, reverse(digit_values)) |> UInt, base=base)
 end
 
@@ -474,7 +474,8 @@ function permute(b::BaseInt{T,Ti,B}, perm::AbstractVector{Ti}) where {T,Ti,B}
     B > 1 || throw(ArgumentError("Base must be ≥ 2"))
 
     n = length(perm)
-    @assert all(p -> 1 <= p <= n, perm) "perm must index into 1:length(perm)"
+    all(p -> 1 <= p <= n, perm) ||
+        throw(ArgumentError("perm must index into 1:length(perm)"))
 
     BB = T(B)
 

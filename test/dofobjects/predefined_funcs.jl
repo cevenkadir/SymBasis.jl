@@ -68,6 +68,14 @@
         @test typeof(dofo2) == DoFObject{2,Int64,UInt32,Int32}
     end
 
+    @testset "Argument validation for DoF specs" begin
+        @test_throws ArgumentError Spin(0 // 1)
+        @test_throws ArgumentError Spin(1 // 3)
+        @test_throws ArgumentError Boson(0)
+        @test_throws ArgumentError SpinfulFermion(0 // 1, 1)
+        @test_throws ArgumentError SpinfulFermion(1 // 3, 1)
+    end
+
     @testset "SpinfulFermion construction (UInt auto-sizing)" begin
         # max_occupancy=3 ≤ 255 → UInt8
         sf1 = SpinfulFermion(1 // 2, 3)

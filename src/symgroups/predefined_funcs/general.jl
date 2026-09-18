@@ -890,10 +890,10 @@ struct Translational{T_k<:Integer,Ti} <: AbstractSymSpec
 
     function Translational(k::T_k, perm::AbstractVector{Ti}) where {T_k,Ti}
         N = length(perm)
-        @assert N == length(unique(perm))
+        N == length(unique(perm)) || throw(ArgumentError("perm must be a permutation (no repeated entries), got $perm"))
 
         Id_vec = 1:N .|> Ti
-        @assert perm != Id_vec
+        perm != Id_vec || throw(ArgumentError("perm must not be the identity permutation"))
 
         return new{T_k,Ti}(k, perm)
     end
@@ -931,7 +931,7 @@ function sym(
             break
         end
     end
-    @assert R <= N
+    R <= N || throw(ArgumentError("order of perm ($R) exceeds N ($N)"))
 
     rₛ = 0:(R-1)
 
@@ -981,12 +981,12 @@ struct SpatialReflection{T_p<:Integer,Ti} <: AbstractSymSpec
 
     function SpatialReflection(p::T_p, perm::AbstractVector{Ti}) where {T_p,Ti}
         N = length(perm)
-        @assert N == length(unique(perm))
+        N == length(unique(perm)) || throw(ArgumentError("perm must be a permutation (no repeated entries), got $perm"))
 
-        @assert p == T_p(-1) || p == T_p(1)
+        (p == T_p(-1) || p == T_p(1)) || throw(ArgumentError("p must be -1 or 1, got $p"))
 
         Id_vec = 1:N .|> Ti
-        @assert perm != Id_vec
+        perm != Id_vec || throw(ArgumentError("perm must not be the identity permutation"))
 
         return new{T_p,Ti}(p, perm)
     end
@@ -1024,7 +1024,7 @@ function sym(
             break
         end
     end
-    @assert R == 2
+    R == 2 || throw(ArgumentError("perm must be an involution (order 2), got order $R"))
 
     rₛ = 0:(R-1)
 
@@ -1071,10 +1071,10 @@ struct Rotational{T_r<:Integer,Ti} <: AbstractSymSpec
 
     function Rotational(r::T_r, perm::AbstractVector{Ti}) where {T_r,Ti}
         N = length(perm)
-        @assert N == length(unique(perm))
+        N == length(unique(perm)) || throw(ArgumentError("perm must be a permutation (no repeated entries), got $perm"))
 
         Id_vec = 1:N .|> Ti
-        @assert perm != Id_vec
+        perm != Id_vec || throw(ArgumentError("perm must not be the identity permutation"))
 
         return new{T_r,Ti}(r, perm)
     end

@@ -15,7 +15,7 @@
         @test sg1.factors == factors
         @test sg1.N == N
 
-        @test_throws AssertionError SymGroup(
+        @test_throws ArgumentError SymGroup(
             dofo, cycle, check_perm, apply_perm, phase_unity, factors[1:end-1], N
         )
 
@@ -55,19 +55,19 @@
         @test csg1.factors == factors
         @test csg1.N == N
 
-        @test_throws AssertionError CombSymGroup(
+        @test_throws ArgumentError CombSymGroup(
             dofo, cycle, checks, applies, phases, factors[1:end-1, :], N
         )
-        @test_throws AssertionError CombSymGroup(
+        @test_throws ArgumentError CombSymGroup(
             dofo, cycle, checks, applies, phases, factors[:, 1:end-1], N
         )
-        @test_throws AssertionError CombSymGroup(
+        @test_throws ArgumentError CombSymGroup(
             dofo, cycle, checks[1:end-1], applies, phases, factors, N
         )
-        @test_throws AssertionError CombSymGroup(
+        @test_throws ArgumentError CombSymGroup(
             dofo, cycle, checks, applies[1:end-1], phases, factors, N
         )
-        @test_throws AssertionError CombSymGroup(
+        @test_throws ArgumentError CombSymGroup(
             dofo, cycle, checks, applies, phases[1:end-1], factors, N
         )
 
@@ -101,7 +101,7 @@
                 @test csg.factors[i, j] ≈ sg1.factors[i] * sg2.factors[j]
             end
 
-            @test_throws AssertionError begin
+            @test_throws ArgumentError begin
                 sg1 ∘ sym(TotalMagnetization(1 // 2, N + 1), dof_object(Spin(3 // 2)))
             end
         end
@@ -120,7 +120,7 @@
                 @test csg2.factors[i, j, k] ≈ csg.factors[i, j] * sg3.factors[k]
             end
 
-            @test_throws AssertionError begin
+            @test_throws ArgumentError begin
                 csg ∘ sym(
                     SpatialReflection(-1, mod1.((N-1):-1:1, N)), dof_object(Spin(3 // 2))
                 )
@@ -141,7 +141,7 @@
                 @test csg3.factors[i, j, k] ≈ sg3.factors[i] * csg.factors[j, k]
             end
 
-            @test_throws AssertionError begin
+            @test_throws ArgumentError begin
                 sym(
                     SpatialReflection(-1, mod1.((N-1):-1:1, N)), dof_object(Spin(3 // 2))
                 ) ∘ csg

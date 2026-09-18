@@ -58,6 +58,7 @@ end
         @test !(absent ∈ ub)
 
         # Empty basis edge case.
+        @test_throws ArgumentError Basis(BaseInt{UInt,Int,2}[BaseInt(UInt(1); base=2)], Float64[])
         eb = Basis(BaseInt{UInt,Int,2}[], Float64[])
         @test state_index(eb, BaseInt(UInt(0); base=2)) === nothing
         @test !(BaseInt(UInt(0); base=2) ∈ eb)

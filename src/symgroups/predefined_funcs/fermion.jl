@@ -31,8 +31,8 @@ struct TotalSpinlessFermionicNumber{T_b<:Integer,T_N<:Integer} <: AbstractSymSpe
     function TotalSpinlessFermionicNumber(
         n_particles::T_b, N::T_N
     ) where {T_b,T_N}
-        @assert n_particles >= 0 "Number of particles must be non-negative."
-        @assert n_particles <= N "Number of particles cannot exceed the total number of DoF-objects."
+        n_particles >= 0 || throw(ArgumentError("Number of particles must be non-negative, got $n_particles"))
+        n_particles <= N || throw(ArgumentError("Number of particles cannot exceed the total number of DoF-objects ($n_particles > $N)"))
 
         return new{T_b,T_N}(n_particles, N)
     end
@@ -187,7 +187,8 @@ function sym(
     ss::TotalSpinlessFermionicNumber{T_b,T_N},
     dofo::DoFObject{B,T_b,T,Ti}
 ) where {B,T_b,T,Ti,T_N}
-    @assert dofo.type == :SpinlessFermion
+    dofo.type == :SpinlessFermion ||
+        throw(ArgumentError("expected a SpinlessFermion DoF-object, got $(dofo.type)"))
 
     all_spinless_fermion_sumₛ = combos_boson_sum(dofo.ldof[end], ss.n_particles, ss.N)
 
@@ -227,9 +228,9 @@ struct TotalSpinfulFermionicNumber{T_b<:Integer,T_N<:Integer} <: AbstractSymSpec
     function TotalSpinfulFermionicNumber(
         n_up::T_b, n_down::T_b, N::T_N
     ) where {T_b,T_N}
-        @assert n_up >= 0 "Number of spin-up particles must be non-negative."
-        @assert n_down >= 0 "Number of spin-down particles must be non-negative."
-        @assert n_up + n_down <= N "Total number of particles cannot exceed the total number of DoF-objects."
+        n_up >= 0 || throw(ArgumentError("Number of spin-up particles must be non-negative, got $n_up"))
+        n_down >= 0 || throw(ArgumentError("Number of spin-down particles must be non-negative, got $n_down"))
+        n_up + n_down <= N || throw(ArgumentError("Total number of particles cannot exceed the total number of DoF-objects ($(n_up + n_down) > $N)"))
 
         return new{T_b,T_N}(n_up, n_down, N)
     end
@@ -255,13 +256,14 @@ function sym(
     ss::TotalSpinfulFermionicNumber{T_b,T_N},
     dofo::DoFObject{B,T_ldof,T,Ti}
 ) where {B,T_ldof,T,Ti,T_b,T_N}
-    @assert dofo.type == :SpinfulFermion
+    dofo.type == :SpinfulFermion ||
+        throw(ArgumentError("expected a SpinfulFermion DoF-object, got $(dofo.type)"))
 
     all_ms = sort(unique(vcat(collect.(dofo.ldof)...)))
-    @assert length(all_ms) == 2 (
+    length(all_ms) == 2 || throw(ArgumentError(
         "TotalSpinfulFermionicNumber requires a spin-1/2 SpinfulFermion DoF-object " *
         "(exactly 2 distinct spin projections), got $(length(all_ms))."
-    )
+    ))
     m_down, m_up = all_ms
 
     up_weights = [count(==(m_up), l) for l in dofo.ldof]
@@ -365,7 +367,7 @@ struct FermionicSpinInversion{T_z<:Integer,T_N<:Integer} <: AbstractSymSpec
     N::T_N
 
     function FermionicSpinInversion(z::T_z, N::T_N) where {T_z,T_N}
-        @assert z == T_z(-1) || z == T_z(1)
+        (z == T_z(-1) || z == T_z(1)) || throw(ArgumentError("z must be -1 or 1, got $z"))
 
         return new{T_z,T_N}(z, N)
     end
@@ -384,7 +386,8 @@ function sym(
     ss::FermionicSpinInversion{T_z,T_N},
     dofo::DoFObject{B,T_ldof,T,Ti}
 ) where {B,T_ldof,T,Ti,T_z,T_N}
-    @assert dofo.type == :SpinfulFermion
+    dofo.type == :SpinfulFermion ||
+        throw(ArgumentError("expected a SpinfulFermion DoF-object, got $(dofo.type)"))
 
     occ_of = Dict(dofo.ldof[d+1] => d for d in 0:(B-1))
     relabel = ntuple(i -> occ_of[sort(-dofo.ldof[i])], B)

@@ -181,7 +181,8 @@ struct TotalMagnetization{T_s<:Rational,T_N<:Integer} <: AbstractSymSpec
     N::T_N
 
     function TotalMagnetization(mag::T_s, N::T_N) where {T_s,T_N}
-        @assert denominator(mag) == 1 || denominator(mag) == 2
+        (denominator(mag) == 1 || denominator(mag) == 2) ||
+            throw(ArgumentError("mag must be an integer or half-integer, got $mag"))
 
         return new{T_s,T_N}(mag, N)
     end
@@ -246,7 +247,8 @@ function sym(
     ss::TotalMagnetization{T_s,T_N},
     dofo::DoFObject{B,T_s,T,Ti}
 ) where {B,T_s,T,Ti,T_N}
-    @assert dofo.type == :Spin
+    dofo.type == :Spin ||
+        throw(ArgumentError("expected a Spin DoF-object, got $(dofo.type)"))
     s = T_s((length(dofo) - 1) // 2)
 
     all_spin_sumₛ = combos_spin_sum(s, ss.mag, ss.N)
@@ -317,9 +319,10 @@ struct SpinMultipole{RANK,T_q<:Real,T_w<:Real,T_N<:Integer,T_atol<:Real,T_rtol<:
         atol::T_atol=0.0, rtol::T_rtol=rtoldefault(T_q, _multipole_eltype(T_w), atol)
     ) where {RANK,T_q,T_w,T_N,T_atol,T_rtol}
 
-        @assert RANK >= 1
+        RANK >= 1 || throw(ArgumentError("qₛ must have at least one dimension, got RANK=$RANK"))
         _validate_qₛ(qₛ)
-        @assert size(weights) == (N, size(qₛ, 1))
+        size(weights) == (N, size(qₛ, 1)) ||
+            throw(ArgumentError("weights must have size $((N, size(qₛ, 1))), got $(size(weights))"))
 
         return new{RANK,T_q,T_w,T_N,T_atol,T_rtol}(
             qₛ, _build_eff_weights(weights, RANK), N, atol, rtol
@@ -386,7 +389,8 @@ function sym(
     ss::SpinMultipole{RANK,T_q,T_w,T_N,T_atol,T_rtol},
     dofo::DoFObject{B,T_s,T,Ti}
 ) where {B,T_s,T,Ti,RANK,T_q,T_w,T_N,T_atol,T_rtol}
-    @assert dofo.type == :Spin
+    dofo.type == :Spin ||
+        throw(ArgumentError("expected a Spin DoF-object, got $(dofo.type)"))
 
     multipole_sym = SymGroup(
         dofo,
@@ -425,7 +429,7 @@ struct SpinInversion{T_z<:Integer,T_N<:Integer} <: AbstractSymSpec
     N::T_N
 
     function SpinInversion(z::T_z, N::T_N) where {T_z,T_N}
-        @assert z == T_z(-1) || z == T_z(1)
+        (z == T_z(-1) || z == T_z(1)) || throw(ArgumentError("z must be -1 or 1, got $z"))
 
         return new{T_z,T_N}(z, N)
     end
@@ -459,7 +463,8 @@ function sym(
     ss::SpinInversion{T_z,T_N},
     dofo::DoFObject{B,T_s,T,Ti}
 ) where {B,T_s,T,Ti,T_z,T_N}
-    @assert dofo.type == :Spin
+    dofo.type == :Spin ||
+        throw(ArgumentError("expected a Spin DoF-object, got $(dofo.type)"))
     s = T_s((length(dofo) - 1) // 2)
 
     sites = 1:ss.N |> collect

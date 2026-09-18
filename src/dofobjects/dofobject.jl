@@ -52,8 +52,11 @@ function Base.isequal(dofo1::TDOFO, dofo2::TDOFO) where {TDOFO<:DoFObject}
     return isequal(dofo1.ldof, dofo2.ldof) && isequal(dofo1.type, dofo2.type)
 end
 
+# Type-identifying salt for `hash(::DoFObject)`.
+const _DOFOBJECT_HASH_SEED = 0x3c8e52a7d4f19b06 % UInt
+
 function Base.hash(dofo::DoFObject, h::UInt)
-    return hash(dofo.type, hash(dofo.ldof, hash(:BaseNumber, h)))
+    return hash(dofo.type, hash(dofo.ldof, h + _DOFOBJECT_HASH_SEED))
 end
 
 """

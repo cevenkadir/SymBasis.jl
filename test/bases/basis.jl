@@ -201,6 +201,10 @@ end
         @test hash(b1, h) != hash(b_diff_norms, h)
         @test hash(b1, h) != hash(b_diff_states, h)
 
+        # usable as Dict/Set keys
+        @test length(Set([b1, b2, b_diff_norms])) == 2
+        @test Dict(b1 => 1)[b2] == 1
+
         # isequal and == agree with each other
         @test isequal(b1, b2) == (b1 == b2)
         @test isequal(b1, b_diff_norms) == (b1 == b_diff_norms)

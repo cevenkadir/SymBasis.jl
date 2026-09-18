@@ -80,8 +80,11 @@ function Base.:(==)(b1::Basis{T,T_n}, b2::Basis{T,T_n}) where {T,T_n}
     return b1.states == b2.states && b1.norms == b2.norms && b1.sg == b2.sg
 end
 
+# Type-identifying salt for `hash(::Basis)`.
+const _BASIS_HASH_SEED = 0x6f1d3a5c9b27e841 % UInt
+
 function Base.hash(b::Basis, h::UInt)
-    return hash(b.states, hash(b.norms, hash(b.sg, hash(:BaseNumber, h))))
+    return hash(b.states, hash(b.norms, hash(b.sg, h + _BASIS_HASH_SEED)))
 end
 
 # Destructuring (`states, norms = b`, `states, norms, sg = b`) lowers to

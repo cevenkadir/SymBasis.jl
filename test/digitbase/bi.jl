@@ -91,6 +91,12 @@
         c1 = bi"56"9
         c2 = bi"56"10
         @test hash(c1) != hash(c2)
+
+        # salted hash is consistent with isequal, and BaseInt works as Dict/Set key
+        @test hash(a1, UInt(7)) == hash(a2, UInt(7))
+        @test length(Set([a1, a2, b1])) == 2
+        d = Dict(a1 => 1, b1 => 2)
+        @test d[a2] == 1
     end
 
     @testset "Base.iterate for BaseInt" begin

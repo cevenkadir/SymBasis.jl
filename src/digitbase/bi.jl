@@ -94,8 +94,11 @@ function Base.isequal(b1::TB, b2::TB) where {TB<:BaseInt}
     return isequal(b1.value, b2.value)
 end
 
+# Type-identifying salt for `hash(::BaseInt)`.
+const _BASEINT_HASH_SEED = 0xa94b17e60d2c58f3 % UInt
+
 function Base.hash(b::BaseInt{T,Ti,B}, h::UInt) where {T,Ti,B}
-    return hash(B, hash(b.value, hash(:BaseNumber, h)))
+    return hash(B, hash(b.value, h + _BASEINT_HASH_SEED))
 end
 
 function Base.length(::BaseInt)

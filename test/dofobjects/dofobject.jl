@@ -36,6 +36,11 @@
         h3 = hash(dofo3)
         @test h1 == h2
         @test h1 != h3
+        @test hash(dofo1, UInt(7)) == hash(dofo2, UInt(7))
+
+        # usable as Dict/Set keys
+        @test length(Set([dofo1, dofo2, dofo3])) == 2
+        @test Dict(dofo1 => 1)[dofo2] == 1
     end
 
     @testset "bint function for DoFObject" begin

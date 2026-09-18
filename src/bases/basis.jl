@@ -1,6 +1,7 @@
 
 using SymBasis.DigitBase: BaseInt, BaseIntRange, base_number_to_string, _max_value
-using SymBasis.SymGroups: SymGroup, CombSymGroup, _apply_all, _apply_phase_all,
+using SymBasis.SymGroups:
+    SymGroup, CombSymGroup, _apply_all, _apply_phase_all,
     _candidate_states, apply_Ns
 using SymBasis.DoFObjects: DoFObject
 
@@ -53,7 +54,7 @@ struct Basis{
     T,T_n<:Number,
     T_states<:AbstractVector{T},
     T_norms<:AbstractVector{T_n},
-    T_sg<:Union{SymGroup,CombSymGroup,Nothing}
+    T_sg<:Union{SymGroup,CombSymGroup,Nothing},
 }
     states::T_states
     norms::T_norms
@@ -62,10 +63,14 @@ struct Basis{
     function Basis(
         states::AbstractVector{T},
         norms::AbstractVector{T_n},
-        sg::Union{SymGroup,CombSymGroup,Nothing}=nothing
+        sg::Union{SymGroup,CombSymGroup,Nothing}=nothing,
     ) where {T,T_n<:Number}
         length(states) == length(norms) ||
-            throw(ArgumentError("Length of states and norms must be equal, got $(length(states)) and $(length(norms))"))
+            throw(
+                ArgumentError(
+                    "Length of states and norms must be equal, got $(length(states)) and $(length(norms))"
+                ),
+            )
         return new{T,T_n,typeof(states),typeof(norms),typeof(sg)}(
             states, norms, sg, issorted(states)
         )
@@ -232,7 +237,7 @@ function basis(
     dofo::DoFObject{B,T_s,T,Ti},
     N::Integer;
     norm_type::Type=Float64,
-    is_sorted::Bool=false
+    is_sorted::Bool=false,
 ) where {B,T_s,T,Ti}
     states = collect(
         BaseInt(T(0); base=B, Ti=Ti):BaseInt(_max_value(T, Val(B), N); base=B, Ti=Ti)
@@ -270,7 +275,8 @@ function _OrbitDedup(::Type{T}, n_cycles::Int) where {T}
     )
     n_slots = max(8, nextpow(2, 2 * n_cycles))
     return _OrbitDedup{T}(
-        true, T[], Vector{T}(undef, n_slots), zeros(Int32, n_slots), Int32(0), n_slots - 1, 0
+        true, T[], Vector{T}(undef, n_slots), zeros(Int32, n_slots), Int32(0), n_slots - 1,
+        0,
     )
 end
 
@@ -392,7 +398,7 @@ end
 @generated function _scan_product(
     applys::NTuple{D,Any}, phases::NTuple{D,Any}, elems::NTuple{D,Any},
     valid::NTuple{D,Any}, factors, state₀, F₀, dedup::_OrbitDedup,
-    stab::Vector{NTuple{D,Int}}
+    stab::Vector{NTuple{D,Int}},
 ) where {D}
     ks = [Symbol(:k_, i) for i in 1:D]
     sts = [Symbol(:state_, i) for i in 0:D]
@@ -458,7 +464,7 @@ function _basis_impl_csg(
     dim_elems::DE,
     F₀::Complex{T_n},
     eps_norm_type::T_n,
-    skip_dim::Val{S}
+    skip_dim::Val{S},
 ) where {T,Ti,B,T_n<:Real,T_s,Ts,DE<:Tuple,S}
     n_cycles = length(csg.cycles)
     checks = csg.check
@@ -518,7 +524,7 @@ function _basis_impl(
     eps_norm_type::T_n,
     get_temp_state::F,
     get_phase::G,
-    is_sorted::Bool
+    is_sorted::Bool,
 ) where {T,Ti,B,T_n<:Real,T_s,Ts,F,G}
     nthreads = Threads.nthreads()
 
@@ -618,15 +624,16 @@ function basis(
     N::Integer,
     sg::SymGroup{B,T_s,T,Ti,Ts};
     norm_type::Type=Float64,
-    is_sorted::Bool=false
+    is_sorted::Bool=false,
 ) where {T,Ti,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
     F₀ = zero(Complex{norm_type})
     eps_norm_type = eps(norm_type)
     c = true
     candidates = _candidate_states(sg.check, sg.cycles, BaseInt{T,Ti,B}, N)
-    all_bints = candidates === nothing ?
-                (BaseInt(T(0); base=B, Ti=Ti):BaseInt(_max_value(T, Val(B), N); base=B, Ti=Ti)) :
-                candidates
+    all_bints =
+        candidates === nothing ?
+        (BaseInt(T(0); base=B, Ti=Ti):BaseInt(_max_value(T, Val(B), N); base=B, Ti=Ti)) :
+        candidates
 
     # Kept separate from `get_temp_state` so `_basis_impl` can call it only for the cycles
     # that actually fix `state₀`; `sg.phase` is a pure function of `(cycle, state)`, so the
@@ -638,7 +645,7 @@ function basis(
         return _basis_impl(
             all_bints, length(sg.cycles), sg, F₀, eps_norm_type,
             (idx, state₀) -> (true, sg.apply(sg.cycles[idx], state₀)),
-            get_phase, is_sorted
+            get_phase, is_sorted,
         )
     end
 
@@ -656,7 +663,7 @@ function basis(
         eps_norm_type,
         get_temp_state,
         get_phase,
-        is_sorted
+        is_sorted,
     )
 end
 
@@ -693,7 +700,7 @@ function basis(
     N::Integer,
     csg::CombSymGroup{B,T_s,T,Ti,Ts};
     norm_type::Type=Float64,
-    is_sorted::Bool=false
+    is_sorted::Bool=false,
 ) where {T,Ti,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
     F₀ = zero(Complex{norm_type})
     eps_norm_type = eps(norm_type)
@@ -714,18 +721,23 @@ function basis(
     cand_dim = 0
     for i in 1:ndims(csg.cycles)
         candᵢ = _candidate_states(csg.check[i], dim_elems[i], BaseInt{T,Ti,B}, N)
-        if candᵢ !== nothing && (candidates === nothing || length(candᵢ) < length(candidates))
+        if candᵢ !== nothing &&
+            (candidates === nothing || length(candᵢ) < length(candidates))
             candidates = candᵢ
             cand_dim = i
         end
     end
-    all_bints = candidates === nothing ?
-                (BaseInt(T(0); base=B, Ti=Ti):BaseInt(_max_value(T, Val(B), N); base=B, Ti=Ti)) :
-                candidates
+    all_bints =
+        candidates === nothing ?
+        (BaseInt(T(0); base=B, Ti=Ti):BaseInt(_max_value(T, Val(B), N); base=B, Ti=Ti)) :
+        candidates
 
     # `Val` so `_fill_valid!` can drop the skipped dimension's loop at compile time.
-    skip_dim = (cand_dim != 0 && _candidates_satisfy_check(
-        csg.apply[cand_dim], dim_elems[cand_dim], candidates)) ? cand_dim : 0
+    skip_dim =
+        (
+            cand_dim != 0 && _candidates_satisfy_check(
+                csg.apply[cand_dim], dim_elems[cand_dim], candidates)
+        ) ? cand_dim : 0
 
     return _basis_impl_csg(
         all_bints, csg, dim_elems, F₀, eps_norm_type, Val(skip_dim)
@@ -771,7 +783,7 @@ function is_commutative(b::Basis, csg::CombSymGroup)
                 ok = _commutes_pair(
                     b.states, chunk, csg,
                     csg.apply[i], csg.phase[i], dim_elems[i],
-                    csg.apply[j], csg.phase[j], dim_elems[j]
+                    csg.apply[j], csg.phase[j], dim_elems[j],
                 )
                 ok || break
             end
@@ -787,7 +799,7 @@ end
 function _commutes_pair(
     states, chunk, csg,
     applyᵢ::Fa, phaseᵢ::Fp, elemsᵢ,
-    applyⱼ::Ga, phaseⱼ::Gp, elemsⱼ
+    applyⱼ::Ga, phaseⱼ::Gp, elemsⱼ,
 ) where {Fa,Fp,Ga,Gp}
     @inbounds for s_idx in chunk
         test_state = states[s_idx]
@@ -852,7 +864,7 @@ of a symmetry group.
 """
 function representative(
     state::BaseInt{T,Ti,B},
-    sg::SymGroup{B,T_s,T,Ti,Ts}
+    sg::SymGroup{B,T_s,T,Ti,Ts},
 ) where {T,Ti,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
     n_cycles = length(sg.cycles)
 
@@ -898,7 +910,7 @@ of a combined symmetry group.
 """
 function representative(
     state::BaseInt{T,Ti,B},
-    csg::CombSymGroup{B,T_s,T,Ti,Ts}
+    csg::CombSymGroup{B,T_s,T,Ti,Ts},
 ) where {T,Ti,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
     n_cycles = length(csg.cycles)
 

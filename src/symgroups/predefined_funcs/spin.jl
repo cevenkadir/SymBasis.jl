@@ -3,9 +3,11 @@ using SymBasis.Miscs: rtoldefault
 
 function _validate_qₛ(qₛ::AbstractArray)
     D = size(qₛ, 1)
-    all(==(D), size(qₛ)) || throw(ArgumentError(
-        "qₛ must have all dimensions equal to D = $D, got size = $(size(qₛ))"
-    ))
+    all(==(D), size(qₛ)) || throw(
+        ArgumentError(
+            "qₛ must have all dimensions equal to D = $D, got size = $(size(qₛ))"
+        ),
+    )
     for idx in CartesianIndices(qₛ)
         t = Tuple(idx)
         for perm in all_permutations(t)
@@ -46,7 +48,7 @@ function _check_multipole(
     T_weights<:AbstractMatrix{Tw},
     T_N<:Integer,
     T_atol<:Real,
-    T_rtol<:Real
+    T_rtol<:Real,
 }
     ET = _multipole_eltype(Tw)
     BB = T(B)
@@ -125,7 +127,7 @@ values. The result is combined with `prev_bool`.
 function check_multipole(
     p::NamedTuple,
     state::BaseInt{T,Ti,B},
-    prev_bool::Bool
+    prev_bool::Bool,
 ) where {T,Ti,B}
     return prev_bool * _check_multipole(state, p)
 end
@@ -149,7 +151,7 @@ symmetry where the state remains unchanged, the function simply returns the inpu
 """
 function apply_multipole(
     p::NamedTuple,
-    state::BaseInt{T,Ti,B}
+    state::BaseInt{T,Ti,B},
 ) where {T,Ti,B}
     return state
 end
@@ -245,7 +247,7 @@ spin-1/2, the plain `N0`, …, `N(B-1)` cycle is kept.
 """
 function sym(
     ss::TotalMagnetization{T_s,T_N},
-    dofo::DoFObject{B,T_s,T,Ti}
+    dofo::DoFObject{B,T_s,T,Ti},
 ) where {B,T_s,T,Ti,T_N}
     dofo.type == :Spin ||
         throw(ArgumentError("expected a Spin DoF-object, got $(dofo.type)"))
@@ -264,7 +266,7 @@ function sym(
         apply_Ns,
         phase_unity,
         ones(length(cyclesₛ)),
-        ss.N
+        ss.N,
     )
 
     return Sz_sym
@@ -316,13 +318,18 @@ struct SpinMultipole{RANK,T_q<:Real,T_w<:Real,T_N<:Integer,T_atol<:Real,T_rtol<:
 
     function SpinMultipole(
         qₛ::AbstractArray{T_q,RANK}, weights::AbstractMatrix{T_w}, N::T_N;
-        atol::T_atol=0.0, rtol::T_rtol=rtoldefault(T_q, _multipole_eltype(T_w), atol)
+        atol::T_atol=0.0, rtol::T_rtol=rtoldefault(T_q, _multipole_eltype(T_w), atol),
     ) where {RANK,T_q,T_w,T_N,T_atol,T_rtol}
 
-        RANK >= 1 || throw(ArgumentError("qₛ must have at least one dimension, got RANK=$RANK"))
+        RANK >= 1 ||
+            throw(ArgumentError("qₛ must have at least one dimension, got RANK=$RANK"))
         _validate_qₛ(qₛ)
         size(weights) == (N, size(qₛ, 1)) ||
-            throw(ArgumentError("weights must have size $((N, size(qₛ, 1))), got $(size(weights))"))
+            throw(
+                ArgumentError(
+                    "weights must have size $((N, size(qₛ, 1))), got $(size(weights))"
+                ),
+            )
 
         return new{RANK,T_q,T_w,T_N,T_atol,T_rtol}(
             qₛ, _build_eff_weights(weights, RANK), N, atol, rtol
@@ -363,7 +370,7 @@ function SpinMultipole(
 ) where {T_q<:Real,T_w<:Real}
     return SpinMultipole(
         fill(q, ntuple(_ -> 1, rank)), reshape(weights, N, 1), N;
-        kwargs...
+        kwargs...,
     )
 end
 
@@ -387,7 +394,7 @@ the weights and checks if it matches the target qₛ values within the specified
 """
 function sym(
     ss::SpinMultipole{RANK,T_q,T_w,T_N,T_atol,T_rtol},
-    dofo::DoFObject{B,T_s,T,Ti}
+    dofo::DoFObject{B,T_s,T,Ti},
 ) where {B,T_s,T,Ti,RANK,T_q,T_w,T_N,T_atol,T_rtol}
     dofo.type == :Spin ||
         throw(ArgumentError("expected a Spin DoF-object, got $(dofo.type)"))
@@ -399,7 +406,7 @@ function sym(
         apply_multipole,
         phase_unity,
         ones(1),
-        ss.N
+        ss.N,
     )
 
     return multipole_sym
@@ -461,7 +468,7 @@ spin-1/2, the plain `N0`, …, `N(B-1)` cycles are kept.
 """
 function sym(
     ss::SpinInversion{T_z,T_N},
-    dofo::DoFObject{B,T_s,T,Ti}
+    dofo::DoFObject{B,T_s,T,Ti},
 ) where {B,T_s,T,Ti,T_z,T_N}
     dofo.type == :Spin ||
         throw(ArgumentError("expected a Spin DoF-object, got $(dofo.type)"))
@@ -480,7 +487,7 @@ function sym(
     Z_sym = SymGroup(
         dofo,
         [
-            merge((; is_flipped=Bool(r), sites=sites,), sumⱼ)
+            merge((; is_flipped=Bool(r), sites=sites), sumⱼ)
             for r in rₛ
             for sumⱼ in sumsₛ
         ],
@@ -488,7 +495,7 @@ function sym(
         apply_flip,
         phase_unity,
         [ss.z^r for r in rₛ for sumⱼ in sumsₛ],
-        ss.N
+        ss.N,
     )
 
     return Z_sym

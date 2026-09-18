@@ -34,7 +34,7 @@ performs, and simply converts `value` to `T`.
 struct BaseInt{T<:Integer,Ti<:Integer,B}
     value::T
 
-    function BaseInt(value::T; base::Integer=2, Ti=Int) where T<:Integer
+    function BaseInt(value::T; base::Integer=2, Ti=Int) where {T<:Integer}
         base >= 2 || throw(ArgumentError("Base must be at least 2, got $base"))
         return new{T,Ti,base}(value)
     end
@@ -82,7 +82,7 @@ macro bi_str(str::String, base::Integer)
     digit_values = [parse(Int, string(c)) for c in str]
     all(x -> 0 <= x < base, digit_values) ||
         throw(ArgumentError("entered digits $digit_values do not follow given base $base"))
-    return BaseInt(evalpoly(base, reverse(digit_values)) |> UInt, base=base)
+    return BaseInt(evalpoly(base, reverse(digit_values)) |> UInt; base=base)
 end
 
 
@@ -120,7 +120,7 @@ end
 subscript(i::Integer) = join(Char(0x2080 + d) for d in reverse!(digits(i)))
 
 function base_number_to_string(b::BaseInt{T,Ti,B}; pad::Integer=1) where {T,Ti,B}
-    str = string(b.value, base=B, pad=pad)
+    str = string(b.value; base=B, pad=pad)
     return "($str)$(subscript(B))"
 end
 
@@ -172,10 +172,12 @@ end
 # than a machine word. Doing the arithmetic in `T` from the start lifts the cap to `T`'s own
 # width, and is bit-identical for every `(T, B, N)` that already fit.
 @inline function _max_value(::Type{T}, ::Val{B}, N::Integer) where {T<:Integer,B}
-    N <= _max_digits(T, Val(B)) || throw(ArgumentError(
-        "a $N-digit base-$B state does not fit in $T (at most " *
-        "$(_max_digits(T, Val(B))) digits); use a wider storage type"
-    ))
+    N <= _max_digits(T, Val(B)) || throw(
+        ArgumentError(
+            "a $N-digit base-$B state does not fit in $T (at most " *
+            "$(_max_digits(T, Val(B))) digits); use a wider storage type",
+        ),
+    )
     return T(B)^N - one(T)
 end
 
@@ -548,13 +550,13 @@ its position.
 function permute(
     b::BaseInt{T,Ti,B},
     pos::Ti,
-    perm::AbstractVector{<:Integer}
+    perm::AbstractVector{<:Integer},
 ) where {T,Ti,B}
     pos >= 1 || throw(ArgumentError("position must be ≥ 1 (1‑based indexing)"))
     length(perm) == B ||
         throw(ArgumentError("permutation vector must have length equal to the base $B"))
     @boundscheck any(p -> p < 0 || p >= B, perm) &&
-                 throw(ArgumentError("permutation entries must be in 0:$(B-1)"))
+        throw(ArgumentError("permutation entries must be in 0:$(B-1)"))
 
     power = _base_pow(Val(B), pos - 1)
     old_digit = _digit_at(b.value, Val(B), pos)
@@ -601,7 +603,7 @@ than their positions.
 function permute(
     b::BaseInt{T,Ti,B},
     pos::AbstractVector{Ti},
-    perm::AbstractVector{<:Integer}
+    perm::AbstractVector{<:Integer},
 ) where {T,Ti,B}
     new_b = b
 
@@ -772,7 +774,9 @@ Base.eltype(::Type{<:DigitIterator{T}}) where {T} = T
 Base.IteratorSize(::Type{<:DigitIterator}) = Base.HasLength()
 Base.IteratorEltype(::Type{<:DigitIterator}) = Base.HasEltype()
 
-function Base.iterate(it::DigitIterator{T,Ti,B}, state::Tuple{Int,T}=(1, it.value)) where {T,Ti,B}
+function Base.iterate(
+    it::DigitIterator{T,Ti,B}, state::Tuple{Int,T}=(1, it.value)
+) where {T,Ti,B}
     i, v = state
     i > it.n && return nothing
     return (v % T(B), (i + 1, v ÷ T(B)))
@@ -836,7 +840,7 @@ integer `b`.
 function Base.write(
     b::BaseInt{T,Ti,B},
     pos::AbstractVector{Ti},
-    d::AbstractVector{<:Integer}
+    d::AbstractVector{<:Integer},
 ) where {T,Ti,B}
     new_b = b
 
@@ -869,7 +873,7 @@ function Base.count(b::BaseInt{T,Ti,B}, pos::AbstractVector{Ti}, d::Integer) whe
     0 ≤ d < B || throw(ArgumentError("digit must satisfy 0 ≤ d < B, got $d"))
 
     @boundscheck any(p -> p < 1, pos) &&
-                 throw(ArgumentError("all positions must be ≥ 1 (1‑based indexing)"))
+        throw(ArgumentError("all positions must be ≥ 1 (1‑based indexing)"))
 
     cnt = 0
     @inbounds for p in pos
@@ -903,13 +907,13 @@ faster when `B` is not a power of two.
 function Base.count(
     b::BaseInt{T,Ti,B},
     pos::AbstractUnitRange{Ti},
-    d::Integer
+    d::Integer,
 ) where {T,Ti,B}
     0 ≤ d < B || throw(ArgumentError("digit must satisfy 0 ≤ d < B, got $d"))
     isempty(pos) && return 0
 
     @boundscheck first(pos) < 1 &&
-                 throw(ArgumentError("all positions must be ≥ 1 (1‑based indexing)"))
+        throw(ArgumentError("all positions must be ≥ 1 (1‑based indexing)"))
 
     cnt = 0
     for digit in _walk_from(b, first(pos), length(pos))
@@ -939,7 +943,7 @@ representation of the integer `b`.
 function Base.count(
     b::BaseInt{T,Ti,B},
     pos::AbstractVector{Ti},
-    d::AbstractVector{<:Integer}
+    d::AbstractVector{<:Integer},
 ) where {T,Ti,B}
     return map(d) do dᵢ
         count(b, pos, dᵢ)

@@ -27,7 +27,7 @@ occupation numbers).
 function combos_dof_sum(
     ldof::AbstractVector,
     target,
-    n::T_n
+    n::T_n,
 ) where {T_n<:Int}
     n_ldof = length(ldof)
 
@@ -86,7 +86,7 @@ specified `target` value.
 function combos_spin_sum(
     s::T_s,
     target::Union{T_s,Int},
-    n::T_n
+    n::T_n,
 ) where {T_s<:Rational,T_n<:Int}
     n_ldof = numerator(2s + 1)
     ldof = ((0:(n_ldof-1)) .- s) |> collect
@@ -146,7 +146,7 @@ occupancy of `max_occupancy` that sum to the specified `target` total particle n
 function combos_boson_sum(
     max_occupancy::Integer,
     target::Integer,
-    n::T_n
+    n::T_n,
 ) where {T_n<:Int}
     ldof = collect(0:max_occupancy)
     return combos_dof_sum(ldof, target, n)
@@ -182,7 +182,7 @@ digits can carry the same total particle count (or the same spin-up/spin-down co
 function combos_dof_sum_weighted(
     weight_lists::NTuple{K,<:AbstractVector{<:Integer}},
     targets::NTuple{K,<:Integer},
-    n::T_n
+    n::T_n,
 ) where {K,T_n<:Int}
     n_ldof = length(weight_lists[1])
     all(==(n_ldof), length.(weight_lists)) ||
@@ -223,7 +223,7 @@ end
 function _configs_to_namedtuples(
     ldof::AbstractVector,
     n::T_n,
-    configs::Vector{<:AbstractVector}
+    configs::Vector{<:AbstractVector},
 ) where {T_n<:Int}
     n_ldof = length(ldof)
 
@@ -337,7 +337,9 @@ Compute a default relative tolerance based on the types of `x` and `y` and the p
 - `Real`: The default relative tolerance. If `atol > 0`, returns zero (absolute tolerance takes precedence).
     Otherwise, returns the maximum of the default relative tolerances for the real parts of types `T` and `S`.
 """
-function rtoldefault(x::Union{T,Type{T}}, y::Union{S,Type{S}}, atol::Real) where {T<:Number,S<:Number}
+function rtoldefault(
+    x::Union{T,Type{T}}, y::Union{S,Type{S}}, atol::Real
+) where {T<:Number,S<:Number}
     rtol = max(rtoldefault(real(T)), rtoldefault(real(S)))
     return atol > 0 ? zero(rtol) : rtol
 end

@@ -99,7 +99,7 @@
         @test dofo1.type == :SpinfulFermion
         @test dofo1.ldof == (
             Rational{Int64}[], Rational{Int64}[-1//2], Rational{Int64}[1//2],
-            Rational{Int64}[-1//2, 1//2]
+            Rational{Int64}[-1//2, 1//2],
         )
         @test typeof(dofo1) == DoFObject{4,Vector{Rational{Int64}},UInt64,Int64}
 

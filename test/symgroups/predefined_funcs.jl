@@ -84,7 +84,7 @@
             weights=ones(Float64, 5, 1),
             N=5,
             atol=1e-10,
-            rtol=1e-10
+            rtol=1e-10,
         )
         @test check_multipole(p4_close, state1, true) == true
         p4_far = (;
@@ -92,7 +92,7 @@
             weights=ones(Float64, 5, 1),
             N=5,
             atol=1e-10,
-            rtol=1e-10
+            rtol=1e-10,
         )
         @test check_multipole(p4_far, state1, true) == false
     end
@@ -120,7 +120,7 @@
         @test !check_flip(
             (; is_flipped=false, sites=sites1, N0=2, N1=3, N=5),
             state1,
-            false
+            false,
         )
         @test check_flip((; is_flipped=false, sites=sites1, N0=2, N1=3, N=5), state1, true)
         # Mismatched counts return false regardless of prev_bool
@@ -134,18 +134,18 @@
         @test !check_flip(
             (; is_flipped=false, sites=sites2, N0=1, N1=1, N2=1, N3=1, N4=0, N=4),
             state2,
-            false
+            false,
         )
         @test check_flip(
             (; is_flipped=false, sites=sites2, N0=1, N1=1, N2=1, N3=1, N4=0, N=4),
             state2,
-            true
+            true,
         )
         # Mismatched counts
         @test !check_flip(
             (; is_flipped=false, sites=sites2, N0=2, N1=1, N2=1, N3=0, N4=0, N=4),
             state2,
-            true
+            true,
         )
     end
 
@@ -156,17 +156,17 @@
         # is_flipped=false: returns unchanged state
         @test apply_flip(
             (; is_flipped=false, sites=sites1, N0=2, N1=3, N=5),
-            state1
+            state1,
         ) == state1
         # is_flipped=true: flip all 5 bits → value 5 = bi"101"2
         @test apply_flip(
             (; is_flipped=true, sites=sites1, N0=2, N1=3, N=5),
-            state1
+            state1,
         ) == bi"101"2
         # Flip only sites [1, 2]: 26 → 25 = bi"11001"2
         @test apply_flip(
             (; is_flipped=true, sites=collect(1:2), N0=2, N1=3, N=5),
-            state1
+            state1,
         ) == bi"11001"2
 
         # Non-binary state (base 5): bi"1302"5 (digits pos1=2,pos2=0,pos3=3,pos4=1)
@@ -175,12 +175,12 @@
         # is_flipped=false: returns unchanged state
         @test apply_flip(
             (; is_flipped=false, sites=sites2, N0=1, N1=1, N2=1, N3=1, N4=0, N=4),
-            state2
+            state2,
         ) == state2
         # is_flipped=true: flip all 4 digits → bi"3142"5
         @test apply_flip(
             (; is_flipped=true, sites=sites2, N0=1, N1=1, N2=1, N3=1, N4=0, N=4),
-            state2
+            state2,
         ) == bi"3142"5
     end
 
@@ -214,13 +214,13 @@
 
     @testset "sym of TotalMagnetization" begin
         dofo1 = dof_object(Spin(1 // 2))
-        Sz_sym1ₛ = [sym(TotalMagnetization(Sz, 2), dofo1) for Sz in -1//1:1//1]
+        Sz_sym1ₛ = [sym(TotalMagnetization(Sz, 2), dofo1) for Sz in (-1//1):(1//1)]
         cycle1ₛ = [
             [(; N0=2, N1=0, N=2)],
             [(; N0=1, N1=1, N=2)],
-            [(; N0=0, N1=2, N=2)]
+            [(; N0=0, N1=2, N=2)],
         ]
-        factor1ₛ = [[1.0,], [1.0,], [1.0,]]
+        factor1ₛ = [[1.0], [1.0], [1.0]]
         for (i, Sz_symᵢ) in enumerate(Sz_sym1ₛ)
             @test Sz_symᵢ.dofo == dofo1
             @test Sz_symᵢ.cycles == cycle1ₛ[i]
@@ -235,14 +235,14 @@
         # for every signature at once.
         WC = SymBasis.SymGroups.WeightedCounts
         dofo2 = dof_object(Spin(1 // 1))
-        Sz_sym2ₛ = [sym(TotalMagnetization(Sz, 3), dofo2) for Sz in -3//2:3//2]
+        Sz_sym2ₛ = [sym(TotalMagnetization(Sz, 3), dofo2) for Sz in (-3//2):(3//2)]
         cycle2ₛ = [
             [(; N0=3, N1=0, N2=0, N=3)],
             [(; wc=WC(((0, 1, 2),), (2,), [(1, 2, 0), (2, 0, 1)]), N=3)],
             [(; wc=WC(((0, 1, 2),), (4,), [(0, 2, 1), (1, 0, 2)]), N=3)],
-            [(; N0=0, N1=0, N2=3, N=3)]
+            [(; N0=0, N1=0, N2=3, N=3)],
         ]
-        factor2ₛ = [[1.0,], [1.0,], [1.0,], [1.0,]]
+        factor2ₛ = [[1.0], [1.0], [1.0], [1.0]]
         for (i, Sz_symᵢ) in enumerate(Sz_sym2ₛ)
             @test Sz_symᵢ.dofo == dofo2
             @test Sz_symᵢ.cycles == cycle2ₛ[i]
@@ -259,7 +259,7 @@
         ]
         for (i, sigs) in enumerate(all_sigs)
             expected = [
-                bi for bi in BaseInt(UInt(0); base=3):BaseInt(UInt(3^3 - 1); base=3)
+                bi for bi in BaseInt(UInt(0); base=3):BaseInt(UInt(3^3-1); base=3)
                 if digit_sig(bi, 3, 3) in sigs
             ]
             @test basis(dofo2, 3, Sz_sym2ₛ[i]).states == expected
@@ -419,9 +419,11 @@
             # spin-1 sites are |0,2⟩, |1,1⟩ and |2,0⟩, of which the flip-even/odd
             # combination keeps two resp. one.
             states = basis(dofo2, 2, Z_sym2).states
-            @test states == (z == 1 ?
-                             [BaseInt(UInt(2); base=3), BaseInt(UInt(4); base=3)] :
-                             [BaseInt(UInt(2); base=3)])
+            @test states == (
+                z == 1 ?
+                [BaseInt(UInt(2); base=3), BaseInt(UInt(4); base=3)] :
+                [BaseInt(UInt(2); base=3)]
+            )
         end
     end
 
@@ -447,7 +449,7 @@
                 @test [c.invperm for c in transl_sym1ₛ.cycles] == [
                     Base.invperm([1, 2, 3]),
                     Base.invperm(perm1),
-                    Base.invperm(perm1[perm1])
+                    Base.invperm(perm1[perm1]),
                 ]
                 @test transl_sym1ₛ.check == check_perm
                 @test transl_sym1ₛ.apply == apply_perm
@@ -463,7 +465,7 @@
             perm2 = [2, 1]
             cycles = [
                 (; perm=BitPermutation{UInt}(1:length(perm2) |> collect)),
-                (; perm=BitPermutation{UInt}(perm2))
+                (; perm=BitPermutation{UInt}(perm2)),
             ]
             for k in 0:(length(perm2)-1)
                 transl_sym2ₛ = sym(Translational(k, perm2), dofo2)
@@ -508,12 +510,14 @@
 
             @test transl_sym4.dofo == dofo4
             @test all(
-                transl_sym4.cycles[i].perm.vector == BitPermutation{UInt}(perm_k(perm4, i - 1)).vector
+                transl_sym4.cycles[i].perm.vector ==
+                BitPermutation{UInt}(perm_k(perm4, i - 1)).vector
                 for i in 1:length(transl_sym4.cycles)
             )
             @test transl_sym4.check == check_perm
             @test transl_sym4.phase == phase_perm_fermionic
-            @test transl_sym4.factors ≈ [cispi(-2 * r / length(perm4)) for r in 0:(length(perm4)-1)]
+            @test transl_sym4.factors ≈
+                [cispi(-2 * r / length(perm4)) for r in 0:(length(perm4)-1)]
 
             state = bi"11"2
             transformed_state = transl_sym4.apply(transl_sym4.cycles[2], state)
@@ -534,7 +538,8 @@
             @test all(c.parity == (false, true, true, false) for c in transl_sym5.cycles)
             @test transl_sym5.check == check_perm
             @test transl_sym5.phase == phase_perm_fermionic
-            @test transl_sym5.factors ≈ [cispi(-2 * r / length(perm5)) for r in 0:(length(perm5)-1)]
+            @test transl_sym5.factors ≈
+                [cispi(-2 * r / length(perm5)) for r in 0:(length(perm5)-1)]
 
             # site1 = down-only (digit1), site2 = up-only (digit2); swapping them is an odd
             # permutation of 2 occupied (odd-parity) digits, so the phase is -1.
@@ -563,7 +568,7 @@
         perm1 = [5, 4, 3, 2, 1]
         cycles1 = [
             (; perm=BitPermutation{UInt}(1:length(perm1) |> collect)),
-            (; perm=BitPermutation{UInt}(perm1))
+            (; perm=BitPermutation{UInt}(perm1)),
         ]
         refl_sym1ₛ = [
             sym(SpatialReflection(p, perm1), dofo1) for p in q_nums1
@@ -590,7 +595,7 @@
             refl_symᵢ = refl_sym2ₛ[i]
             @test refl_symᵢ.dofo == dofo2
             @test [c.perm for c in refl_symᵢ.cycles] == [
-                1:length(perm2) |> collect, perm2,
+                1:length(perm2) |> collect, perm2
             ]
             @test refl_symᵢ.check == check_perm
             @test refl_symᵢ.apply == apply_perm
@@ -605,7 +610,8 @@
                 refl_sym3 = sym(SpatialReflection(p, perm3), dofo3)
                 @test refl_sym3.dofo == dofo3
                 @test all(
-                    refl_sym3.cycles[i].perm.vector == BitPermutation{UInt}(perm_k(perm3, i - 1)).vector
+                    refl_sym3.cycles[i].perm.vector ==
+                    BitPermutation{UInt}(perm_k(perm3, i - 1)).vector
                     for i in 1:length(refl_sym3.cycles)
                 )
                 @test refl_sym3.check == check_perm
@@ -674,7 +680,7 @@
                     1:length(perm1) |> collect,
                     perm1,
                     perm1[perm1],
-                    perm1[perm1[perm1]]
+                    perm1[perm1[perm1]],
                 ]
                 @test rot_sym1.check == check_perm
                 @test rot_sym1.apply == apply_perm
@@ -722,7 +728,7 @@
                     1:length(perm3) |> collect,
                     perm3,
                     perm3[perm3],
-                    perm3[perm3[perm3]]
+                    perm3[perm3[perm3]],
                 ]
                 @test all(c.parity == (false, true, true, false) for c in rot_sym3.cycles)
                 @test rot_sym3.check == check_perm
@@ -855,7 +861,9 @@
         @test all(isone, N_sym2.factors)
 
         # The spinless fermion number symmetry is only valid on :SpinlessFermion dofo.
-        @test_throws ArgumentError sym(TotalSpinlessFermionicNumber(1, 2), dof_object(Boson(1)))
+        @test_throws ArgumentError sym(
+            TotalSpinlessFermionicNumber(1, 2), dof_object(Boson(1))
+        )
     end
 
     @testset "TotalSpinfulFermionicNumber constructor" begin
@@ -893,7 +901,7 @@
             wc=SymBasis.SymGroups.WeightedCounts(
                 ((0, 0, 1, 1), (0, 1, 0, 1)), (1, 1), [(0, 1, 1, 0), (1, 0, 0, 1)]
             ),
-            N=2
+            N=2,
         )]
         @test length(N_sym1.factors) == length(N_sym1.cycles)
         @test all(isone, N_sym1.factors)
@@ -901,7 +909,7 @@
         # The collapse must not change the sector: |↓↑⟩, |↑↓⟩, |0,↑↓⟩ and |↑↓,0⟩ are the
         # four N_up = N_down = 1 states of two sites.
         @test basis(dofo1, 2, N_sym1).states ==
-              [BaseInt(UInt(v); base=4) for v in (3, 6, 9, 12)]
+            [BaseInt(UInt(v); base=4) for v in (3, 6, 9, 12)]
 
         # N=3, n_up=1, n_down=0: only one digit-count cycle (2 empties, 1 up-only)
         N_sym2 = sym(TotalSpinfulFermionicNumber(1, 0, 3), dofo1)
@@ -913,7 +921,9 @@
         @test all(isone, N_sym2.factors)
 
         # Only valid on a :SpinfulFermion dofo.
-        @test_throws ArgumentError sym(TotalSpinfulFermionicNumber(1, 1, 2), dof_object(SpinlessFermion()))
+        @test_throws ArgumentError sym(
+            TotalSpinfulFermionicNumber(1, 1, 2), dof_object(SpinlessFermion())
+        )
 
         # Only valid on a spin-1/2 SpinfulFermion (exactly 2 distinct projections).
         dofo_spin1 = dof_object(SpinfulFermion(1 // 1, 2))
@@ -999,7 +1009,7 @@
             # The candidate set is a superset of the sector and a subset of all N-digit
             # states passing the check for some cycle -- here it is exactly the latter.
             brute = [
-                bi for bi in BaseInt(UInt(0); base=B):BaseInt(UInt(B^N - 1); base=B)
+                bi for bi in BaseInt(UInt(0); base=B):BaseInt(UInt(B^N-1); base=B)
                 if any(c -> sg.check(c, bi, true), sg.cycles)
             ]
             @test cand == brute
@@ -1028,7 +1038,7 @@
             dofo_b = dof_object(Boson(max_occ))
             sg = sym(TotalBosonicNumber(total, N), dofo_b)
             @test length(basis(dofo_b, N, sg).states) ==
-                  n_bounded_vectors(N, max_occ, total)
+                n_bounded_vectors(N, max_occ, total)
         end
 
         # Spinful fermions: choosing which sites hold an up and which hold a down are

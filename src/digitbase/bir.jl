@@ -61,7 +61,7 @@ end
 
 function Base.iterate(
     r::BaseIntRange{T,Ti,B},
-    state::BaseInt{T,Ti,B}=r.first
+    state::BaseInt{T,Ti,B}=r.first,
 ) where {T,Ti,B}
     state.value > r.last.value && return nothing
 
@@ -75,7 +75,7 @@ function Base.collect(r::BaseIntRange{T,Ti,B}) where {T,Ti,B}
 
     cur = r.first.value
     step_val = r.step.value
-    @inbounds for i = 1:len
+    @inbounds for i in 1:len
         out[i] = BaseInt{T,Ti,B}(cur)
         cur += step_val
     end

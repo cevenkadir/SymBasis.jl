@@ -16,7 +16,7 @@
         @test sg1.N == N
 
         @test_throws ArgumentError SymGroup(
-            dofo, cycle, check_perm, apply_perm, phase_unity, factors[1:end-1], N
+            dofo, cycle, check_perm, apply_perm, phase_unity, factors[1:(end-1)], N
         )
 
         # Backcompatible constructor without explicit phase argument.
@@ -56,19 +56,19 @@
         @test csg1.N == N
 
         @test_throws ArgumentError CombSymGroup(
-            dofo, cycle, checks, applies, phases, factors[1:end-1, :], N
+            dofo, cycle, checks, applies, phases, factors[1:(end-1), :], N
         )
         @test_throws ArgumentError CombSymGroup(
-            dofo, cycle, checks, applies, phases, factors[:, 1:end-1], N
+            dofo, cycle, checks, applies, phases, factors[:, 1:(end-1)], N
         )
         @test_throws ArgumentError CombSymGroup(
-            dofo, cycle, checks[1:end-1], applies, phases, factors, N
+            dofo, cycle, checks[1:(end-1)], applies, phases, factors, N
         )
         @test_throws ArgumentError CombSymGroup(
-            dofo, cycle, checks, applies[1:end-1], phases, factors, N
+            dofo, cycle, checks, applies[1:(end-1)], phases, factors, N
         )
         @test_throws ArgumentError CombSymGroup(
-            dofo, cycle, checks, applies, phases[1:end-1], factors, N
+            dofo, cycle, checks, applies, phases[1:(end-1)], factors, N
         )
 
         # Backcompatible constructor without explicit phase argument.
@@ -229,7 +229,7 @@
             apply_perm,
             phase_unity,
             Float64[],
-            N
+            N,
         )
         io_empty = IOBuffer()
         show(io_empty, sg_empty)

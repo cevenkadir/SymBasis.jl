@@ -102,15 +102,15 @@
     @testset "Base.iterate for BaseInt" begin
         b = bi"123"4
         digits = collect(b)
-        @test digits == [bi"123"4,]
+        @test digits == [bi"123"4]
 
         b2 = bi"4567"8
         digits2 = collect(b2)
-        @test digits2 == [bi"4567"8,]
+        @test digits2 == [bi"4567"8]
 
         b3 = bi"890"10
         digits3 = collect(b3)
-        @test digits3 == [bi"890"10,]
+        @test digits3 == [bi"890"10]
     end
 
     @testset "Base.show for BaseInt" begin
@@ -425,9 +425,9 @@
 
         # Iteration must not allocate: it is meant for the innermost loops.
         b4 = BaseInt(UInt(1234); base=4)
-        sumdigits(x, n) = (s = zero(UInt); for d in eachdigit(x, n)
-            s += d
-        end; s)
+        sumdigits(x, n) = (s=zero(UInt); for d in eachdigit(x, n)
+                s += d
+            end; s)
         sumdigits(b4, 8)
         @test (@allocated sumdigits(b4, 8)) == 0
         @test sumdigits(b4, 8) == sum(read(b4, i) for i in 1:8)
@@ -463,7 +463,7 @@
                 @test read(flip(b, pos), pos) == (base - 1) - read(b, pos)
                 @test read(write(b, pos, 1), pos) == 1
                 @test collect(eachdigit(write(b, pos, 1), 8)) ==
-                      [i == pos ? UInt(1) : digits_before[i] for i in 1:8]
+                    [i == pos ? UInt(1) : digits_before[i] for i in 1:8]
 
                 # `inc`/`dec` are exact inverses away from the carry/borrow boundaries.
                 if read(b, pos) < base - 1
@@ -490,7 +490,7 @@
                 b = BaseInt(T(v); base=base, Ti=Int)
                 @test read(b, r) == read(b, collect(r))
                 @test typeof(read(b, r)) == typeof(read(b, collect(r)))
-                for d in 0:min(base - 1, 3)
+                for d in 0:min(base-1, 3)
                     @test count(b, r, d) == count(b, collect(r), d)
                 end
             end

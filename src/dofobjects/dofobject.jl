@@ -38,7 +38,7 @@ struct DoFObject{B,T_ldof,T<:Integer,Ti<:Integer} <: AbstractDoFObject
     function DoFObject(
         type::Symbol,
         ldof::NTuple{B,T_ldof};
-        T::Type=UInt, Ti::Type=Int
+        T::Type=UInt, Ti::Type=Int,
     ) where {B,T_ldof}
         return new{B,T_ldof,T,Ti}(type, ldof)
     end

@@ -49,7 +49,7 @@ struct SymGroup{
     B,T_s,T<:Integer,Ti<:Integer,T_f<:Number,
     T_c<:AbstractVector{<:NamedTuple},
     F_c<:Function,F_a<:Function,F_p<:Function,
-    T_fs<:AbstractVector{T_f}
+    T_fs<:AbstractVector{T_f},
 }
     dofo::DoFObject{B,T_s,T,Ti}
     cycles::T_c
@@ -66,14 +66,20 @@ struct SymGroup{
         apply::Function,
         phase::Function,
         factors::AbstractVector{T_f},
-        N::Integer
+        N::Integer,
     ) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
         length(cycles) == length(factors) ||
-            throw(ArgumentError("cycles and factors must have the same length, got $(length(cycles)) and $(length(factors))"))
+            throw(
+                ArgumentError(
+                    "cycles and factors must have the same length, got $(length(cycles)) and $(length(factors))"
+                ),
+            )
         return new{
             B,T_s,T,Ti,T_f,
-            typeof(cycles),typeof(check),typeof(apply),typeof(phase),typeof(factors)
-        }(dofo, cycles, check, apply, phase, factors, Int(N))
+            typeof(cycles),typeof(check),typeof(apply),typeof(phase),typeof(factors),
+        }(
+            dofo, cycles, check, apply, phase, factors, Int(N)
+        )
     end
 end
 
@@ -83,7 +89,7 @@ function SymGroup(
     check::Function,
     apply::Function,
     factors::AbstractVector{T_f},
-    N::Integer
+    N::Integer,
 ) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
     return SymGroup(dofo, cycles, check, apply, phase_unity, factors, N)
 end
@@ -157,7 +163,7 @@ struct CombSymGroup{
     F_c<:Tuple{Vararg{Function}},
     F_a<:Tuple{Vararg{Function}},
     F_p<:Tuple{Vararg{Function}},
-    T_fs<:AbstractArray{T_f}
+    T_fs<:AbstractArray{T_f},
 }
     dofo::DoFObject{B,T_s,T,Ti}
     cycles::T_c
@@ -173,20 +179,38 @@ struct CombSymGroup{
         apply::Tuple{Vararg{Function}},
         phase::Tuple{Vararg{Function}},
         factors::AbstractArray{T_f},
-        N::Integer
+        N::Integer,
     ) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
         size(cycles) == size(factors) ||
-            throw(ArgumentError("cycles and factors must have the same size, got $(size(cycles)) and $(size(factors))"))
+            throw(
+                ArgumentError(
+                    "cycles and factors must have the same size, got $(size(cycles)) and $(size(factors))"
+                ),
+            )
         ndims(cycles) == length(check) ||
-            throw(ArgumentError("length of check ($(length(check))) must equal ndims(cycles) ($(ndims(cycles)))"))
+            throw(
+                ArgumentError(
+                    "length of check ($(length(check))) must equal ndims(cycles) ($(ndims(cycles)))"
+                ),
+            )
         ndims(cycles) == length(apply) ||
-            throw(ArgumentError("length of apply ($(length(apply))) must equal ndims(cycles) ($(ndims(cycles)))"))
+            throw(
+                ArgumentError(
+                    "length of apply ($(length(apply))) must equal ndims(cycles) ($(ndims(cycles)))"
+                ),
+            )
         ndims(cycles) == length(phase) ||
-            throw(ArgumentError("length of phase ($(length(phase))) must equal ndims(cycles) ($(ndims(cycles)))"))
+            throw(
+                ArgumentError(
+                    "length of phase ($(length(phase))) must equal ndims(cycles) ($(ndims(cycles)))"
+                ),
+            )
         return new{
             B,T_s,T,Ti,T_f,
-            typeof(cycles),typeof(check),typeof(apply),typeof(phase),typeof(factors)
-        }(dofo, cycles, check, apply, phase, factors, Int(N))
+            typeof(cycles),typeof(check),typeof(apply),typeof(phase),typeof(factors),
+        }(
+            dofo, cycles, check, apply, phase, factors, Int(N)
+        )
     end
 end
 
@@ -200,7 +224,7 @@ function CombSymGroup(
     apply::Union{AbstractVector{<:Function},Tuple{Vararg{Function}}},
     phase::Union{AbstractVector{<:Function},Tuple{Vararg{Function}}},
     factors::AbstractArray{T_f},
-    N::Integer
+    N::Integer,
 ) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
     return CombSymGroup(
         dofo, map(c -> (c...,), cycles), (check...,), (apply...,), (phase...,), factors, N
@@ -214,7 +238,7 @@ function CombSymGroup(
     apply::Union{AbstractVector{<:Function},Tuple{Vararg{Function}}},
     phase::Union{AbstractVector{<:Function},Tuple{Vararg{Function}}},
     factors::AbstractArray{T_f},
-    N::Integer
+    N::Integer,
 ) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
     return CombSymGroup(dofo, cycles, (check...,), (apply...,), (phase...,), factors, N)
 end
@@ -225,7 +249,7 @@ function CombSymGroup(
     check::Union{AbstractVector{<:Function},Tuple{Vararg{Function}}},
     apply::Union{AbstractVector{<:Function},Tuple{Vararg{Function}}},
     factors::AbstractArray{T_f},
-    N::Integer
+    N::Integer,
 ) where {B,T_s,T<:Integer,Ti<:Integer,T_f<:Number}
     return CombSymGroup(
         dofo,
@@ -234,7 +258,7 @@ function CombSymGroup(
         apply,
         ntuple(_ -> phase_unity, length(apply)),
         factors,
-        N
+        N,
     )
 end
 
@@ -246,7 +270,7 @@ end
     return _apply_all(
         Base.tail(applys),
         Base.tail(cycle),
-        first(applys)(first(cycle), state)
+        first(applys)(first(cycle), state),
     )
 end
 
@@ -260,11 +284,11 @@ end
         Base.tail(phases),
         Base.tail(cycle),
         new_state,
-        ph * phᵢ
+        ph * phᵢ,
     )
 end
 
-_cycles_preview(cycles; maxitems::Int=4) = begin
+function _cycles_preview(cycles; maxitems::Int=4)
     n = length(cycles)
     if n == 0
         return "∅"
@@ -284,8 +308,9 @@ function _print_kv(io::IO, key::AbstractString, val; indent::Int=2)
     return nothing
 end
 
-Base.summary(g::SymGroup{B,T_s,T,Ti,T_f}) where {B,T_s,T,Ti,T_f} =
+function Base.summary(g::SymGroup{B,T_s,T,Ti,T_f}) where {B,T_s,T,Ti,T_f}
     "SymGroup{$(B),$(T_s),$(T),$(Ti),$(T_f)} with $(length(g.cycles)) cycle(s)"
+end
 
 function Base.show(io::IO, g::SymGroup)
     # compact (used e.g. in arrays)
@@ -301,7 +326,7 @@ function Base.show(io::IO, g::SymGroup)
     _print_kv(
         io,
         "factors:",
-        "$(length(g.factors)) element(s), eltype=$(eltype(g.factors))"
+        "$(length(g.factors)) element(s), eltype=$(eltype(g.factors))",
     )
     _print_kv(io, "check:", string(nameof(g.check)))
     _print_kv(io, "apply:", string(nameof(g.apply)))
@@ -315,9 +340,10 @@ function Base.show(io::IO, ::MIME"text/plain", g::SymGroup)
     return nothing
 end
 
-Base.summary(g::CombSymGroup{B,T_s,T,Ti,T_f}) where {B,T_s,T,Ti,T_f} =
+function Base.summary(g::CombSymGroup{B,T_s,T,Ti,T_f}) where {B,T_s,T,Ti,T_f}
     "CombSymGroup{$(B),$(T_s),$(T),$(Ti),$(T_f)} " *
     "with size of cycles = $(size(g.cycles))"
+end
 
 function Base.show(io::IO, g::CombSymGroup)
     if get(io, :compact, false)
@@ -355,8 +381,9 @@ end
 # shape `∘` composes: a `SymGroup`'s single cycle/check/apply/phase becomes a 1-tuple, so
 # `_compose` below can concatenate either operand identically instead of each `∘` method
 # hand-flattening its own combination of plain values and tuples.
-_normalize(sg::SymGroup) =
+function _normalize(sg::SymGroup)
     (map(c -> (c,), sg.cycles), (sg.check,), (sg.apply,), (sg.phase,), sg.factors)
+end
 _normalize(csg::CombSymGroup) = (csg.cycles, csg.check, csg.apply, csg.phase, csg.factors)
 
 # Shared composition core for all four `∘` methods below: concatenate the normalized
@@ -371,7 +398,7 @@ function _compose(a::Union{SymGroup,CombSymGroup}, b::Union{SymGroup,CombSymGrou
         (applyₐ..., applyᵦ...),
         (phaseₐ..., phaseᵦ...),
         map(x -> *(x...), Base.product(factorsₐ, factorsᵦ)),
-        N
+        N,
     )
 end
 
@@ -396,10 +423,16 @@ symmetry groups.
 """
 function Base.:(∘)(
     sg1::SymGroup{B,T_s,T,Ti,<:T_f},
-    sg2::SymGroup{B,T_s,T,Ti,<:T_f}
+    sg2::SymGroup{B,T_s,T,Ti,<:T_f},
 ) where {B,T_s,T,Ti,T_f<:Number}
-    sg1.dofo == sg2.dofo || throw(ArgumentError("cannot compose symmetry groups acting on different DoF-objects"))
-    sg1.N == sg2.N || throw(ArgumentError("cannot compose symmetry groups with different N: $(sg1.N) vs $(sg2.N)"))
+    sg1.dofo == sg2.dofo || throw(
+        ArgumentError("cannot compose symmetry groups acting on different DoF-objects")
+    )
+    sg1.N == sg2.N || throw(
+        ArgumentError(
+            "cannot compose symmetry groups with different N: $(sg1.N) vs $(sg2.N)"
+        ),
+    )
     return _compose(sg1, sg2, sg1.dofo, sg1.N)
 end
 
@@ -423,10 +456,16 @@ functions, and factors of the input symmetry groups.
 """
 function Base.:(∘)(
     csg::CombSymGroup{B,T_s,T,Ti,<:T_f},
-    sg::SymGroup{B,T_s,T,Ti,<:T_f}
+    sg::SymGroup{B,T_s,T,Ti,<:T_f},
 ) where {B,T_s,T,Ti,T_f<:Number}
-    csg.dofo == sg.dofo || throw(ArgumentError("cannot compose symmetry groups acting on different DoF-objects"))
-    csg.N == sg.N || throw(ArgumentError("cannot compose symmetry groups with different N: $(csg.N) vs $(sg.N)"))
+    csg.dofo == sg.dofo || throw(
+        ArgumentError("cannot compose symmetry groups acting on different DoF-objects")
+    )
+    csg.N == sg.N || throw(
+        ArgumentError(
+            "cannot compose symmetry groups with different N: $(csg.N) vs $(sg.N)"
+        ),
+    )
     return _compose(csg, sg, csg.dofo, csg.N)
 end
 
@@ -450,10 +489,16 @@ functions, and factors of the input symmetry groups.
 """
 function Base.:(∘)(
     sg::SymGroup{B,T_s,T,Ti,<:T_f},
-    csg::CombSymGroup{B,T_s,T,Ti,<:T_f}
+    csg::CombSymGroup{B,T_s,T,Ti,<:T_f},
 ) where {B,T_s,T,Ti,T_f<:Number}
-    csg.dofo == sg.dofo || throw(ArgumentError("cannot compose symmetry groups acting on different DoF-objects"))
-    csg.N == sg.N || throw(ArgumentError("cannot compose symmetry groups with different N: $(csg.N) vs $(sg.N)"))
+    csg.dofo == sg.dofo || throw(
+        ArgumentError("cannot compose symmetry groups acting on different DoF-objects")
+    )
+    csg.N == sg.N || throw(
+        ArgumentError(
+            "cannot compose symmetry groups with different N: $(csg.N) vs $(sg.N)"
+        ),
+    )
     return _compose(sg, csg, csg.dofo, csg.N)
 end
 
@@ -478,9 +523,15 @@ input symmetry groups.
 """
 function Base.:(∘)(
     csg1::CombSymGroup{B,T_s,T,Ti,<:T_f},
-    csg2::CombSymGroup{B,T_s,T,Ti,<:T_f}
+    csg2::CombSymGroup{B,T_s,T,Ti,<:T_f},
 ) where {B,T_s,T,Ti,T_f<:Number}
-    csg1.dofo == csg2.dofo || throw(ArgumentError("cannot compose symmetry groups acting on different DoF-objects"))
-    csg1.N == csg2.N || throw(ArgumentError("cannot compose symmetry groups with different N: $(csg1.N) vs $(csg2.N)"))
+    csg1.dofo == csg2.dofo || throw(
+        ArgumentError("cannot compose symmetry groups acting on different DoF-objects")
+    )
+    csg1.N == csg2.N || throw(
+        ArgumentError(
+            "cannot compose symmetry groups with different N: $(csg1.N) vs $(csg2.N)"
+        ),
+    )
     return _compose(csg1, csg2, csg1.dofo, csg1.N)
 end

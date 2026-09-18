@@ -56,7 +56,7 @@ of freedom are determined by the spin value `s`, which defines a range from `-s`
     for the specified spin.
 """
 function dof_object(type::Spin{Ts,T,Ti}) where {Ts,T,Ti}
-    ldof = -type.s:type.s |> Tuple
+    ldof = (-type.s):type.s |> Tuple
 
     return DoFObject(:Spin, ldof; T=T, Ti=Ti)
 end
@@ -85,7 +85,8 @@ struct Boson{Tb<:Unsigned,T,Ti} <: AbstractDoFSpec{T,Ti}
     max_occupancy::Tb
 
     function Boson(max_occupancy::Tb; T::Type=UInt, Ti::Type=Int) where {Tb}
-        max_occupancy > 0 || throw(ArgumentError("max_occupancy must be positive, got $max_occupancy"))
+        max_occupancy > 0 ||
+            throw(ArgumentError("max_occupancy must be positive, got $max_occupancy"))
 
         return new{Tb,T,Ti}(max_occupancy)
     end
@@ -109,10 +110,17 @@ for storage based on the provided values.
 """
 function Boson(max_occupancy::Signed; kwargs...)
     m = max_occupancy
-    Tb = m ≤ typemax(UInt8) ? UInt8 :
-         m ≤ typemax(UInt16) ? UInt16 :
-         m ≤ typemax(UInt32) ? UInt32 :
-         m ≤ typemax(UInt64) ? UInt64 : UInt128
+    Tb = if m ≤ typemax(UInt8)
+        UInt8
+    elseif m ≤ typemax(UInt16)
+        UInt16
+    elseif m ≤ typemax(UInt32)
+        UInt32
+    elseif m ≤ typemax(UInt64)
+        UInt64
+    else
+        UInt128
+    end
     return Boson(Tb(max_occupancy); kwargs...)
 end
 
@@ -209,7 +217,9 @@ struct SpinfulFermion{Ts<:Rational,Tsf<:Unsigned,T,Ti} <: AbstractDoFSpec{T,Ti}
     s::Ts
     max_occupancy::Tsf
 
-    function SpinfulFermion(s::Ts, max_occupancy::Tsf; T::Type=UInt, Ti::Type=Int) where {Ts,Tsf}
+    function SpinfulFermion(
+        s::Ts, max_occupancy::Tsf; T::Type=UInt, Ti::Type=Int
+    ) where {Ts,Tsf}
         numerator(s) > 0 || throw(ArgumentError("Spin s must be positive, got $s"))
         (denominator(s) == 1 || denominator(s) == 2) ||
             throw(ArgumentError("Spin s must be an integer or half-integer, got $s"))
@@ -238,10 +248,17 @@ unsigned integer type for storage based on the provided value.
 """
 function SpinfulFermion(s, max_occupancy::Signed; kwargs...)
     m = max_occupancy
-    Tsf = m ≤ typemax(UInt8) ? UInt8 :
-          m ≤ typemax(UInt16) ? UInt16 :
-          m ≤ typemax(UInt32) ? UInt32 :
-          m ≤ typemax(UInt64) ? UInt64 : UInt128
+    Tsf = if m ≤ typemax(UInt8)
+        UInt8
+    elseif m ≤ typemax(UInt16)
+        UInt16
+    elseif m ≤ typemax(UInt32)
+        UInt32
+    elseif m ≤ typemax(UInt64)
+        UInt64
+    else
+        UInt128
+    end
     return SpinfulFermion(s, Tsf(max_occupancy); kwargs...)
 end
 
@@ -264,28 +281,32 @@ four local digits are, in order: unoccupied, spin-down, spin-up, doubly occupied
     for the specified spinful fermionic system.
 """
 function dof_object(type::SpinfulFermion{Ts,Tsf,T,Ti}) where {Ts,Tsf,T,Ti}
-    ms = -type.s:type.s |> Vector
-    ldof = Tuple(sort!(
-        [[x for (i, x) in pairs(ms) if (b >> (i - 1)) & 1 == 1]
-         for b in 0:(1<<length(ms))-1
-         if count_ones(b) <= type.max_occupancy],
-        by=v -> (length(v), Tuple(v))
-    ))
+    ms = (-type.s):type.s |> Vector
+    ldof = Tuple(
+        sort!(
+            [
+                [x for (i, x) in pairs(ms) if (b >> (i - 1)) & 1 == 1]
+                for b in 0:((1<<length(ms))-1)
+                if count_ones(b) <= type.max_occupancy
+            ];
+            by=v -> (length(v), Tuple(v)),
+        ),
+    )
 
     return DoFObject(:SpinfulFermion, ldof; T=T, Ti=Ti)
 end
 
 @deprecate dof_object(
     sym::Symbol, args...;
-    kwargs...
+    kwargs...,
 ) dof_object(
     getfield(DoFObjects, sym)(args...;
-        kwargs...)
+        kwargs...),
 )
 
 @deprecate dof_object(
     sym::Val{:Spin}, args...;
-    kwargs...
+    kwargs...,
 ) dof_object(
     Spin(args...; kwargs...)
 )

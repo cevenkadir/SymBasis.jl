@@ -32,7 +32,7 @@ digit power table `pows`) used by [`apply_perm`](@ref) and
 function check_perm(
     p::NamedTuple,
     state::BaseInt{T,Ti,B},
-    prev_bool::Bool
+    prev_bool::Bool,
 ) where {T,Ti,B}
     return prev_bool
 end
@@ -52,7 +52,7 @@ permutation).
 """
 function _perm_cycle(
     perm::AbstractVector{Ti},
-    dofo::DoFObject{B,T_s,T,Ti}
+    dofo::DoFObject{B,T_s,T,Ti},
 ) where {B,T_s,T,Ti}
     ip = Base.invperm(perm)
     # `T`, not the permutation's own `Ti`: the wrapper is applied to `BaseInt{T,Ti,2}` states.
@@ -101,7 +101,7 @@ path (via `BitPermutations.bitpermute`) when `p.perm` is a `BitPermutation` (bas
 """
 function apply_perm(
     p::NamedTuple,
-    state::BaseInt{T,Ti,B}
+    state::BaseInt{T,Ti,B},
 ) where {T,Ti,B}
     # Cycles built by `sym(...)` for B > 2 carry the inverse permutation and a digit power
     # table, allowing a single-pass, allocation-free permutation. (`haskey` on a NamedTuple
@@ -114,7 +114,7 @@ end
 
 function _apply_perm(
     perm::AbstractVector{<:Integer},
-    state::BaseInt{T,Ti,B}
+    state::BaseInt{T,Ti,B},
 ) where {T,Ti,B}
     return permute(state, perm)
 end
@@ -122,7 +122,7 @@ end
 function _permute_invpow(
     state::BaseInt{T,Ti,B},
     inv_perm::AbstractVector{<:Integer},
-    pows::AbstractVector{T}
+    pows::AbstractVector{T},
 ) where {T,Ti,B}
     BB = T(B)
     v = state.value
@@ -161,7 +161,7 @@ than the wrapping cycle `NamedTuple`.
 """
 function _apply_perm(
     perm::BitPermutation{T,<:PermutationBackend{T}},
-    state::BaseInt{T,Ti,2}
+    state::BaseInt{T,Ti,2},
 ) where {T,Ti}
     return BaseInt{T,Ti,2}(bitpermute(state.value, perm))
 end
@@ -284,7 +284,7 @@ function _weighted_count_cycle(
     cycles,
     weight_lists::NTuple{K,<:AbstractVector{<:Integer}},
     ::Val{B},
-    N::Integer
+    N::Integer,
 ) where {K,B}
     length(cycles) > 1 || return nothing
     all(wl -> length(wl) == B && all(>=(0), wl), weight_lists) || return nothing
@@ -317,7 +317,7 @@ function _counts_cycles(
     cycles,
     weight_lists::NTuple{K,<:AbstractVector{<:Integer}},
     ::Val{B},
-    N::Integer
+    N::Integer,
 ) where {K,B}
     collapsed = _weighted_count_cycle(cycles, weight_lists, Val(B), N)
     return collapsed === nothing ? cycles : [collapsed]
@@ -346,7 +346,7 @@ Since this is a symmetry check, the result is combined with `prev_bool`.
 function check_Ns(
     p::NamedTuple{names,NT},
     state::BaseInt,
-    prev_bool::Bool
+    prev_bool::Bool,
 ) where {names,NT<:Tuple{Vararg{Integer}}}
     return prev_bool * _check_Ns(state, p)
 end
@@ -367,7 +367,7 @@ multi-signature sectors built by `sym` for `TotalBosonicNumber`, `TotalMagnetiza
 function check_Ns(
     p::NamedTuple{names,<:Tuple{WeightedCounts,Integer}},
     state::BaseInt,
-    prev_bool::Bool
+    prev_bool::Bool,
 ) where {names}
     return prev_bool && _check_wc(state, p.wc, p.N)
 end
@@ -395,7 +395,7 @@ the named tuple `p`. Accepts any named tuple that contains the fields `N`, `N0`,
 """
 function _check_Ns(
     state::BaseInt{T,Ti,B},
-    p::NamedTuple{names}
+    p::NamedTuple{names},
 ) where {T,Ti,B,names}
     BB = T(B)
     targets = _digit_targets(p, Val(B))
@@ -465,7 +465,7 @@ state.
 """
 function apply_Ns(
     p::NamedTuple{names,NT},
-    state::BaseInt
+    state::BaseInt,
 ) where {names,NT<:Tuple{Vararg{Integer}}}
     return state
 end
@@ -473,7 +473,7 @@ end
 # Collapsed digit-count cycles (see `WeightedCounts`) act trivially too.
 function apply_Ns(
     p::NamedTuple{names,<:Tuple{WeightedCounts,Integer}},
-    state::BaseInt
+    state::BaseInt,
 ) where {names}
     return state
 end
@@ -505,7 +505,7 @@ The result is combined with `prev_bool`.
 function check_flip(
     p::NamedTuple{names,<:Tuple{Bool,<:AbstractVector{Ti},Vararg{Integer}}},
     state::BaseInt{T,Ti,B},
-    prev_bool::Bool
+    prev_bool::Bool,
 ) where {names,T,Ti,B}
     return prev_bool && _check_Ns(state, p)
 end
@@ -529,7 +529,7 @@ function check_flip(
         names,<:Tuple{Bool,<:AbstractVector{<:Integer},WeightedCounts,Integer}
     },
     state::BaseInt,
-    prev_bool::Bool
+    prev_bool::Bool,
 ) where {names}
     return prev_bool && _check_wc(state, p.wc, p.N)
 end
@@ -560,7 +560,7 @@ returns the original state.
 """
 function apply_flip(
     p::NamedTuple{names,<:Tuple{Bool,<:AbstractVector{Ti},Vararg{Integer}}},
-    state::BaseInt{T,Ti,B}
+    state::BaseInt{T,Ti,B},
 ) where {names,T,Ti,B}
     if p.is_flipped
         return flip(state, p.sites)
@@ -574,7 +574,7 @@ function apply_flip(
     p::NamedTuple{
         names,<:Tuple{Bool,<:AbstractVector{<:Integer},WeightedCounts,Integer}
     },
-    state::BaseInt
+    state::BaseInt,
 ) where {names}
     return p.is_flipped ? flip(state, p.sites) : state
 end
@@ -844,7 +844,7 @@ function _fixed_counts_fill!(
     remaining::Vector{Int},
     pows::Vector{T},
     pos::Int,
-    val::T
+    val::T,
 ) where {T,Ti,B}
     if pos < 1
         @inbounds out[idx] = BaseInt{T,Ti,B}(val)
@@ -853,7 +853,9 @@ function _fixed_counts_fill!(
     @inbounds for d in 0:(B-1)
         if remaining[d+1] > 0
             remaining[d+1] -= 1
-            idx = _fixed_counts_fill!(out, idx, remaining, pows, pos - 1, val + T(d) * pows[pos])
+            idx = _fixed_counts_fill!(
+                out, idx, remaining, pows, pos - 1, val + T(d) * pows[pos]
+            )
             remaining[d+1] += 1
         end
     end
@@ -898,7 +900,9 @@ struct Translational{T_k<:Integer,Ti} <: AbstractSymSpec
 
     function Translational(k::T_k, perm::AbstractVector{Ti}) where {T_k,Ti}
         N = length(perm)
-        N == length(unique(perm)) || throw(ArgumentError("perm must be a permutation (no repeated entries), got $perm"))
+        N == length(unique(perm)) || throw(
+            ArgumentError("perm must be a permutation (no repeated entries), got $perm")
+        )
 
         Id_vec = 1:N .|> Ti
         perm != Id_vec || throw(ArgumentError("perm must not be the identity permutation"))
@@ -926,7 +930,7 @@ symmetry specification `ss`.
 """
 function sym(
     ss::Translational{T_k,Ti},
-    dofo::DoFObject{B,T_s,T,Ti}
+    dofo::DoFObject{B,T_s,T,Ti},
 ) where {B,T_s,T,Ti,T_k}
     N = length(ss.perm)
     Id_vec = 1:N .|> Ti
@@ -958,7 +962,7 @@ function sym(
             cispi(-2r * ss.k / R)
             for r in rₛ
         ],
-        N
+        N,
     )
 
     return T_sym
@@ -989,7 +993,9 @@ struct SpatialReflection{T_p<:Integer,Ti} <: AbstractSymSpec
 
     function SpatialReflection(p::T_p, perm::AbstractVector{Ti}) where {T_p,Ti}
         N = length(perm)
-        N == length(unique(perm)) || throw(ArgumentError("perm must be a permutation (no repeated entries), got $perm"))
+        N == length(unique(perm)) || throw(
+            ArgumentError("perm must be a permutation (no repeated entries), got $perm")
+        )
 
         (p == T_p(-1) || p == T_p(1)) || throw(ArgumentError("p must be -1 or 1, got $p"))
 
@@ -1019,7 +1025,7 @@ reflection symmetry specification `ss`.
 """
 function sym(
     ss::SpatialReflection{T_p,Ti},
-    dofo::DoFObject{B,T_s,T,Ti}
+    dofo::DoFObject{B,T_s,T,Ti},
 ) where {B,T_s,T,Ti,T_p}
     N = length(ss.perm)
     Id_vec = 1:N .|> Ti
@@ -1048,7 +1054,7 @@ function sym(
         apply,
         phase,
         [ss.p^r for r in rₛ],
-        N
+        N,
     )
 
     return P_sym
@@ -1079,7 +1085,9 @@ struct Rotational{T_r<:Integer,Ti} <: AbstractSymSpec
 
     function Rotational(r::T_r, perm::AbstractVector{Ti}) where {T_r,Ti}
         N = length(perm)
-        N == length(unique(perm)) || throw(ArgumentError("perm must be a permutation (no repeated entries), got $perm"))
+        N == length(unique(perm)) || throw(
+            ArgumentError("perm must be a permutation (no repeated entries), got $perm")
+        )
 
         Id_vec = 1:N .|> Ti
         perm != Id_vec || throw(ArgumentError("perm must not be the identity permutation"))
@@ -1109,7 +1117,7 @@ constructs the rotational symmetry group using the `check_perm` and `apply_perm`
 """
 function sym(
     ss::Rotational{T_r,Ti},
-    dofo::DoFObject{B,T_s,T,Ti}
+    dofo::DoFObject{B,T_s,T,Ti},
 ) where {B,T_s,T,Ti,T_r}
     N = length(ss.perm)
     Id_vec = 1:N .|> Ti
@@ -1134,7 +1142,7 @@ function sym(
         apply,
         phase,
         [cispi(-2 * r * ss.r / R) for r in rₛ],
-        N
+        N,
     )
 
     return R_sym
@@ -1143,6 +1151,6 @@ end
 @deprecate sym(
     s::Symbol,
     dofo::DoFObject{B,T_s,T,Ti},
-    args...; kwargs...
+    args...; kwargs...,
 ) where {B,T_s,T,Ti} sym(getfield(SymGroups, s)(args...), dofo; kwargs...)
 # END -- predefined symmetry group wrappers for end users

@@ -1,0 +1,9 @@
+style = "blue"
+margin = 92
+format_docstrings = false
+always_use_return = false
+remove_extra_newlines = false
+whitespace_ops_in_indices = false
+join_lines_based_on_source = true
+conditional_to_if = false
+pipe_to_function_call = false

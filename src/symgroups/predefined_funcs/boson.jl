@@ -27,7 +27,9 @@ struct TotalBosonicNumber{T_b<:Integer,T_N<:Integer} <: AbstractSymSpec
     function TotalBosonicNumber(
         n_particles::T_b, N::T_N
     ) where {T_b,T_N}
-        n_particles >= 0 || throw(ArgumentError("Number of particles must be non-negative, got $n_particles"))
+        n_particles >= 0 || throw(
+            ArgumentError("Number of particles must be non-negative, got $n_particles")
+        )
 
         return new{T_b,T_N}(n_particles, N)
     end
@@ -59,7 +61,7 @@ of signatures; with a single signature the plain `N0`, …, `N(B-1)` cycle is ke
 """
 function sym(
     ss::TotalBosonicNumber{T_b,T_N},
-    dofo::DoFObject{B,T_b,T,Ti}
+    dofo::DoFObject{B,T_b,T,Ti},
 ) where {B,T_b,T,Ti,T_N}
     dofo.type == :Boson ||
         throw(ArgumentError("expected a Boson DoF-object, got $(dofo.type)"))
@@ -77,7 +79,7 @@ function sym(
         apply_Ns,
         phase_unity,
         ones(length(cyclesₛ)),
-        ss.N
+        ss.N,
     )
 
     return N_sym

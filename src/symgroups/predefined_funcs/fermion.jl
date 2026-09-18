@@ -31,8 +31,14 @@ struct TotalSpinlessFermionicNumber{T_b<:Integer,T_N<:Integer} <: AbstractSymSpe
     function TotalSpinlessFermionicNumber(
         n_particles::T_b, N::T_N
     ) where {T_b,T_N}
-        n_particles >= 0 || throw(ArgumentError("Number of particles must be non-negative, got $n_particles"))
-        n_particles <= N || throw(ArgumentError("Number of particles cannot exceed the total number of DoF-objects ($n_particles > $N)"))
+        n_particles >= 0 || throw(
+            ArgumentError("Number of particles must be non-negative, got $n_particles")
+        )
+        n_particles <= N || throw(
+            ArgumentError(
+                "Number of particles cannot exceed the total number of DoF-objects ($n_particles > $N)"
+            ),
+        )
 
         return new{T_b,T_N}(n_particles, N)
     end
@@ -70,7 +76,7 @@ bit each step); other bases use a sequential digit-by-digit `divrem` pass.
 """
 function phase_perm_fermionic(
     p::NamedTuple,
-    state::BaseInt{T,Ti,B}
+    state::BaseInt{T,Ti,B},
 ) where {T,Ti,B}
     # Cycles built by `sym(...)` carry the precomputed inverse permutation; fall back to
     # computing it for user-built cycles. (`haskey` on a NamedTuple is compile-time.)
@@ -85,7 +91,7 @@ end
 # bitmask of already-mapped positions — no intermediate vectors.
 function _phase_perm_fermionic(
     inv_perm::AbstractVector{<:Integer},
-    state::BaseInt{T,Ti,2}
+    state::BaseInt{T,Ti,2},
 ) where {T,Ti}
     v = state.value
     seen = zero(T)
@@ -103,7 +109,7 @@ end
 
 function _phase_perm_fermionic(
     inv_perm::AbstractVector{<:Integer},
-    state::BaseInt{T,Ti,B}
+    state::BaseInt{T,Ti,B},
 ) where {T,Ti,B}
     BB = T(B)
     v = state.value
@@ -141,7 +147,7 @@ consistent with the ascending-spin-projection intra-site operator ordering used 
 function _phase_perm_fermionic(
     inv_perm::AbstractVector{<:Integer},
     parity::NTuple{B,Bool},
-    state::BaseInt{T,Ti,B}
+    state::BaseInt{T,Ti,B},
 ) where {T,Ti,B}
     BB = T(B)
     v = state.value
@@ -185,7 +191,7 @@ particles.
 """
 function sym(
     ss::TotalSpinlessFermionicNumber{T_b,T_N},
-    dofo::DoFObject{B,T_b,T,Ti}
+    dofo::DoFObject{B,T_b,T,Ti},
 ) where {B,T_b,T,Ti,T_N}
     dofo.type == :SpinlessFermion ||
         throw(ArgumentError("expected a SpinlessFermion DoF-object, got $(dofo.type)"))
@@ -199,7 +205,7 @@ function sym(
         apply_Ns,
         phase_unity,
         ones(length(all_spinless_fermion_sumₛ)),
-        ss.N
+        ss.N,
     )
 
     return N_sym
@@ -228,9 +234,19 @@ struct TotalSpinfulFermionicNumber{T_b<:Integer,T_N<:Integer} <: AbstractSymSpec
     function TotalSpinfulFermionicNumber(
         n_up::T_b, n_down::T_b, N::T_N
     ) where {T_b,T_N}
-        n_up >= 0 || throw(ArgumentError("Number of spin-up particles must be non-negative, got $n_up"))
-        n_down >= 0 || throw(ArgumentError("Number of spin-down particles must be non-negative, got $n_down"))
-        n_up + n_down <= N || throw(ArgumentError("Total number of particles cannot exceed the total number of DoF-objects ($(n_up + n_down) > $N)"))
+        n_up >= 0 || throw(
+            ArgumentError("Number of spin-up particles must be non-negative, got $n_up")
+        )
+        n_down >= 0 || throw(
+            ArgumentError(
+                "Number of spin-down particles must be non-negative, got $n_down"
+            ),
+        )
+        n_up + n_down <= N || throw(
+            ArgumentError(
+                "Total number of particles cannot exceed the total number of DoF-objects ($(n_up + n_down) > $N)"
+            ),
+        )
 
         return new{T_b,T_N}(n_up, n_down, N)
     end
@@ -254,16 +270,18 @@ signature the plain `N0`, …, `N(B-1)` cycle is kept.
 """
 function sym(
     ss::TotalSpinfulFermionicNumber{T_b,T_N},
-    dofo::DoFObject{B,T_ldof,T,Ti}
+    dofo::DoFObject{B,T_ldof,T,Ti},
 ) where {B,T_ldof,T,Ti,T_b,T_N}
     dofo.type == :SpinfulFermion ||
         throw(ArgumentError("expected a SpinfulFermion DoF-object, got $(dofo.type)"))
 
     all_ms = sort(unique(vcat(collect.(dofo.ldof)...)))
-    length(all_ms) == 2 || throw(ArgumentError(
-        "TotalSpinfulFermionicNumber requires a spin-1/2 SpinfulFermion DoF-object " *
-        "(exactly 2 distinct spin projections), got $(length(all_ms))."
-    ))
+    length(all_ms) == 2 || throw(
+        ArgumentError(
+            "TotalSpinfulFermionicNumber requires a spin-1/2 SpinfulFermion DoF-object " *
+            "(exactly 2 distinct spin projections), got $(length(all_ms)).",
+        ),
+    )
     m_down, m_up = all_ms
 
     up_weights = [count(==(m_up), l) for l in dofo.ldof]
@@ -284,7 +302,7 @@ function sym(
         apply_Ns,
         phase_unity,
         ones(length(cyclesₛ)),
-        ss.N
+        ss.N,
     )
 
     return Nud_sym
@@ -307,7 +325,7 @@ opposed to [`apply_perm`](@ref)/[`apply_perm_fermionic`](@ref), which permute *s
 """
 function apply_spinful_fermion_relabel(
     p::NamedTuple,
-    state::BaseInt{T,Ti,B}
+    state::BaseInt{T,Ti,B},
 ) where {T,Ti,B}
     new_state = state
     for x in p.sites
@@ -335,7 +353,7 @@ moves between sites, so the total sign is simply the product of independent per-
 """
 function phase_spinful_fermion_relabel(
     p::NamedTuple,
-    state::BaseInt{T,Ti,B}
+    state::BaseInt{T,Ti,B},
 ) where {T,Ti,B}
     sign = 1
     for x in p.sites
@@ -384,7 +402,7 @@ DoF-object `dofo`, exchanging spin-up and spin-down at every site.
 """
 function sym(
     ss::FermionicSpinInversion{T_z,T_N},
-    dofo::DoFObject{B,T_ldof,T,Ti}
+    dofo::DoFObject{B,T_ldof,T,Ti},
 ) where {B,T_ldof,T,Ti,T_z,T_N}
     dofo.type == :SpinfulFermion ||
         throw(ArgumentError("expected a SpinfulFermion DoF-object, got $(dofo.type)"))
@@ -411,7 +429,7 @@ function sym(
         apply_spinful_fermion_relabel,
         phase_spinful_fermion_relabel,
         [ss.z^r for r in rₛ],
-        ss.N
+        ss.N,
     )
 
     return Z_sym

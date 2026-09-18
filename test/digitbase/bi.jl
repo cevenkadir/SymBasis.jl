@@ -22,6 +22,15 @@
         b = BaseInt(UInt(10); base=2, Ti=Int)
         @test_throws ArgumentError permute(b, [1, 2, 5, 3])
         @test_throws ArgumentError permute(b, [0, 1, 2, 3])
+        # duplicates are not a permutation
+        @test_throws ArgumentError permute(b, [1, 1, 3, 4])
+        @test_throws ArgumentError permute(BaseInt(UInt(10); base=2, Ti=Int), [1, 1, 3])
+        @test_throws ArgumentError permute(b, vcat(1, 1, 3:70)) # > 64 digits branch
+        # valid permutations (both branches) still work
+        @test permute(b, [4, 3, 2, 1]) == BaseInt(UInt(5); base=2, Ti=Int)
+        @test permute(b, [1, 2, 3, 4]) == b
+        bl = BaseInt(UInt128(1) << 69; base=2, Ti=Int)
+        @test permute(bl, collect(70:-1:1)) == BaseInt(UInt128(1); base=2, Ti=Int)
     end
 
     @testset "Macro bi_str for BaseInt" begin

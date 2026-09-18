@@ -474,9 +474,6 @@ function permute(b::BaseInt{T,Ti,B}, perm::AbstractVector{Ti}) where {T,Ti,B}
     B > 1 || throw(ArgumentError("Base must be ≥ 2"))
 
     n = length(perm)
-    all(p -> 1 <= p <= n, perm) ||
-        throw(ArgumentError("perm must index into 1:length(perm)"))
-
     BB = T(B)
 
     # digits of b in LSD-first order
@@ -490,9 +487,31 @@ function permute(b::BaseInt{T,Ti,B}, perm::AbstractVector{Ti}) where {T,Ti,B}
     out = zero(T)
     pBk = one(T) # B^(k-1)
 
-    @inbounds for k in 1:n
-        out += digitsb[perm[k]] * pBk # place digit perm[k] as k-th LSD digit
-        pBk *= BB
+    if n <= 64
+        # Validation is folded into the placement loop with an allocation-free seen-mask,
+        # so checking that `perm` is a genuine permutation adds no measurable cost.
+        seen = UInt64(0)
+        @inbounds for k in 1:n
+            p = perm[k]
+            1 <= p <= n || throw(ArgumentError("perm must index into 1:length(perm)"))
+            bit = UInt64(1) << (p - 1)
+            iszero(seen & bit) ||
+                throw(ArgumentError("perm must be a permutation: index $p is repeated"))
+            seen |= bit
+            out += digitsb[p] * pBk # place digit perm[k] as k-th LSD digit
+            pBk *= BB
+        end
+    else
+        seen = falses(n)
+        @inbounds for k in 1:n
+            p = perm[k]
+            1 <= p <= n || throw(ArgumentError("perm must index into 1:length(perm)"))
+            seen[p] &&
+                throw(ArgumentError("perm must be a permutation: index $p is repeated"))
+            seen[p] = true
+            out += digitsb[p] * pBk
+            pBk *= BB
+        end
     end
 
     return BaseInt{T,Ti,B}(out)

@@ -50,7 +50,7 @@ function combos_dof_sum(
                 counts[i] = c
                 push!(configs, vcat([fill(ldofR[j], counts[j]) for j in 1:n_ldof]...))
             end
-            return
+            return nothing
         end
 
         for c in 0:remaining
@@ -109,7 +109,7 @@ function combos_spin_sum(
                 # Build a representative config: each projection repeated counts[j] times.
                 push!(configs, vcat([fill(ldof[j], counts[j]) for j in 1:n_ldof]...))
             end
-            return
+            return nothing
         end
 
         for c in 0:remaining
@@ -206,7 +206,7 @@ function combos_dof_sum_weighted(
                 nt = merge(NT(ntuple(j -> counts[j], n_ldof)), (; N=n))
                 push!(res, nt)
             end
-            return
+            return nothing
         end
 
         for c in 0:remaining

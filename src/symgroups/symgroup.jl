@@ -290,7 +290,7 @@ function Base.show(io::IO, g::SymGroup)
     # compact (used e.g. in arrays)
     if get(io, :compact, false)
         print(io, summary(g))
-        return
+        return nothing
     end
 
     println(io, summary(g))
@@ -318,7 +318,7 @@ Base.summary(g::CombSymGroup{B,T_s,T,Ti,T_f}) where {B,T_s,T,Ti,T_f} =
 function Base.show(io::IO, g::CombSymGroup)
     if get(io, :compact, false)
         print(io, summary(g))
-        return
+        return nothing
     end
 
     println(io, summary(g))

@@ -2,7 +2,6 @@ module SymGroups
 
 include("symgroup.jl")
 export SymGroup, CombSymGroup
-export _make_hashset
 
 include("predefined_funcs/general.jl")
 export AbstractSymSpec

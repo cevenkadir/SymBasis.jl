@@ -5,6 +5,8 @@ using SymBasis.SymGroups:
     _candidate_states, apply_Ns
 using SymBasis.DoFObjects: DoFObject
 
+# The parameters `T` and `T_n` are user-facing. `T_states`, `T_norms` and `T_sg` are
+# storage-only: they keep the field types concrete and are inferred by the constructor.
 """
     Basis{T,T_n<:Number}
     Basis(
@@ -18,17 +20,25 @@ basis states are represented using [`SymBasis.DigitBase.BaseInt`](@ref), which a
 efficient representation and manipulation of states in different bases.
 
 # Fields
-- `states::AbstractVector{T}`: A vector of basis states, where `T` is the type of the basis
-    states.
-- `norms::AbstractVector{T_n}`: A vector of norms corresponding to each basis state, where
-    `T_n` is the data type for the norms.
-- `sg::Union{SymGroup,CombSymGroup,Nothing}`: An optional symmetry group associated with the
-    basis. It can be either a [`SymBasis.SymGroups.SymGroup`](@ref) or a
-    [`SymBasis.SymGroups.CombSymGroup`](@ref), or `nothing` if no symmetry group is
-    associated.
+- `states::T_states`: A vector of basis states, where `T` is the type of the basis
+    states (`T_states <: AbstractVector{T}`).
+- `norms::T_norms`: A vector of norms corresponding to each basis state, where
+    `T_n` is the data type for the norms (`T_norms <: AbstractVector{T_n}`).
+- `sg::T_sg`: An optional symmetry group associated with the basis
+    (`T_sg <: Union{SymGroup,CombSymGroup,Nothing}`). It can be either a
+    [`SymBasis.SymGroups.SymGroup`](@ref) or a [`SymBasis.SymGroups.CombSymGroup`](@ref), or
+    `nothing` if no symmetry group is associated.
 - `sorted::Bool`: Whether `states` is in ascending order, determined once at construction.
     Bases built by [`basis`](@ref) always are; [`state_index`](@ref) uses this to pick a
     binary search over a linear scan.
+
+# Type parameters
+- `T`: The element type of `states`.
+- `T_n<:Number`: The element type of `norms`.
+- `T_states`, `T_norms`, `T_sg`: The concrete types of the `states`, `norms` and `sg`
+    fields. They exist only to keep the field types concrete, so that field access is
+    inferable and code using a `Basis` is specialized. They are inferred by the constructor
+    and are not meant to be chosen by users.
 
 # Constructor Arguments
 - `states::AbstractVector{T}`: A vector of basis states, where `T` is the type of the basis

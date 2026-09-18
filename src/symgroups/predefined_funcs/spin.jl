@@ -166,10 +166,6 @@ A concrete subtype of [`SymBasis.SymGroups.AbstractSymSpec`](@ref) representing 
 magnetization symmetry specification. The type parameter `T_s` represents the target total
 magnetization quantum number, while `T_N` represents the number of sites.
 
-# Fields
-- `mag::T_s`: The target total magnetization quantum number for the symmetry specification.
-- `N::T_N`: The number of sites.
-
 # Constructor Arguments
 - `mag::T_s`: The target total magnetization quantum number for the symmetry specification.
 - `N::T_N`: The number of sites.
@@ -278,17 +274,6 @@ end
 
 A concrete subtype of [`SymBasis.SymGroups.AbstractSymSpec`](@ref) representing a spin
 multipole symmetry specification.
-
-# Fields
-- `qₛ::AbstractArray{T_q,RANK}`: The target multipole quantum numbers for the symmetry
-    specification.
-- `weights::AbstractMatrix{T_w}`: The weights used to compute the multipole sum from the
-    spin projections.
-- `N::T_N`: The number of sites.
-- `atol::T_tol`: The absolute tolerance for comparing the computed multipole sum to the
-    target values.
-- `rtol::T_tol`: The relative tolerance for comparing the computed multipole sum to the
-    target values.
 
 # Constructor Arguments
 - `qₛ::AbstractArray{T_q,RANK}`: The target multipole quantum numbers for the symmetry
@@ -418,10 +403,6 @@ end
 A concrete subtype of [`SymBasis.SymGroups.AbstractSymSpec`](@ref) representing a spin
 inversion symmetry specification. The type parameter `T_z` represents the spin inversion
 quantum number, while `T_N` represents the number of sites.
-
-# Fields
-- `z::T_z`: The parity quantum number (either `-1` or `1`).
-- `N::T_N`: The number of sites.
 
 # Constructor Arguments
 - `z::T_z`: The parity quantum number (either `-1` or `1`).

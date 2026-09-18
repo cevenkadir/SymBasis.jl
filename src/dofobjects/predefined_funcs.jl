@@ -13,10 +13,6 @@ A concrete type representing a quantum mechanical spin specification. The spin v
 a rational number that can be either an integer or a half-integer, and it defines the local
 degrees of freedom for the spin object.
 
-# Fields
-- `s::Ts`: The spin value, which must be a positive rational number with a denominator of 1
-    or 2.
-
 # Constructor Arguments
 - `s::Ts`: The spin value, which must be a positive rational number with a denominator of 1
     or 2.
@@ -66,9 +62,6 @@ end
 
 A concrete type representing a bosonic degree of freedom specification. This type defines
 the maximum occupancy for each particle.
-
-# Fields
-- `max_occupancy::Tb`: The maximum occupancy for each bosonic particle.
 
 # Constructor Arguments
 - `max_occupancy::Tb`: The maximum occupancy for each bosonic particle.
@@ -194,11 +187,6 @@ A concrete type representing a spinful fermionic degree of freedom specification
 value `s` is a rational number that can be either an integer or a half-integer (same
 convention as [`SymBasis.DoFObjects.Spin`](@ref)), and `max_occupancy` bounds the number of
 fermions allowed to simultaneously occupy a single site.
-
-# Fields
-- `s::Ts`: The spin value, which must be a positive rational number with a denominator of 1
-    or 2.
-- `max_occupancy::Tsf`: The maximum number of fermions allowed per site.
 
 # Constructor Arguments
 - `s::Ts`: The spin value, which must be a positive rational number with a denominator of 1

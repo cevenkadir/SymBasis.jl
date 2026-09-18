@@ -18,18 +18,6 @@ A symmetry group acting on a DoF-object. The symmetry group is defined by its as
 DoF-object, a set of cycles representing the symmetry operations, functions to check and
 apply these operations, and factors associated with each symmetry cycle.
 
-# Fields
-- `dofo::`[`SymBasis.DoFObjects.DoFObject`](@ref)`{B,T_s,T,Ti}`: The DoF-object on which the
-    symmetry group acts.
-- `cycles::T_c`: A vector of named tuples representing the symmetry cycles (`T_c` is a
-    subtype of `AbstractVector{<:NamedTuple}`).
-- `check::F_c`: A function to check the validity of symmetry operations (`F_c <: Function`).
-- `apply::F_a`: A function to apply the symmetry operations (`F_a <: Function`).
-- `phase::F_p`: A function to compute the phase of symmetry operations (`F_p <: Function`).
-- `factors::T_fs`: A vector of factors associated with each symmetry cycle
-    (`T_fs <: AbstractVector{T_f}`).
-- `N::Int`: The number of sites. Used to check the validity of the symmetry operations.
-
 # Type parameters
 - `B`: The base (local Hilbert-space dimension) of the DoF-object.
 - `T_s`: The type of the local degrees of freedom (spin-like quantum numbers) of the
@@ -43,6 +31,10 @@ apply these operations, and factors associated with each symmetry cycle.
     by the constructor and are not meant to be chosen by users.
 
 # Constructor Arguments
+Each argument is stored in the field of the same name. The fields `cycles`, `check`,
+`apply`, `phase` and `factors` are stored with the concrete types `T_c`, `F_c`, `F_a`,
+`F_p` and `T_fs` (see Type parameters), and `N` is stored as an `Int`.
+
 - `dofo::`[`SymBasis.DoFObjects.DoFObject`](@ref)`{B,T_s,T,Ti}`: The DoF-object on which the
     symmetry group acts.
 - `cycles::AbstractVector{<:NamedTuple}`: A vector of named tuples representing the symmetry
@@ -132,21 +124,6 @@ tuples, and `check`/`apply`/`phase` are `Tuple`s of functions) so that the per-d
 types stay known to the compiler in the hot loops. The constructor also accepts the legacy
 layout (array of vectors of named tuples, and vectors of functions) and converts it.
 
-# Fields
-- `dofo::`[`SymBasis.DoFObjects.DoFObject`](@ref)`{B,T_s,T,Ti}`: The DoF-object on which the
-    combined symmetry group acts.
-- `cycles::T_c`: An array of tuples of named tuples representing the combined symmetry
-    cycles (`T_c <: AbstractArray{<:Tuple{Vararg{NamedTuple}}}`).
-- `check::F_c`: A tuple of functions to check the validity of each set of symmetry
-    operations (`F_c <: Tuple{Vararg{Function}}`).
-- `apply::F_a`: A tuple of functions to apply each set of symmetry operations
-    (`F_a <: Tuple{Vararg{Function}}`).
-- `phase::F_p`: A tuple of functions to compute phase factors for each set of symmetry
-    operations (`F_p <: Tuple{Vararg{Function}}`).
-- `factors::T_fs`: An array of factors associated with each combined symmetry cycle
-    (`T_fs <: AbstractArray{T_f}`).
-- `N::Int`: The number of sites. Used to check the validity of the symmetry operations.
-
 # Type parameters
 - `B`: The base (local Hilbert-space dimension) of the DoF-object.
 - `T_s`: The type of the local degrees of freedom (spin-like quantum numbers) of the
@@ -160,6 +137,10 @@ layout (array of vectors of named tuples, and vectors of functions) and converts
     They are inferred by the constructor and are not meant to be chosen by users.
 
 # Constructor Arguments
+Each argument is stored in the field of the same name. The fields `cycles`, `check`,
+`apply`, `phase` and `factors` are stored with the concrete types `T_c`, `F_c`, `F_a`,
+`F_p` and `T_fs` (see Type parameters), and `N` is stored as an `Int`.
+
 - `dofo::`[`SymBasis.DoFObjects.DoFObject`](@ref)`{B,T_s,T,Ti}`: The DoF-object on which the
     combined symmetry group acts.
 - `cycles::AbstractArray{<:Tuple{Vararg{NamedTuple}}}`: An array of tuples of named

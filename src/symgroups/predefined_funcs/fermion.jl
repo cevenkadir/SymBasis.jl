@@ -12,10 +12,6 @@ target total fermion number quantum number, while `T_N` represents the number of
 This symmetry selects the subspace with fixed total fermion number, i.e. states whose
 binary occupations sum to `n_particles`.
 
-# Fields
-- `n_particles::T_b`: The target total fermion number quantum number.
-- `N::T_N`: The number of sites.
-
 # Constructor Arguments
 - `n_particles::T_b`: The target total fermion number quantum number.
 - `N::T_N`: The number of sites.

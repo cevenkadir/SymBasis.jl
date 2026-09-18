@@ -15,10 +15,6 @@ local degrees of freedom (ldof) with length `B`. The type of the local degrees o
 specified by the type parameter `T_ldof`, while the integer types used for indexing and
 calculations are specified by the type parameters `T` and `Ti`.
 
-# Fields
-- `type::Symbol`: The type of the object (e.g., `:Spin`, `:Fermion`) as a symbol.
-- `ldof::NTuple{B,T_ldof}`: A tuple representing the local degrees of freedom of the object.
-
 # Constructor Arguments
 - `type::Symbol`: The type of the object (e.g., `:Spin`, `:Fermion`) as a symbol.
 - `ldof::NTuple{B,T_ldof}`: A tuple representing the local degrees of freedom of the object.

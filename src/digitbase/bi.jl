@@ -11,11 +11,9 @@
 A type representing an integer in base `B`, where `T` is the underlying integer type used to
 store the value, and `Ti` is the integer type used for indexing digits.
 
-# Fields
-- `value::T`: The integer value representing the number in base `B`.
-
 # Constructor Arguments
-- `value::T`: The integer value to be represented in base `B`.
+- `value::T`: The integer value to be represented in base `B`. It is stored unchanged in
+    the field of the same name, `value::T`.
 
 # Constructor Keyword Arguments
 - `base::Integer=2`: The base in which to represent the integer. Default is `2`.

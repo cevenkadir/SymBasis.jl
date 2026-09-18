@@ -7,10 +7,6 @@ A concrete subtype of [`SymBasis.SymGroups.AbstractSymSpec`](@ref) representing 
 particle number conservation specification. The type parameter `T_b` represents the target
 total particle number quantum number, while `T_N` represents the number of sites.
 
-# Fields
-- `n_particles::T_b`: The target total particle number quantum number.
-- `N::T_N`: The number of sites.
-
 # Constructor Arguments
 - `n_particles::T_b`: The target total particle number quantum number.
 - `N::T_N`: The number of sites.

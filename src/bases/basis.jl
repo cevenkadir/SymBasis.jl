@@ -41,11 +41,9 @@ efficient representation and manipulation of states in different bases.
     and are not meant to be chosen by users.
 
 # Constructor Arguments
-- `states::AbstractVector{T}`: A vector of basis states, where `T` is the type of the basis
-    states.
-- `norms::AbstractVector{T_n}`: A vector of norms corresponding to each basis state.
-- `sg::Union{SymGroup,CombSymGroup,Nothing}`: An optional symmetry group associated with the
-    basis.
+The constructor takes `states::AbstractVector{T}`, `norms::AbstractVector{T_n}` and
+optionally `sg::Union{SymGroup,CombSymGroup,Nothing}`, each stored in the field of the same
+name (see Fields). `sorted` is computed by the constructor.
 
 # Returns
 - [`SymBasis.Bases.Basis`](@ref)`{T,T_n}`: A new [`SymBasis.Bases.Basis`](@ref) instance

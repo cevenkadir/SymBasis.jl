@@ -1,4 +1,4 @@
-using SymBasis.Miscs: combos_dof_sum_weighted
+using SymBasis.Miscs: combos_dof_sum_weighted, _invperm
 
 # For spinless fermions
 """
@@ -52,7 +52,7 @@ subset of sites where `state` has a nonzero digit.
 precomputed `invperm` field — as produced for cycles built by
 [`SymBasis.SymGroups.sym`](@ref) for `Translational`/`SpatialReflection`/`Rotational`
 symmetries applied to spinless fermions — that inverse permutation is used directly;
-otherwise it is computed on the fly via [`SymBasis.Miscs.invperm`](@ref).
+otherwise it is computed on the fly via `SymBasis.Miscs._invperm`.
 
 The sign itself is obtained by counting inversions of the occupied-site permutation with a
 bitmask sweep over already-mapped positions (`count_ones` on a shifted mask), rather than
@@ -74,7 +74,7 @@ function phase_perm_fermionic(
 ) where {T,Ti,B}
     # Cycles built by `sym(...)` carry the precomputed inverse permutation; fall back to
     # computing it for user-built cycles. (`haskey` on a NamedTuple is compile-time.)
-    inv_perm = haskey(p, :invperm) ? p.invperm : invperm(p.perm)
+    inv_perm = haskey(p, :invperm) ? p.invperm : _invperm(p.perm)
     if haskey(p, :parity)
         return _phase_perm_fermionic(inv_perm, p.parity, state)
     end

@@ -366,19 +366,16 @@ Compute the default relative tolerance for a non-floating-point real type.
 rtoldefault(::Type{<:Real}) = 0
 
 """
-    invperm(perm::BitPermutation{T,<:PermutationBackend{T}}) where {T}
+    _invperm(perm)
 
-Compute the inverse of a bit permutation.
+Private helper: inverse of a permutation, returned as a standard `Vector`.
 
-# Arguments
-- `perm::BitPermutation{T,<:PermutationBackend{T}}`: The bit permutation for which to
-    compute the inverse.
+Accepts a `BitPermutation` (converted with `Vector` first) or any
+`AbstractVector{<:Integer}` (forwarded to `Base.invperm` unchanged). Kept under a distinct,
+unexported name so that `using SymBasis.Miscs` never shadows `Base.invperm`.
 
 # Returns
-- `Vector{T}`: The inverse of the input bit permutation, returned as a standard vector.
+- `Vector{<:Integer}`: The inverse permutation.
 """
-function invperm(perm::BitPermutation{T,<:PermutationBackend{T}}) where {T}
-    return Base.invperm(Vector(perm))
-end
-
-invperm(perm::AbstractVector{<:Integer}) = Base.invperm(perm)
+_invperm(perm::BitPermutation) = Base.invperm(Vector(perm))
+_invperm(perm::AbstractVector{<:Integer}) = Base.invperm(perm)

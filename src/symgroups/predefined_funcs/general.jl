@@ -1,4 +1,4 @@
-using SymBasis.Miscs: perm_k, perm_wrapper, invperm
+using SymBasis.Miscs: perm_k, perm_wrapper
 using BitPermutations: bitpermute, PermutationBackend, BitPermutation
 using SymBasis.DoFObjects: DoFObject
 using SymBasis.DigitBase: BaseInt, permute, count, flip, read

@@ -7,7 +7,7 @@ abstract type AbstractDoFObject end
     DoFObject(
         type::Symbol,
         ldof::NTuple{B,T_ldof};
-        T::DataType=UInt, Ti::DataType=Int
+        T::Type=UInt, Ti::Type=Int
     ) where {B,T_ldof}
 
 An object having degrees of freedom. Each object is characterized by its type and a tuple of
@@ -24,9 +24,9 @@ calculations are specified by the type parameters `T` and `Ti`.
 - `ldof::NTuple{B,T_ldof}`: A tuple representing the local degrees of freedom of the object.
 
 # Constructor Keyword Arguments
-- `T::DataType=UInt`: The integer type used for indexing and calculations. Default is
+- `T::Type=UInt`: The integer type used for indexing and calculations. Default is
     `UInt`.
-- `Ti::DataType=Int`: The integer type used for indexing and calculations. Default is
+- `Ti::Type=Int`: The integer type used for indexing and calculations. Default is
     `Int`.
 
 # Returns
@@ -38,7 +38,7 @@ struct DoFObject{B,T_ldof,T<:Integer,Ti<:Integer} <: AbstractDoFObject
     function DoFObject(
         type::Symbol,
         ldof::NTuple{B,T_ldof};
-        T::DataType=UInt, Ti::DataType=Int
+        T::Type=UInt, Ti::Type=Int
     ) where {B,T_ldof}
         return new{B,T_ldof,T,Ti}(type, ldof)
     end

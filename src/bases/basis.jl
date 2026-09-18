@@ -199,7 +199,7 @@ Generates the full basis for a DoF-object without symmetry considerations.
 - `N::Integer`: The number of sites.
 
 # Keyword Arguments
-- `norm_type::DataType=Float64`: The data type for the norms of the basis states. Default is
+- `norm_type::Type=Float64`: The data type for the norms of the basis states. Default is
     `Float64`.
 - `is_sorted::Bool=false`: Retained for backwards compatibility and has no effect: the
     states are enumerated in ascending order, so the returned basis is always sorted.
@@ -210,7 +210,7 @@ Generates the full basis for a DoF-object without symmetry considerations.
 function basis(
     dofo::DoFObject{B,T_s,T,Ti},
     N::Integer;
-    norm_type::DataType=Float64,
+    norm_type::Type=Float64,
     is_sorted::Bool=false
 ) where {B,T_s,T,Ti}
     states = collect(
@@ -584,7 +584,7 @@ Generates the symmetry-resolved basis for a DoF-object under the action of a sym
     resolved.
 
 # Keyword Arguments
-- `norm_type::DataType=Float64`: The data type for the norms of the basis states. Default is
+- `norm_type::Type=Float64`: The data type for the norms of the basis states. Default is
     `Float64`.
 - `is_sorted::Bool=false`: Retained for backwards compatibility and has no effect: the
     states are enumerated in ascending order, so the returned basis is always sorted.
@@ -596,7 +596,7 @@ function basis(
     dofo::DoFObject{B,T_s,T,Ti},
     N::Integer,
     sg::SymGroup{B,T_s,T,Ti,Ts};
-    norm_type::DataType=Float64,
+    norm_type::Type=Float64,
     is_sorted::Bool=false
 ) where {T,Ti,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
     F₀ = zero(Complex{norm_type})
@@ -644,7 +644,7 @@ end
         dofo::DoFObject{B,T_s,T,Ti},
         N::Integer,
         csg::CombSymGroup{B,T_s,T,Ti,Ts};
-        norm_type::DataType=Float64,
+        norm_type::Type=Float64,
         is_sorted::Bool=false
     ) where {T,Ti,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
 
@@ -659,7 +659,7 @@ Generates the symmetry-resolved basis for a DoF-object under the action of a com
     group to be resolved.
 
 # Keyword Arguments
-- `norm_type::DataType=Float64`: The data type for the norms of the basis states. Default is
+- `norm_type::Type=Float64`: The data type for the norms of the basis states. Default is
     `Float64`.
 - `is_sorted::Bool=false`: Retained for backwards compatibility and has no effect: the
     states are enumerated in ascending order, so the returned basis is always sorted.
@@ -671,7 +671,7 @@ function basis(
     dofo::DoFObject{B,T_s,T,Ti},
     N::Integer,
     csg::CombSymGroup{B,T_s,T,Ti,Ts};
-    norm_type::DataType=Float64,
+    norm_type::Type=Float64,
     is_sorted::Bool=false
 ) where {T,Ti,B,T_s,T_n<:Real,Ts<:Union{T_n,Complex{T_n}}}
     F₀ = zero(Complex{norm_type})

@@ -195,8 +195,8 @@ function sym(
     N_sym = SymGroup(
         dofo,
         all_spinless_fermion_sumₛ,
-        check_Nₛ,
-        apply_Nₛ,
+        check_Ns,
+        apply_Ns,
         phase_unity,
         ones(length(all_spinless_fermion_sumₛ)),
         ss.N
@@ -280,8 +280,8 @@ function sym(
     Nud_sym = SymGroup(
         dofo,
         cyclesₛ,
-        check_Nₛ,
-        apply_Nₛ,
+        check_Ns,
+        apply_Ns,
         phase_unity,
         ones(length(cyclesₛ)),
         ss.N

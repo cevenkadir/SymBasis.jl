@@ -260,8 +260,8 @@ function sym(
     Sz_sym = SymGroup(
         dofo,
         cyclesₛ,
-        check_Nₛ,
-        apply_Nₛ,
+        check_Ns,
+        apply_Ns,
         phase_unity,
         ones(length(cyclesₛ)),
         ss.N

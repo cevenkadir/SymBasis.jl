@@ -41,8 +41,8 @@
                 (; perm=perm_k(perm, i))]
             for i in 0:(N-1), N0 in 1:(N-1)
         ]
-        checks = [check_perm, check_Nₛ]
-        applies = [apply_perm, apply_Nₛ]
+        checks = [check_perm, check_Ns]
+        applies = [apply_perm, apply_Ns]
         phases = [phase_unity, phase_unity]
         factors = [1.0 for i in 0:(N-1), N0 in 1:(N-1)]
 

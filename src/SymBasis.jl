@@ -51,11 +51,11 @@ export AbstractSymSpec
 using .SymGroups: Translational, SpatialReflection, Rotational
 export Translational, SpatialReflection, Rotational
 
-using .SymGroups: check_Nₛ, check_perm, check_flip
-export check_Nₛ, check_perm, check_flip
+using .SymGroups: check_Ns, check_Nₛ, check_perm, check_flip
+export check_Ns, check_Nₛ, check_perm, check_flip
 
-using .SymGroups: apply_Nₛ, apply_perm, apply_flip
-export apply_Nₛ, apply_perm, apply_flip
+using .SymGroups: apply_Ns, apply_Nₛ, apply_perm, apply_flip
+export apply_Ns, apply_Nₛ, apply_perm, apply_flip
 
 using .SymGroups: WeightedCounts
 export WeightedCounts

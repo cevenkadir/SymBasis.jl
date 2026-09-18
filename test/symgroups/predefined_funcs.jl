@@ -26,22 +26,27 @@
         @test apply_perm((; perm=perm2), state2) == bi"320001"5
     end
 
-    @testset "check_Nₛ" begin
-        state1 = bi"11010"2
-        @test !check_Nₛ((; N0=2, N1=3, N=5), state1, false)
-        @test check_Nₛ((; N0=2, N1=3, N=5), state1, true)
-
-        state2 = bi"5410"6
-        @test !check_Nₛ((; N0=2, N1=1, N2=0, N3=0, N4=1, N5=1, N=5), state2, false)
-        @test check_Nₛ((; N0=2, N1=1, N2=0, N3=0, N4=1, N5=1, N=5), state2, true)
+    @testset "Unicode aliases" begin
+        @test check_Nₛ === check_Ns
+        @test apply_Nₛ === apply_Ns
     end
 
-    @testset "apply_Nₛ" begin
+    @testset "check_Ns" begin
+        state1 = bi"11010"2
+        @test !check_Ns((; N0=2, N1=3, N=5), state1, false)
+        @test check_Ns((; N0=2, N1=3, N=5), state1, true)
+
+        state2 = bi"5410"6
+        @test !check_Ns((; N0=2, N1=1, N2=0, N3=0, N4=1, N5=1, N=5), state2, false)
+        @test check_Ns((; N0=2, N1=1, N2=0, N3=0, N4=1, N5=1, N=5), state2, true)
+    end
+
+    @testset "apply_Ns" begin
         state1 = bi"10011"2
-        @test apply_Nₛ((; N0=2, N1=3, N=5), state1) == bi"10011"2
+        @test apply_Ns((; N0=2, N1=3, N=5), state1) == bi"10011"2
 
         state2 = bi"1302"5
-        @test apply_Nₛ((; N0=1, N1=1, N2=1, N3=1, N4=0, N=4), state2) == bi"1302"5
+        @test apply_Ns((; N0=1, N1=1, N2=1, N3=1, N4=0, N=4), state2) == bi"1302"5
     end
 
     @testset "check_multipole" begin
@@ -219,8 +224,8 @@
         for (i, Sz_symᵢ) in enumerate(Sz_sym1ₛ)
             @test Sz_symᵢ.dofo == dofo1
             @test Sz_symᵢ.cycles == cycle1ₛ[i]
-            @test Sz_symᵢ.check == check_Nₛ
-            @test Sz_symᵢ.apply == apply_Nₛ
+            @test Sz_symᵢ.check == check_Ns
+            @test Sz_symᵢ.apply == apply_Ns
             @test Sz_symᵢ.factors == factor1ₛ[i]
         end
 
@@ -241,8 +246,8 @@
         for (i, Sz_symᵢ) in enumerate(Sz_sym2ₛ)
             @test Sz_symᵢ.dofo == dofo2
             @test Sz_symᵢ.cycles == cycle2ₛ[i]
-            @test Sz_symᵢ.check == check_Nₛ
-            @test Sz_symᵢ.apply == apply_Nₛ
+            @test Sz_symᵢ.check == check_Ns
+            @test Sz_symᵢ.apply == apply_Ns
             @test Sz_symᵢ.factors == factor2ₛ[i]
         end
 
@@ -760,8 +765,8 @@
         N_sym1 = sym(pnc1, dofo1)
 
         @test N_sym1.dofo == dofo1
-        @test N_sym1.check == check_Nₛ
-        @test N_sym1.apply == apply_Nₛ
+        @test N_sym1.check == check_Ns
+        @test N_sym1.apply == apply_Ns
         @test length(N_sym1.cycles) >= 1
         @test all(haskey(c, :N) for c in N_sym1.cycles)
         @test all(c.N == 2 for c in N_sym1.cycles)
@@ -774,8 +779,8 @@
         N_sym2 = sym(pnc2, dofo2)
 
         @test N_sym2.dofo == dofo2
-        @test N_sym2.check == check_Nₛ
-        @test N_sym2.apply == apply_Nₛ
+        @test N_sym2.check == check_Ns
+        @test N_sym2.apply == apply_Ns
         # For 1 particle distributed among 3 sites: only one configuration
         # (N0=2, N1=1, N=3) meaning 2 sites empty, 1 site has 1 particle
         @test length(N_sym2.cycles) == 1
@@ -787,8 +792,8 @@
         N_sym3 = sym(pnc3, dofo3)
 
         @test N_sym3.dofo == dofo3
-        @test N_sym3.check == check_Nₛ
-        @test N_sym3.apply == apply_Nₛ
+        @test N_sym3.check == check_Ns
+        @test N_sym3.apply == apply_Ns
         # For 0 particles: only one configuration (N0=2, N1=0, N=2)
         @test length(N_sym3.cycles) == 1
         @test all(isone, N_sym3.factors)
@@ -799,8 +804,8 @@
         N_sym4 = sym(pnc4, dofo4)
 
         @test N_sym4.dofo == dofo4
-        @test N_sym4.check == check_Nₛ
-        @test N_sym4.apply == apply_Nₛ
+        @test N_sym4.check == check_Ns
+        @test N_sym4.apply == apply_Ns
         # Multiple configurations possible for 3 particles on 4 sites
         @test length(N_sym4.cycles) >= 1
         @test all(c.N == 4 for c in N_sym4.cycles)
@@ -831,8 +836,8 @@
         N_sym1 = sym(pnf1, dofo1)
 
         @test N_sym1.dofo == dofo1
-        @test N_sym1.check == check_Nₛ
-        @test N_sym1.apply == apply_Nₛ
+        @test N_sym1.check == check_Ns
+        @test N_sym1.apply == apply_Ns
         @test all(c.N == 4 for c in N_sym1.cycles)
         @test length(N_sym1.factors) == length(N_sym1.cycles)
         @test all(isone, N_sym1.factors)
@@ -843,8 +848,8 @@
         N_sym2 = sym(pnf2, dofo2)
 
         @test N_sym2.dofo == dofo2
-        @test N_sym2.check == check_Nₛ
-        @test N_sym2.apply == apply_Nₛ
+        @test N_sym2.check == check_Ns
+        @test N_sym2.apply == apply_Ns
         @test length(N_sym2.cycles) == 1
         @test all(c.N == 4 for c in N_sym2.cycles)
         @test all(isone, N_sym2.factors)
@@ -882,8 +887,8 @@
         # directly via per-digit weight tables.
         N_sym1 = sym(TotalSpinfulFermionicNumber(1, 1, 2), dofo1)
         @test N_sym1.dofo == dofo1
-        @test N_sym1.check == check_Nₛ
-        @test N_sym1.apply == apply_Nₛ
+        @test N_sym1.check == check_Ns
+        @test N_sym1.apply == apply_Ns
         @test N_sym1.cycles == [(;
             wc=SymBasis.SymGroups.WeightedCounts(
                 ((0, 0, 1, 1), (0, 1, 0, 1)), (1, 1), [(0, 1, 1, 0), (1, 0, 0, 1)]
@@ -901,8 +906,8 @@
         # N=3, n_up=1, n_down=0: only one digit-count cycle (2 empties, 1 up-only)
         N_sym2 = sym(TotalSpinfulFermionicNumber(1, 0, 3), dofo1)
         @test N_sym2.dofo == dofo1
-        @test N_sym2.check == check_Nₛ
-        @test N_sym2.apply == apply_Nₛ
+        @test N_sym2.check == check_Ns
+        @test N_sym2.apply == apply_Ns
         @test all(c.N == 3 for c in N_sym2.cycles)
         @test length(N_sym2.factors) == length(N_sym2.cycles)
         @test all(isone, N_sym2.factors)

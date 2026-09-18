@@ -216,7 +216,7 @@ function of the digit counts is stored as one cycle carrying a
 [`WeightedCounts`](@ref SymBasis.SymGroups.WeightedCounts): a weight table giving each digit
 value's contribution (here $0, 1, 2$ bosons for digits $0, 1, 2$), the target value ($N_b$),
 and the list of admissible signatures. Membership is then decided by
-[`check_Nₛ`](@ref SymBasis.SymGroups.check_Nₛ) in a single pass over a state's digits,
+[`check_Ns`](@ref SymBasis.SymGroups.check_Ns) in a single pass over a state's digits,
 whatever the number of signatures, instead of one pass per signature. The signatures are
 still kept because [`basis`](@ref SymBasis.Bases.basis) uses them to enumerate the sector
 directly rather than scanning all $B^N$ states.

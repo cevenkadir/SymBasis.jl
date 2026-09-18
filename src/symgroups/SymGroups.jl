@@ -6,8 +6,8 @@ export SymGroup, CombSymGroup
 include("predefined_funcs/general.jl")
 export AbstractSymSpec
 export Translational, SpatialReflection, Rotational
-export check_Nₛ, check_perm, check_flip
-export apply_Nₛ, apply_perm, apply_flip
+export check_Ns, check_Nₛ, check_perm, check_flip
+export apply_Ns, apply_Nₛ, apply_perm, apply_flip
 export WeightedCounts
 export phase_unity
 export sym

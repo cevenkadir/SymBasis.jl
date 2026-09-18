@@ -276,7 +276,7 @@ Returns `nothing` — signalling the caller to keep the original per-signature c
 the collapse would not be an exact rewrite or would not pay off:
 
 - fewer than two signatures (nothing to collapse; in particular every base-2 sector, whose
-  [`SymBasis.SymGroups.check_Nₛ`](@ref) has a dedicated `count_ones` fast path),
+  [`SymBasis.SymGroups.check_Ns`](@ref) has a dedicated `count_ones` fast path),
 - a negative weight (the early-exit in [`_check_wc`](@ref) assumes monotone partial sums),
 - signatures that do not all encode the same target value.
 """
@@ -324,7 +324,7 @@ function _counts_cycles(
 end
 
 """
-    check_Nₛ(
+    check_Ns(
         p::NamedTuple{names,NT},
         state::SymBasis.DigitBase.BaseInt,
         prev_bool::Bool,
@@ -332,6 +332,8 @@ end
 
 Check if the given state has the specified digit counts as defined in the named tuple `p`.
 Since this is a symmetry check, the result is combined with `prev_bool`.
+
+`check_Nₛ` is a Unicode alias of this function, kept for backward compatibility.
 
 # Arguments
 - `p::NamedTuple{names,NT}`: A named tuple containing the digit counts.
@@ -341,16 +343,16 @@ Since this is a symmetry check, the result is combined with `prev_bool`.
 # Returns
 - `Bool`: The combined result of the previous boolean and the digit count check.
 """
-function check_Nₛ(
+function check_Ns(
     p::NamedTuple{names,NT},
     state::BaseInt,
     prev_bool::Bool
 ) where {names,NT<:Tuple{Vararg{Integer}}}
-    return prev_bool * _check_Nₛ(state, p)
+    return prev_bool * _check_Ns(state, p)
 end
 
 """
-    check_Nₛ(
+    check_Ns(
         p::NamedTuple{names,<:Tuple{SymBasis.SymGroups.WeightedCounts,Integer}},
         state::SymBasis.DigitBase.BaseInt,
         prev_bool::Bool
@@ -362,7 +364,7 @@ conserved quantity carried by `p.wc` in a single pass over the digits (see
 multi-signature sectors built by `sym` for `TotalBosonicNumber`, `TotalMagnetization` and
 `TotalSpinfulFermionicNumber`.
 """
-function check_Nₛ(
+function check_Ns(
     p::NamedTuple{names,<:Tuple{WeightedCounts,Integer}},
     state::BaseInt,
     prev_bool::Bool
@@ -370,19 +372,19 @@ function check_Nₛ(
     return prev_bool && _check_wc(state, p.wc, p.N)
 end
 
-# `check_Nₛ` restricts states purely by digit-count signature, so its sector can be
+# `check_Ns` restricts states purely by digit-count signature, so its sector can be
 # enumerated directly -- see `_enumerates_by_digit_count`.
-_enumerates_by_digit_count(::typeof(check_Nₛ)) = true
+_enumerates_by_digit_count(::typeof(check_Ns)) = true
 
 """
-    _check_Nₛ(
+    _check_Ns(
         state::SymBasis.DigitBase.BaseInt{T,Ti,B},
         p::NamedTuple{names}
     ) where {T,Ti,B,names}
 
 Internal function to check if the given state has the specified digit counts as defined in
 the named tuple `p`. Accepts any named tuple that contains the fields `N`, `N0`, `N1`, ...,
-`N(B-1)` (e.g. from both `check_Nₛ` and `check_flip` parameter tuples).
+`N(B-1)` (e.g. from both `check_Ns` and `check_flip` parameter tuples).
 
 # Arguments
 - `state::`[`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: The state to be checked.
@@ -391,7 +393,7 @@ the named tuple `p`. Accepts any named tuple that contains the fields `N`, `N0`,
 # Returns
 - `Bool`: `true` if the state has the specified digit counts, `false` otherwise.
 """
-function _check_Nₛ(
+function _check_Ns(
     state::BaseInt{T,Ti,B},
     p::NamedTuple{names}
 ) where {T,Ti,B,names}
@@ -419,7 +421,7 @@ end
 end
 
 """
-    _check_Nₛ(
+    _check_Ns(
         state::SymBasis.DigitBase.BaseInt{T,Ti,2},
         p::NamedTuple{N0::TN, N1::TN, N::TN}
     ) where {T,Ti,TN<:Integer}
@@ -434,7 +436,7 @@ as defined in the named tuple `p`.
 # Returns
 - `Bool`: `true` if the state has the specified counts of 0s and 1s, `false` otherwise.
 """
-function _check_Nₛ(
+function _check_Ns(
     state::BaseInt{T,Ti,2},
     p::@NamedTuple{N0::TN, N1::TN, N::TN}
 ) where {T,Ti,TN<:Integer}
@@ -442,7 +444,7 @@ function _check_Nₛ(
 end
 
 """
-    apply_Nₛ(
+    apply_Ns(
         p::NamedTuple{names,NT},
         state::SymBasis.DigitBase.BaseInt
     ) where {names,NT<:Tuple{Vararg{Integer}}}
@@ -450,6 +452,8 @@ end
 Apply the symmetry operation defined by the digit counts in `p` to the given state. Since
 this is a symmetry where the state remains unchanged, the function simply returns the input
 state.
+
+`apply_Nₛ` is a Unicode alias of this function, kept for backward compatibility.
 
 # Arguments
 - `p::NamedTuple{names,NT}`: A named tuple containing the digit counts.
@@ -459,7 +463,7 @@ state.
 # Returns
 - [`SymBasis.DigitBase.BaseInt`](@ref): The unchanged state.
 """
-function apply_Nₛ(
+function apply_Ns(
     p::NamedTuple{names,NT},
     state::BaseInt
 ) where {names,NT<:Tuple{Vararg{Integer}}}
@@ -467,12 +471,16 @@ function apply_Nₛ(
 end
 
 # Collapsed digit-count cycles (see `WeightedCounts`) act trivially too.
-function apply_Nₛ(
+function apply_Ns(
     p::NamedTuple{names,<:Tuple{WeightedCounts,Integer}},
     state::BaseInt
 ) where {names}
     return state
 end
+
+# Backward-compatible Unicode aliases (the ASCII names are the public API).
+const check_Nₛ = check_Ns
+const apply_Nₛ = apply_Ns
 
 """
     check_flip(
@@ -499,7 +507,7 @@ function check_flip(
     state::BaseInt{T,Ti,B},
     prev_bool::Bool
 ) where {names,T,Ti,B}
-    return prev_bool && _check_Nₛ(state, p)
+    return prev_bool && _check_Ns(state, p)
 end
 
 """
@@ -580,7 +588,7 @@ end
 Whether `check` restricts states purely by digit-count signature, so its sector can be
 enumerated directly via [`_sector_states_from_counts`](@ref) instead of scanned over the
 full `Bᴺ` range. This is a trait: it defaults to `false` and is declared `true` next to
-each `check_*` function that supports it (`check_Nₛ`, `check_flip`), so a future
+each `check_*` function that supports it (`check_Ns`, `check_flip`), so a future
 conserved-quantity check opts in at its own definition instead of a dispatch table having
 to be edited elsewhere.
 """

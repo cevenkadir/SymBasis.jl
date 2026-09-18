@@ -86,8 +86,8 @@ SymGroup{2,Rational{Int64},UInt64,Int64,Float64} with 1 cycle(s)
   DoF-object:    DoFObject(Spin, B=2)
   cycles:        (N0 = 2, N1 = 2, N = 4)
   factors:       1 element(s), eltype=Float64
-  check:         check_Nₛ
-  apply:         apply_Nₛ
+  check:         check_Ns
+  apply:         apply_Ns
   phase:         phase_unity
 
 # generate the basis
@@ -95,7 +95,7 @@ julia> basis(dofo, N, sg)
 Basis{BaseInt{UInt64, Int64, 2},Float64} with 6 states
   states: Vector{BaseInt{UInt64, Int64, 2}}
   norms : Vector{Float64}
-  symmetry group: SymGroup{2, Rational{Int64}, UInt64, Int64, Float64, Vector{@NamedTuple{N0::Int64, N1::Int64, N::Int64}}, typeof(check_Nₛ), typeof(apply_Nₛ), typeof(phase_unity), Vector{Float64}}
+  symmetry group: SymGroup{2, Rational{Int64}, UInt64, Int64, Float64, Vector{@NamedTuple{N0::Int64, N1::Int64, N::Int64}}, typeof(check_Ns), typeof(apply_Ns), typeof(phase_unity), Vector{Float64}}
   first 6 states/norms:
     (11)₂    (norm=1.0)
     (101)₂   (norm=1.0)

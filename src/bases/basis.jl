@@ -1,7 +1,7 @@
 
 using SymBasis.DigitBase: BaseInt, BaseIntRange, base_number_to_string, _max_value
 using SymBasis.SymGroups: SymGroup, CombSymGroup, _apply_all, _apply_phase_all,
-    _candidate_states, apply_Nₛ
+    _candidate_states, apply_Ns
 using SymBasis.DoFObjects: DoFObject
 
 """
@@ -348,12 +348,12 @@ that dimension's per-state re-test pure overhead. Requires the candidates to com
 exact [`SymBasis.SymGroups._candidate_states`](@ref) enumeration (not the `Bᴺ` fallback) and
 that dimension to hold a single element.
 
-Also requires `apply_Nₛ`, which is easy to miss: the check is evaluated against the
+Also requires `apply_Ns`, which is easy to miss: the check is evaluated against the
 *transformed* state, so the candidate set's provenance only carries over when the
 transformation is the identity.
 """
 @inline function _candidates_satisfy_check(apply, elems, candidates)
-    return candidates !== nothing && length(elems) == 1 && apply === apply_Nₛ
+    return candidates !== nothing && length(elems) == 1 && apply === apply_Ns
 end
 
 # Nested scan over the valid part of the cycle product, reusing partial applications: the

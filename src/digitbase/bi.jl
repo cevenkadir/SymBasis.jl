@@ -123,6 +123,7 @@ end
 
 function Base.show(io::IO, b::BaseInt)
     print(io, base_number_to_string(b))
+    return nothing
 end
 # END -- General digit-base integer type and associated functions
 

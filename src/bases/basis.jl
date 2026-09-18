@@ -142,6 +142,7 @@ function Base.show(io::IO, b::Basis{T,T_n}) where {T,T_n}
         print(io, "\n")
     end
     print(io, ")")
+    return nothing
 end
 
 function Base.show(
@@ -158,7 +159,7 @@ function Base.show(
     println(io, ind, "norms : ", typeof(b.norms))
     println(io, ind, "symmetry group: ", typeof(b.sg))
 
-    n == 0 && return
+    n == 0 && return nothing
 
     m = min(n, get(io, :limit, true) ? 10 : n)
     println(io, ind, "first $(m) state$(m == 1 ? "" : "s")/norm$(m == 1 ? "" : "s"):")
@@ -179,6 +180,8 @@ function Base.show(
     if m < n
         println(io, ind2, "⋮")
     end
+
+    return nothing
 end
 
 """

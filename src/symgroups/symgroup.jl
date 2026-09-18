@@ -281,6 +281,7 @@ end
 
 function _print_kv(io::IO, key::AbstractString, val; indent::Int=2)
     print(io, ' '^indent, rpad(key, 15), val, '\n')
+    return nothing
 end
 
 Base.summary(g::SymGroup{B,T_s,T,Ti,T_f}) where {B,T_s,T,Ti,T_f} =
@@ -305,10 +306,13 @@ function Base.show(io::IO, g::SymGroup)
     _print_kv(io, "check:", string(nameof(g.check)))
     _print_kv(io, "apply:", string(nameof(g.apply)))
     _print_kv(io, "phase:", string(nameof(g.phase)))
+
+    return nothing
 end
 
 function Base.show(io::IO, ::MIME"text/plain", g::SymGroup)
     show(io, g)
+    return nothing
 end
 
 Base.summary(g::CombSymGroup{B,T_s,T,Ti,T_f}) where {B,T_s,T,Ti,T_f} =
@@ -338,10 +342,13 @@ function Base.show(io::IO, g::CombSymGroup)
         _print_kv(io, "preview @[$(I)]:", "factor=$(facI)")
         _print_kv(io, "", "cycle=" * _cycles_preview(cycI))
     end
+
+    return nothing
 end
 
 function Base.show(io::IO, ::MIME"text/plain", g::CombSymGroup)
     show(io, g)
+    return nothing
 end
 
 # Per-dimension data of a `SymGroup`/`CombSymGroup`, normalized to the tuple-per-dimension

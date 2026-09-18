@@ -88,6 +88,7 @@ function Base.show(io::IO, dofo::DoFObject)
         show(io, x)
     end
     print(io, "⟩")
+    return nothing
 end
 
 function Base.show(
@@ -98,4 +99,5 @@ function Base.show(
     show(io, dofo.ldof)
     print(io, "\n")
     print(io, "  index types: T=", T, ", Ti=", Ti)
+    return nothing
 end

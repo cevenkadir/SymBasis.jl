@@ -80,24 +80,25 @@ end
         @test states_unpacked == b.states
         @test norms_unpacked == b.norms
 
-        # Test manual iteration
-        iter_result1 = iterate(b)
-        @test iter_result1 !== nothing
-        @test iter_result1[1] == b.states
-        @test iter_result1[2] == Val(:norms)
-
-        iter_result2 = iterate(b, Val(:norms))
-        @test iter_result2 !== nothing
-        @test iter_result2[1] == b.norms
-
-        iter_result3 = iterate(b, Val(:sg))
-        @test iter_result3 !== nothing
-        @test iter_result3[1] == b.sg
-        @test iter_result3[2] == Val(:done)
-
-        # Test that iteration terminates (tests the selected line)
-        iter_result4 = iterate(b, Val(:done))
-        @test iter_result4 === nothing
+        # Basis is destructurable but not iterable
+        states3, norms3, sg3 = b
+        @test states3 === b.states
+        @test norms3 === b.norms
+        @test sg3 === b.sg
+        (only_states,) = b
+        @test only_states === b.states
+        destr2(x) = ((s, n) = x; s)
+        destr3(x) = ((s, n, g) = x; g)
+        @test (@inferred destr2(b)) === b.states
+        @test (@inferred destr3(b)) === b.sg
+        destr2(b); destr3(b)
+        @test @allocated(destr2(b)) == 0
+        @test @allocated(destr3(b)) == 0
+        destr4(x) = ((a1, a2, a3, a4) = x; a4)
+        @test_throws BoundsError destr4(b)
+        @test_throws MethodError iterate(b)
+        @test_throws MethodError length(b)
+        @test_throws MethodError collect(b)
 
         # Test Base.summary
         summary_str = sprint(summary, b)

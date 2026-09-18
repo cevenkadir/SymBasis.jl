@@ -42,6 +42,12 @@ efficient representation and manipulation of states in different bases.
 
 The constructor checks that the length of states matches the length of norms to ensure
 consistency.
+
+# Destructuring
+A `Basis` can be unpacked into its fields, `states, norms = b` or `states, norms, sg = b`
+(in field order). `Basis` is not a collection: it is not iterable and has no `length`, so
+`for x in b`, `collect(b)` and `length(b)` throw a `MethodError`. Use `length(b.states)` for
+the number of states.
 """
 struct Basis{
     T,T_n<:Number,
@@ -78,10 +84,22 @@ function Base.hash(b::Basis, h::UInt)
     return hash(b.states, hash(b.norms, hash(b.sg, hash(:BaseNumber, h))))
 end
 
-Base.iterate(b::Basis) = (b.states, Val(:norms))
-Base.iterate(b::Basis, ::Val{:norms}) = (b.norms, Val(:sg))
-Base.iterate(b::Basis, ::Val{:sg}) = (b.sg, Val(:done))
-Base.iterate(b::Basis, ::Val{:done}) = nothing
+# Destructuring (`states, norms = b`, `states, norms, sg = b`) lowers to
+# `Base.indexed_iterate`, not `iterate`. Defining it directly keeps destructuring type-stable
+# and allocation-free without making `Basis` a (misleading) 3-element collection:
+# `for x in b`, `collect(b)` and `length(b)` are deliberately undefined; use `b.states`,
+# `b.norms`, `b.sg`.
+@inline function Base.indexed_iterate(b::Basis, i::Int, state::Int=1)
+    if i == 1
+        return (b.states, 2)
+    elseif i == 2
+        return (b.norms, 3)
+    elseif i == 3
+        return (b.sg, 4)
+    end
+
+    throw(BoundsError(b, i))
+end
 
 """
     state_index(b::SymBasis.Bases.Basis{T}, state::T) where {T}

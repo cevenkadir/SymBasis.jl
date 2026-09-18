@@ -211,6 +211,27 @@ end
         # isequal and == agree with each other
         @test isequal(b1, b2) == (b1 == b2)
         @test isequal(b1, b_diff_norms) == (b1 == b_diff_norms)
+
+        # NaN norms: isequal (and hash) hold, == does not
+        bn1 = Basis(b1.states, [NaN, 1.0, 1.0, 1.0])
+        bn2 = Basis(copy(b1.states), [NaN, 1.0, 1.0, 1.0])
+        @test isequal(bn1, bn2)
+        @test !(bn1 == bn2)
+        @test hash(bn1) == hash(bn2)
+        @test hash(bn1, h) == hash(bn2, h)
+        @test !isequal(bn1, b1)
+
+        # signed zero norms: == true, isequal false
+        bz1 = Basis(b1.states, [0.0, 1.0, 1.0, 1.0])
+        bz2 = Basis(copy(b1.states), [-0.0, 1.0, 1.0, 1.0])
+        @test bz1 == bz2
+        @test !isequal(bz1, bz2)
+        @test hash(bz1) != hash(bz2)
+
+        # different norm types are never equal (no cross-type method)
+        b32 = Basis(b1.states, Float32.(b1.norms))
+        @test !isequal(b1, b32)
+        @test b1 != b32
     end
 
     @testset "basis without any symmetry" begin

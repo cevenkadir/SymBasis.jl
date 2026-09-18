@@ -86,7 +86,8 @@ struct Basis{
 end
 
 function Base.isequal(b1::Basis{T,T_n}, b2::Basis{T,T_n}) where {T,T_n}
-    return b1.states == b2.states && b1.norms == b2.norms && b1.sg == b2.sg
+    return isequal(b1.states, b2.states) && isequal(b1.norms, b2.norms) &&
+           isequal(b1.sg, b2.sg)
 end
 
 function Base.:(==)(b1::Basis{T,T_n}, b2::Basis{T,T_n}) where {T,T_n}

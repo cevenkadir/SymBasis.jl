@@ -40,3 +40,5 @@ Manifest.toml
 .DS_Store
 .DS_Store?
 **/.DS_Store
+# JET test environment (local resolution)
+/test/jet/Manifest.toml

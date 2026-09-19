@@ -1,0 +1,9 @@
+[deps]
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+SymBasis = "0806812d-f945-4f84-939d-820504b53c51"
+
+[sources]
+SymBasis = {path = "../.."}
+
+[compat]
+JET = "0.9, 0.10, 0.11, 0.12"

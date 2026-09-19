@@ -23,4 +23,17 @@ using SymBasis
 
     @info "Testing Basis..."
     include("bases/basis.jl")
+
+    @info "Testing package quality (Aqua)..."
+    include("quality/aqua.jl")
+end
+
+# JET lives in its own environment (test/jet) because each JET release supports only some
+# Julia versions; opt in with `SYMBASIS_JET=1` after setting that environment up, see
+# test/jet/runjet.jl.
+if get(ENV, "SYMBASIS_JET", "0") == "1"
+    @info "Testing static analysis (JET)..."
+    run(
+        `$(Base.julia_cmd()) --project=$(joinpath(@__DIR__, "jet")) $(joinpath(@__DIR__, "jet", "runjet.jl"))`
+    )
 end

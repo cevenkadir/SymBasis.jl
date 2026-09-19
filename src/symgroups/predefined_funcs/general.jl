@@ -414,7 +414,8 @@ end
 
 # Fetch the target digit counts (`N0`, `N1`, …, `N(B-1)`) from `p` with the field lookups
 # resolved at compile time (a runtime `Symbol("N$j")` would intern a new symbol per digit
-# per call).
+# per call). Generated because a plain `ntuple` over `Symbol("N", j)` builds the symbols at
+# run time (about 7x slower, allocating), and a constant symbol table would cap the base.
 @generated function _digit_targets(p::NamedTuple, ::Val{B}) where {B}
     fields = [:(Int(getfield(p, $(QuoteNode(Symbol("N", j)))))) for j in 0:(B-1)]
     return :(($(fields...),))

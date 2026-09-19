@@ -351,7 +351,9 @@ end
 # per flattened cycle). Returns `false` as soon as some dimension has no valid element, in
 # which case no cycle of the product can be valid for `state₀`. Dimension `S` (0 for none) is
 # taken as already satisfied -- see `_candidates_satisfy_check`.
-# Generated so the per-dimension loops are fully unrolled with no tuple juggling.
+# Generated so the per-dimension loops are fully unrolled with no tuple juggling. A plain
+# `Val`-indexed recursion matches it for `D <= 3` but stops inferring at `D = 4` and then
+# allocates per state, so the number of dimensions is not bounded by inference limits here.
 @generated function _fill_valid!(
     valid::NTuple{D,Any}, checks::NTuple{D,Any}, elems::NTuple{D,Any}, state₀, ::Val{S}
 ) where {D,S}
@@ -408,6 +410,9 @@ end
 # never pay for one. That matters because the identity is the first leaf visited and fixes
 # every state, making the phase otherwise unavoidable for all of them. `stab` is in leaf
 # order, so `F` accumulates exactly as it would have inline and the result is bit-identical.
+# A `Val`-indexed recursion over the levels was measured too: for `D = 2` it is slightly
+# faster, but from `D = 3` on inference gives up and it boxes per state, so the nest stays
+# generated.
 @generated function _scan_product(
     applys::NTuple{D,Any}, phases::NTuple{D,Any}, elems::NTuple{D,Any},
     valid::NTuple{D,Any}, factors, state₀, F₀, dedup::_OrbitDedup,

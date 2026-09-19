@@ -853,6 +853,11 @@ function is_commutative(b::Basis)
     return is_commutative(b, b.sg)
 end
 
+# A basis without a symmetry group, or with a single `SymGroup` (one cyclic generator),
+# has nothing that could fail to commute. Without these methods `is_commutative(b)` threw a
+# `MethodError` for such bases.
+is_commutative(::Basis, ::Union{Nothing,SymGroup}) = true
+
 """
     representative(
         state::SymBasis.DigitBase.BaseInt{T,Ti,B},

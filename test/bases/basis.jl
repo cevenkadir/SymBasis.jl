@@ -1796,4 +1796,14 @@ end
         @test_throws ArgumentError basis(dof_object(Spin(1 // 2; T=UInt128)), 128)
         @test length(basis(dof_object(Spin(1 // 2; T=UInt16)), 15).states) == 2^15
     end
+
+    @testset "is_commutative without a CombSymGroup" begin
+        # No symmetry group, or a single `SymGroup`: trivially commutative (used to throw a
+        # `MethodError`).
+        dofo = dof_object(Spin(1 // 2))
+        @test is_commutative(basis(dofo, 4))
+        @test is_commutative(
+            basis(dofo, 4, sym(Translational(0, mod1.((1:4) .+ 1, 4)), dofo))
+        )
+    end
 end

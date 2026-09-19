@@ -1,7 +1,7 @@
 # Getting started
 
 ## Installation
-**Requirements**: Julia 1.11 or later.
+**Requirements**: Julia 1.10 or later.
 
 To install the latest stable version of SymBasis.jl, you can use the Julia package manager. Either use the Julia REPL package mode (by pressing `]`):
 ```julia

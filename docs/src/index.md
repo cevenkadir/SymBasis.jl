@@ -46,7 +46,7 @@ Performance comparisons against other packages are collected on the [benchmarks 
 - [Spinless-fermion t-V chain vs. the exact Bethe-Hulthén solution](examples/tv_chain_bethe_hulthen.md)
 
 ## Quick installation
-**Requirements**: Julia 1.11 or later.
+**Requirements**: Julia 1.10 or later.
 
 You can install SymBasis.jl using Julia's package manager. Open the Julia REPL and run:
 ```julia

@@ -28,6 +28,12 @@ There is also a fully static constructor, `BaseInt{T,Ti,B}(value::Integer)`, use
 internally on hot paths throughout this module. With `B` already fixed in the type domain,
 it skips the runtime `base` check and keyword handling that the general constructor
 performs, and simply converts `value` to `T`.
+
+Because `base` and `Ti` become type parameters, the result type is inferred as a concrete
+`BaseInt{T,Ti,B}` only when they are compile-time constants (a literal, a `const` global,
+or a type parameter such as `B` in `where {B}`), which Julia's constant propagation of
+keyword arguments handles. With a truly runtime `base` the result is a `BaseInt{T,Ti}`
+of unknown `B`, which is type-unstable; use the static constructor or a function barrier.
 """
 struct BaseInt{T<:Integer,Ti<:Integer,B}
     value::T

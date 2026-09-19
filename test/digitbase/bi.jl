@@ -1,3 +1,6 @@
+using Test
+using SymBasis
+
 @testset "Tests for BaseInt" begin
     @testset "Construction of BaseInt" begin
         b = BaseInt(10 |> UInt; base=2, Ti=Int)

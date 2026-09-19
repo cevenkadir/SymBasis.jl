@@ -1,4 +1,6 @@
 using Aqua
+using SymBasis
+using Test
 
 Aqua.test_all(
     SymBasis;

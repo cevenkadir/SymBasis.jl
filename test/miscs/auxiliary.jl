@@ -1,5 +1,8 @@
+using Test
+using SymBasis
+using SymBasis.Miscs
+
 @testset "Testing auxiliary functions of Miscs..." begin
-    using SymBasis.Miscs
     @testset "combos_spin_sum" begin
         res1 = combos_spin_sum(1 // 2, 0, 4)
         @test length(res1) == 1

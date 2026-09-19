@@ -1,31 +1,25 @@
 using Test
 
-using SymBasis
+# Runs `file` in its own throwaway module so that definitions and `using`s do not leak
+# between test files (the same isolation `SafeTestsets.@safetestset` provides). Every file
+# therefore has to import what it needs, which also keeps it runnable on its own.
+function run_isolated(file::AbstractString)
+    mod = Module(gensym(:IsolatedTests))
+    @testset "$file" begin
+        Base.include(mod, joinpath(@__DIR__, file))
+    end
+end
 
-@testset "SymBasis.jl Tests" begin
-    @info "Testing BaseInt..."
-    include("digitbase/bi.jl")
-    @info "Testing BaseIntRange..."
-    include("digitbase/bir.jl")
-
-    @info "Testing DoFObject..."
-    include("dofobjects/dofobject.jl")
-    @info "Testing DoFObject's predefined functions..."
-    include("dofobjects/predefined_funcs.jl")
-
-    @info "Testing auxiliary functions of Miscs..."
-    include("miscs/auxiliary.jl")
-
-    @info "Testing SymGroup..."
-    include("symgroups/symgroup.jl")
-    @info "Testing SymGroup's predefined functions..."
-    include("symgroups/predefined_funcs.jl")
-
-    @info "Testing Basis..."
-    include("bases/basis.jl")
-
-    @info "Testing package quality (Aqua)..."
-    include("quality/aqua.jl")
+@testset verbose = true "SymBasis.jl" begin
+    run_isolated("digitbase/bi.jl")
+    run_isolated("digitbase/bir.jl")
+    run_isolated("dofobjects/dofobject.jl")
+    run_isolated("dofobjects/predefined_funcs.jl")
+    run_isolated("miscs/auxiliary.jl")
+    run_isolated("symgroups/symgroup.jl")
+    run_isolated("symgroups/predefined_funcs.jl")
+    run_isolated("bases/basis.jl")
+    run_isolated("quality/aqua.jl")
 end
 
 # JET lives in its own environment (test/jet) because each JET release supports only some

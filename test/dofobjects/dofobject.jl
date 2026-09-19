@@ -1,3 +1,6 @@
+using Test
+using SymBasis
+
 @testset "Testing DoFObject..." begin
     @testset "Construction of DoFObject" begin
         dofo1 = DoFObject(:Something, (-1 // 2, 1 // 2); T=UInt8, Ti=Int8)

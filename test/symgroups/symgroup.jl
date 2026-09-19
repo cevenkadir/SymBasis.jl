@@ -1,3 +1,7 @@
+using Test
+using SymBasis
+using SymBasis.Miscs: perm_k
+
 @testset "Testing SymGroup..." begin
     @testset "Construction of SymGroup" begin
         dofo = DoFObject(:Pet, (:🐶, :🐱, :🐢, :🦜))

@@ -1,5 +1,9 @@
+using Test
+using SymBasis
+using BitPermutations: BitPermutation
+using SymBasis.Miscs: combos_spin_sum, perm_k
+
 @testset "Testing SymGroup's predefined functions..." begin
-    using BitPermutations: BitPermutation
     @testset "check_perm" begin
         state1 = bi"11010"2
         perm = BitPermutation{UInt}(perm_k([2, 3, 4, 5, 1], 1))

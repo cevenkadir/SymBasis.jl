@@ -1,3 +1,6 @@
+using Test
+using SymBasis
+
 @testset "Testing DoFObject's predefined functions..." begin
     @testset "dof_object of :Spin for DoFObject" begin
         dofo1 = dof_object(Spin(1 // 2; T=UInt32, Ti=Int32))

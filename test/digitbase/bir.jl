@@ -1,3 +1,6 @@
+using Test
+using SymBasis
+
 @testset "Tests for BaseIntRange" begin
     @testset "Construction of BaseIntRange" begin
         r1 = BaseIntRange(bi"0"2, bi"1"2, bi"11"2)

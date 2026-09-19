@@ -1,3 +1,6 @@
+using Test
+using SymBasis
+
 # Helper function to test that unsorted basis matches sorted basis
 function test_unsorted_basis(dofo, N, args...; sorted_states, sorted_norms)
     states_unsorted, norms_unsorted = basis(dofo, N, args...; is_sorted=false)

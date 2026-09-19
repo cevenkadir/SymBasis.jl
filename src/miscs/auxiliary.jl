@@ -1,4 +1,5 @@
-using BitPermutations: BitPermutation, PermutationBackend
+using BitPermutations: AVXCopyGather, BenesNetwork, BitPermutation, GRPNetwork
+using BitPermutations: PermutationBackend
 
 """
     combos_dof_sum(
@@ -316,9 +317,26 @@ function perm_wrapper(
     perm::AbstractVector{<:Integer}, base::Integer, ::Type{T}
 ) where {T<:Integer}
     if base == 2
-        return BitPermutation{unsigned(T)}(perm)
+        return _without_avx_backend(BitPermutation{unsigned(T)}(perm))
     else
         return perm
+    end
+end
+
+# Julia 1.10 ships LLVM 15, which aborts with "Do not know how to split the result of this
+# operator" while compiling the `vpshufbitqmb` intrinsic behind BitPermutations' AVX-512
+# backend, so precompiling or using SymBasis crashes on CPUs where BitPermutations picks
+# that backend by default (those with AVX512-BITALG). On such a CPU, fall back to the
+# backend BitPermutations would have chosen without AVX-512. Julia 1.11 and later are not
+# affected and keep the default backend.
+_without_avx_backend(bp::BitPermutation) = bp
+
+_fallback_backend(::Type{<:Union{UInt32,UInt64}}) = GRPNetwork
+_fallback_backend(::Type{<:Unsigned}) = BenesNetwork
+
+if VERSION < v"1.11"
+    function _without_avx_backend(bp::BitPermutation{U,<:AVXCopyGather}) where {U}
+        return BitPermutation{U}(_fallback_backend(U), bp.vector)
     end
 end
 

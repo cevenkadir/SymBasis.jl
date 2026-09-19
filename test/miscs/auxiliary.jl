@@ -83,6 +83,36 @@ using SymBasis.Miscs
         @test perm_wrapper(perm, 10, UInt16) == perm
     end
 
+    @testset "AVX-512 backend on Julia 1.10" begin
+        using BitPermutations: AVXCopyGather, BenesNetwork, GRPNetwork, bitpermute
+        using Base.CoreLogging: NullLogger, with_logger
+
+        perm = [3, 1, 2, 4, 5, 6, 7, 8]
+
+        # Build the AVX-512 backend explicitly, so this exercises the replacement on any CPU.
+        # Do not apply it: it is not safe to compile on Julia 1.10 with AVX512-BITALG.
+        avx(U) = with_logger(NullLogger()) do
+            BitPermutation{U}(AVXCopyGather, perm)
+        end
+        benes(U) = BitPermutation{U}(BenesNetwork, perm)
+
+        for U in (UInt16, UInt32, UInt64)
+            replaced = Miscs._without_avx_backend(avx(U))
+            @test replaced isa BitPermutation{U}
+            if VERSION < v"1.11"
+                @test !(replaced.backend isa AVXCopyGather)
+                @test replaced.backend isa (U === UInt16 ? BenesNetwork : GRPNetwork)
+                @test bitpermute(U(0b1011), replaced) == bitpermute(U(0b1011), benes(U))
+            else
+                @test replaced.backend isa AVXCopyGather
+            end
+        end
+
+        # Other backends and types are returned untouched.
+        bp = benes(UInt64)
+        @test Miscs._without_avx_backend(bp) === bp
+    end
+
     @testset "_invperm" begin
         using BitPermutations: BitPermutation
 

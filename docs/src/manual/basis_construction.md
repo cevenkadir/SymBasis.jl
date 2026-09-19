@@ -74,7 +74,7 @@ b_with_both_syms.sorted
 Both lookups then use a binary search and cost $\mathcal{O}(\log n)$, so there is no need to build a separate index map for mapping operator-generated states back onto the basis (see [Operator construction](@ref "Operator construction")). If you construct a `Basis` yourself from an unsorted state vector, `sorted` is `false` and both fall back to a linear scan.
 
 !!! warning
-    If you are unsure about whether these symmetries commute with each other in the constructed basis, you can simply pass the combined symmetry group to the [`is_commutative`](@ref SymBasis.Bases.is_commutative) function from the [`SymBasis.SymGroups`](@ref symgroups-api) submodule to check if the symmetries commute:
+    If you are unsure about whether these symmetries commute with each other in the constructed basis, you can simply pass the basis to the [`is_commutative`](@ref SymBasis.Bases.is_commutative) function from the [`SymBasis.Bases`](@ref bases-api) submodule to check if the symmetries commute:
     ```@example basis_construction
     is_commutative(b_with_both_syms)
     ```

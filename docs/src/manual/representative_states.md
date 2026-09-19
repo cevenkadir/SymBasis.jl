@@ -1,11 +1,11 @@
 # Determining representative states
-In SymBasis.jl, each symmetry-related orbit of basis states is represented by a single *representative* state. Starting from a state $\lvert a'(q)\rangle$, you generate all symmetry images under the symmetry operator $\hat{S}$ and choose the one with the smallest hash value as the representative:
+In SymBasis.jl, each symmetry-related orbit of basis states is represented by a single *representative* state. Starting from a state $\lvert a'(q)\rangle$, you generate all symmetry images under the symmetry operator $\hat{S}$ and choose the one with the smallest value as the representative. States are compared by their integer value (the ordering of [`BaseInt`](@ref SymBasis.DigitBase.BaseInt), i.e. `isless`), not by any hash:
 ```math
 \lvert a(q)\rangle = \hat{S}^{\ell_{\mathrm{rep}}}\lvert a'(q)\rangle,
 \qquad
-\ell_{\mathrm{rep}}=\arg\min_{\ell}\Big\{\mathrm{hash}\!\big[\hat{S}^\ell\lvert a'(q)\rangle\big]\Big\}~.
+\ell_{\mathrm{rep}}=\arg\min_{\ell}\Big\{\mathrm{val}\!\big[\hat{S}^\ell\lvert a'(q)\rangle\big]\Big\}~,
 ```
-Here, $q$ labels the symmetry sector, and $\ell_{\mathrm{rep}}$ is the shift needed to map $\lvert a'(q)\rangle$ onto its representative $\lvert a(q)\rangle$. This is handled automatically when you construct a basis via [`basis`](@ref SymBasis.Bases.basis) from [`SymBasis.Bases`](@ref bases-api), ensuring that each symmetry sector contains only one representative per orbit.
+Here, $\mathrm{val}[\cdot]$ denotes the integer value of the state in base-$B$ notation, $q$ labels the symmetry sector, and $\ell_{\mathrm{rep}}$ is the shift needed to map $\lvert a'(q)\rangle$ onto its representative $\lvert a(q)\rangle$ (ties, which occur when a state has a nontrivial stabilizer, are resolved in favor of the first such shift). Consequently, the representative is the minimum of its orbit, and [`basis`](@ref SymBasis.Bases.basis) keeps a state exactly when no symmetry image is smaller than the state itself. This is handled automatically when you construct a basis via [`basis`](@ref SymBasis.Bases.basis) from [`SymBasis.Bases`](@ref bases-api), ensuring that each symmetry sector contains only one representative per orbit.
 
 ## Operator action and mapping back to representatives
 Consider an operator decomposed into local contributions,

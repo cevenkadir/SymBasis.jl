@@ -310,6 +310,10 @@ end
     return z
 end
 
+# The `@inbounds` accesses rest on one invariant: at most `n_cycles` insertions follow a
+# `_dedup_reset!` (one per cycle of the group). Linear mode then has room in `seen`
+# (`count < n_cycles` before each insertion), and hash mode keeps its load factor at most
+# 1/2, so the probe loop terminates and `i` stays in `1:mask+1`.
 @inline function _dedup_insert!(d::_OrbitDedup{T}, v::T) where {T}
     if d.use_hash
         i = (Int(_mix64(v) & 0x7fffffffffffffff) & d.mask) + 1
@@ -448,6 +452,8 @@ end
             # Splatted rather than `ntuple(i -> ...)`: a closure in a `@generated` function's
             # returned AST is rejected as impure.
             es = ($([:(elems[$i][ksel[$i]]) for i in 1:D]...),)
+            # `factors` has the shape of the cycle product (checked by the `CombSymGroup`
+            # constructor) and `ksel` indexes the per-dimension elements, so it is in range.
             F += factors[ksel...] * last(_apply_phase_all(applys, phases, es, state₀, 1))
         end
         return (F, false)
@@ -467,6 +473,37 @@ function _chunk_length(n::Integer, n_cycles::Integer, nthreads::Integer)
     return max(1, cld(n, n_chunks))
 end
 
+# Below this much work (`n * n_cycles`) a scan runs on the calling thread as a single chunk:
+# a spawned task plus its `fetch` costs on the order of ten microseconds, which dwarfs a scan
+# that itself takes microseconds. A candidate-cycle pair costs from a few to some tens of
+# nanoseconds depending on the symmetry, so this bound keeps the serial scan below the spawn
+# cost for any of them. With one thread there is nothing to overlap, so it is always serial.
+const _SERIAL_WORK = 1 << 10
+
+# Apply `scan` to consecutive chunks of `items` and return the per-chunk results in order,
+# on the calling thread when the work is small (or there is a single thread) and on one task
+# per chunk otherwise. Either way the chunks are the pieces `Iterators.partition` yields, so
+# `scan` sees a single chunk type and the results are ordered identically.
+function _scan_chunks(
+    scan::F, items, n_cycles::Integer; serial_work::Integer=_SERIAL_WORK
+) where {F}
+    n = length(items)
+    nthreads = Threads.nthreads()
+    if nthreads == 1 || n * n_cycles < serial_work
+        return map(scan, Iterators.partition(items, max(1, n)))
+    end
+    chunk_len = _chunk_length(n, n_cycles, nthreads)
+    tasks = map(chunk -> Threads.@spawn(scan(chunk)), Iterators.partition(items, chunk_len))
+    return fetch.(tasks)
+end
+
+# Concatenate the `(states, norms)` pairs `_scan_chunks` produced for `basis`.
+function _join_chunks(results, ::Type{S}, ::Type{N}) where {S,N}
+    isempty(results) && return S[], N[]
+    length(results) == 1 && return results[1][1], results[1][2]
+    return vcat((r[1] for r in results)...), vcat((r[2] for r in results)...)
+end
+
 function _basis_impl_csg(
     all_bints::Union{BaseIntRange{T,Ti,B},AbstractVector{BaseInt{T,Ti,B}}},
     csg::CombSymGroup{B,T_s,T,Ti,Ts},
@@ -482,44 +519,37 @@ function _basis_impl_csg(
     factors = csg.factors
     D = length(dim_elems)
 
-    nthreads = Threads.nthreads()
-    chunk_len = _chunk_length(length(all_bints), n_cycles, nthreads)
+    results = _scan_chunks(all_bints, n_cycles) do chunk
+        local_norms = T_n[]
+        local_states = BaseInt{T,Ti,B}[]
+        sizehint!(local_norms, length(chunk) ÷ n_cycles + 4)
+        sizehint!(local_states, length(chunk) ÷ n_cycles + 4)
+        valid = map(es -> Vector{Bool}(undef, length(es)), dim_elems)
+        dedup = _OrbitDedup(T, n_cycles)
+        # Reused across states; an orbit cannot fix `state₀` more often than it has
+        # elements, so `n_cycles` is a hard bound on the stabilizer size.
+        stab = Vector{NTuple{D,Int}}(undef, n_cycles)
 
-    tasks = map(Iterators.partition(all_bints, chunk_len)) do chunk
-        Threads.@spawn begin
-            local_norms = T_n[]
-            local_states = BaseInt{T,Ti,B}[]
-            sizehint!(local_norms, length(chunk) ÷ n_cycles + 4)
-            sizehint!(local_states, length(chunk) ÷ n_cycles + 4)
-            valid = map(es -> Vector{Bool}(undef, length(es)), dim_elems)
-            dedup = _OrbitDedup(T, n_cycles)
-            # Reused across states; an orbit cannot fix `state₀` more often than it has
-            # elements, so `n_cycles` is a hard bound on the stabilizer size.
-            stab = Vector{NTuple{D,Int}}(undef, n_cycles)
+        for state₀ in chunk
+            _fill_valid!(valid, checks, dim_elems, state₀, skip_dim) || continue
 
-            for state₀ in chunk
-                _fill_valid!(valid, checks, dim_elems, state₀, skip_dim) || continue
+            _dedup_reset!(dedup)
+            local_F, aborted = _scan_product(
+                applys, phases, dim_elems, valid, factors, state₀, F₀, dedup, stab
+            )
+            aborted && continue
 
-                _dedup_reset!(dedup)
-                local_F, aborted = _scan_product(
-                    applys, phases, dim_elems, valid, factors, state₀, F₀, dedup, stab
-                )
-                aborted && continue
-
-                norm₀ = dedup.count * abs2(local_F)
-                if norm₀ > eps_norm_type
-                    push!(local_norms, norm₀)
-                    push!(local_states, state₀)
-                end
+            norm₀ = dedup.count * abs2(local_F)
+            if norm₀ > eps_norm_type
+                push!(local_norms, norm₀)
+                push!(local_states, state₀)
             end
-
-            (local_states, local_norms)
         end
+
+        (local_states, local_norms)
     end
 
-    results = fetch.(tasks)
-    states = isempty(results) ? BaseInt{T,Ti,B}[] : vcat((r[1] for r in results)...)
-    norms = isempty(results) ? T_n[] : vcat((r[2] for r in results)...)
+    states, norms = _join_chunks(results, BaseInt{T,Ti,B}, T_n)
 
     # Ascending by construction: ordered scan + order-preserving chunk concatenation.
     return Basis(states, norms, csg)
@@ -535,66 +565,58 @@ function _basis_impl(
     get_phase::G,
     is_sorted::Bool,
 ) where {T,Ti,B,T_n<:Real,T_s,Ts,F,G}
-    nthreads = Threads.nthreads()
+    results = _scan_chunks(all_bints, n_cycles) do chunk
+        local_norms = T_n[]
+        local_states = BaseInt{T,Ti,B}[]
+        sizehint!(local_norms, length(chunk) ÷ n_cycles + 4)
+        sizehint!(local_states, length(chunk) ÷ n_cycles + 4)
+        local_F = F₀
+        dedup = _OrbitDedup(T, n_cycles)
+        # Reused across states; the stabilizer cannot be larger than the group.
+        stab = Vector{Int}(undef, n_cycles)
 
-    chunk_len = _chunk_length(length(all_bints), n_cycles, nthreads)
+        for state₀ in chunk
+            _dedup_reset!(dedup)
+            n_stab = 0
+            aborted = false
 
-    tasks = map(Iterators.partition(all_bints, chunk_len)) do chunk
-        Threads.@spawn begin
-            local_norms = T_n[]
-            local_states = BaseInt{T,Ti,B}[]
-            sizehint!(local_norms, length(chunk) ÷ n_cycles + 4)
-            sizehint!(local_states, length(chunk) ÷ n_cycles + 4)
-            local_F = F₀
-            dedup = _OrbitDedup(T, n_cycles)
-            # Reused across states; the stabilizer cannot be larger than the group.
-            stab = Vector{Int}(undef, n_cycles)
+            @inbounds for idx in 1:n_cycles
+                is_valid_state, temp_state = get_temp_state(idx, state₀)
 
-            for state₀ in chunk
-                _dedup_reset!(dedup)
-                n_stab = 0
-                aborted = false
+                if is_valid_state
+                    _dedup_insert!(dedup, temp_state.value)
 
-                @inbounds for idx in 1:n_cycles
-                    is_valid_state, temp_state = get_temp_state(idx, state₀)
-
-                    if is_valid_state
-                        _dedup_insert!(dedup, temp_state.value)
-
-                        if isless(temp_state, state₀)
-                            aborted = true
-                            break
-                        elseif temp_state == state₀
-                            # Record the stabilizer element; its phase is only worth
-                            # computing if the scan gets past every abort below.
-                            n_stab += 1
-                            stab[n_stab] = idx
-                        end
+                    if isless(temp_state, state₀)
+                        aborted = true
+                        break
+                    elseif temp_state == state₀
+                        # Record the stabilizer element; its phase is only worth
+                        # computing if the scan gets past every abort below.
+                        n_stab += 1
+                        stab[n_stab] = idx
                     end
-                end
-
-                aborted && continue
-
-                local_F = F₀
-                @inbounds for t in 1:n_stab
-                    idx = stab[t]
-                    local_F += sg.factors[idx] * get_phase(idx, state₀)
-                end
-
-                norm₀ = dedup.count * abs2(local_F)
-                if norm₀ > eps_norm_type
-                    push!(local_norms, norm₀)
-                    push!(local_states, state₀)
                 end
             end
 
-            (local_states, local_norms)
+            aborted && continue
+
+            local_F = F₀
+            @inbounds for t in 1:n_stab
+                idx = stab[t]
+                local_F += sg.factors[idx] * get_phase(idx, state₀)
+            end
+
+            norm₀ = dedup.count * abs2(local_F)
+            if norm₀ > eps_norm_type
+                push!(local_norms, norm₀)
+                push!(local_states, state₀)
+            end
         end
+
+        (local_states, local_norms)
     end
 
-    results = fetch.(tasks)
-    states = isempty(results) ? BaseInt{T,Ti,B}[] : vcat((r[1] for r in results)...)
-    norms = isempty(results) ? T_n[] : vcat((r[2] for r in results)...)
+    states, norms = _join_chunks(results, BaseInt{T,Ti,B}, T_n)
 
     # `all_bints` is scanned in ascending order (a range, or a pre-sorted candidate
     # vector) and chunk concatenation preserves that order, so the output is already
@@ -773,35 +795,31 @@ function is_commutative(b::Basis, csg::CombSymGroup)
     end
 
     ndims_cycles = csg.cycles |> ndims
-    nthreads = Threads.nthreads()
-
     # Distinct elements per dimension: the flattened cycle product repeats each
     # (element i, element j) pair many times, and only the pair matters here.
     dim_elems = _dim_elements(csg.cycles)
     state_indices = eachindex(b.states)
-    chunk_len = _chunk_length(
-        length(state_indices), ndims_cycles * (ndims_cycles - 1) ÷ 2, nthreads)
-
-    tasks = map(Iterators.partition(state_indices, chunk_len)) do chunk
-        Threads.@spawn begin
-            ok = true
-            for i in 1:ndims_cycles, j in (i+1):ndims_cycles
-                # Function barrier: resolve the per-dimension functions and element
-                # vectors once per dimension pair instead of on every inner iteration
-                # (indexing a heterogeneous tuple with a runtime index is type-unstable).
-                ok = _commutes_pair(
-                    b.states, chunk, csg,
-                    csg.apply[i], csg.phase[i], dim_elems[i],
-                    csg.apply[j], csg.phase[j], dim_elems[j],
-                )
-                ok || break
-            end
-            ok
+    # Each state is checked against the whole cycle product, so `n * n_pairs` badly
+    # underestimates the work here: no size-based serial cut-off, only the single thread one.
+    results = _scan_chunks(
+        state_indices, ndims_cycles * (ndims_cycles - 1) ÷ 2; serial_work=0
+    ) do chunk
+        ok = true
+        for i in 1:ndims_cycles, j in (i+1):ndims_cycles
+            # Function barrier: resolve the per-dimension functions and element
+            # vectors once per dimension pair instead of on every inner iteration
+            # (indexing a heterogeneous tuple with a runtime index is type-unstable).
+            ok = _commutes_pair(
+                b.states, chunk, csg,
+                csg.apply[i], csg.phase[i], dim_elems[i],
+                csg.apply[j], csg.phase[j], dim_elems[j],
+            )
+            ok || break
         end
+        ok
     end
 
-    # Fetch results from all tasks - all must be true
-    results = fetch.(tasks)
+    # All chunks must commute
     return all(results)
 end
 

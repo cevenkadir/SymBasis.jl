@@ -1809,4 +1809,32 @@ end
             basis(dofo, 4, sym(Translational(0, mod1.((1:4) .+ 1, 4)), dofo))
         )
     end
+    @testset "serial and threaded scans agree" begin
+        scan_chunks = SymBasis.Bases._scan_chunks
+        items = 1:1000
+        # Each chunk reports its items in order, so any chunking must concatenate to `items`.
+        chunks(; kw...) = scan_chunks(collect, items, 3; kw...)
+        serial = chunks(serial_work=typemax(Int))
+        @test length(serial) == 1
+        @test vcat(serial...) == collect(items)
+        @test vcat(chunks(serial_work=0)...) == collect(items)
+        @test vcat(chunks()...) == collect(items)
+        # An empty range yields no chunk on either path.
+        @test isempty(scan_chunks(collect, 1:0, 3; serial_work=typemax(Int)))
+        @test isempty(scan_chunks(collect, 1:0, 3; serial_work=0))
+
+        # Bases straddling the serial/threaded cut-off, against the necklace counts and their
+        # own reordering-invariant properties.
+        dofo = dof_object(Spin(1 // 2))
+        for (N, n_orbits) in ((4, 2), (8, 10), (12, 80), (16, 810))
+            sz = sym(TotalMagnetization(0 // 1, N), dofo)
+            tr = sym(Translational(0, mod1.((1:N) .+ 1, N)), dofo)
+            b = basis(dofo, N, sz ∘ tr)
+            @test length(b.states) == n_orbits
+            @test issorted(b.states)
+            @test all(>(0), b.norms)
+            @test is_commutative(b, sz ∘ tr)
+        end
+    end
+
 end

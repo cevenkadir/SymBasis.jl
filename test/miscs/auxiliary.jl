@@ -117,14 +117,14 @@ using SymBasis.Miscs
         using BitPermutations: BitPermutation
 
         perm1 = [3, 1, 2]
-        bp1 = BitPermutation{UInt64}(perm1)
+        bp1 = perm_wrapper(perm1, 2, UInt64)
         inv1 = Miscs._invperm(bp1)
         @test inv1 == [2, 3, 1]
         @test inv1 == Base.invperm(Vector(bp1))
         @test Vector(bp1)[inv1] == collect(1:length(perm1))
 
         perm2 = [2, 5, 1, 4, 3]
-        bp2 = BitPermutation{UInt64}(perm2)
+        bp2 = perm_wrapper(perm2, 2, UInt64)
         inv2 = Miscs._invperm(bp2)
         @test inv2 == [3, 1, 5, 4, 2]
         @test inv2 == Base.invperm(Vector(bp2))

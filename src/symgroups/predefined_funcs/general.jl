@@ -149,6 +149,11 @@ selected when the cycle's `perm` field is a `BitPermutation` (base 2 only); it i
 `_apply_perm(p.perm, state)` from `apply_perm`, receiving the permutation directly rather
 than the wrapping cycle `NamedTuple`.
 
+On Julia 1.10, a `BitPermutation` that uses BitPermutations' AVX-512 backend crashes the
+compiler (LLVM 15). [`SymBasis.Miscs.perm_wrapper`](@ref) avoids that backend there, so
+build the permutations you put in a cycle with it, or with an explicit non-AVX backend
+such as `BitPermutation{UInt}(GRPNetwork, perm)`, instead of `BitPermutation{UInt}(perm)`.
+
 # Arguments
 - `perm::BitPermutations.BitPermutation{T,<:BitPermutations.PermutationBackend{T}}`: The bit
     permutation to apply.

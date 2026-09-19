@@ -1,12 +1,12 @@
 using Test
 using SymBasis
 using BitPermutations: BitPermutation
-using SymBasis.Miscs: combos_spin_sum, perm_k
+using SymBasis.Miscs: combos_spin_sum, perm_k, perm_wrapper
 
 @testset "Testing SymGroup's predefined functions..." begin
     @testset "check_perm" begin
         state1 = bi"11010"2
-        perm = BitPermutation{UInt}(perm_k([2, 3, 4, 5, 1], 1))
+        perm = perm_wrapper(perm_k([2, 3, 4, 5, 1], 1), 2, UInt)
         @test !check_perm((; perm=perm), state1, false)
         @test check_perm((; perm=perm), state1, true)
 
@@ -18,9 +18,9 @@ using SymBasis.Miscs: combos_spin_sum, perm_k
     end
     @testset "apply_perm" begin
         state1 = bi"10011"2
-        perm1 = BitPermutation{UInt}(perm_k([2, 1, 4, 5, 3], 1))
+        perm1 = perm_wrapper(perm_k([2, 1, 4, 5, 3], 1), 2, UInt)
         @test apply_perm((; perm=perm1), state1) == bi"1011"2
-        perm1 = BitPermutation{UInt}(perm_k([2, 1, 4, 5, 3], 2))
+        perm1 = perm_wrapper(perm_k([2, 1, 4, 5, 3], 2), 2, UInt)
         @test apply_perm((; perm=perm1), state1) == bi"111"2
 
         state2 = bi"1302"5
@@ -468,8 +468,8 @@ using SymBasis.Miscs: combos_spin_sum, perm_k
             dofo2 = DoFObject(:YinYang, (:⚫️, :⚪️))
             perm2 = [2, 1]
             cycles = [
-                (; perm=BitPermutation{UInt}(1:length(perm2) |> collect)),
-                (; perm=BitPermutation{UInt}(perm2)),
+                (; perm=perm_wrapper(1:length(perm2) |> collect, 2, UInt)),
+                (; perm=perm_wrapper(perm2, 2, UInt)),
             ]
             for k in 0:(length(perm2)-1)
                 transl_sym2ₛ = sym(Translational(k, perm2), dofo2)
@@ -515,7 +515,7 @@ using SymBasis.Miscs: combos_spin_sum, perm_k
             @test transl_sym4.dofo == dofo4
             @test all(
                 transl_sym4.cycles[i].perm.vector ==
-                BitPermutation{UInt}(perm_k(perm4, i - 1)).vector
+                perm_wrapper(perm_k(perm4, i - 1), 2, UInt).vector
                 for i in 1:length(transl_sym4.cycles)
             )
             @test transl_sym4.check == check_perm
@@ -571,8 +571,8 @@ using SymBasis.Miscs: combos_spin_sum, perm_k
         q_nums1 = [-1, 1]
         perm1 = [5, 4, 3, 2, 1]
         cycles1 = [
-            (; perm=BitPermutation{UInt}(1:length(perm1) |> collect)),
-            (; perm=BitPermutation{UInt}(perm1)),
+            (; perm=perm_wrapper(1:length(perm1) |> collect, 2, UInt)),
+            (; perm=perm_wrapper(perm1, 2, UInt)),
         ]
         refl_sym1ₛ = [
             sym(SpatialReflection(p, perm1), dofo1) for p in q_nums1
@@ -615,7 +615,7 @@ using SymBasis.Miscs: combos_spin_sum, perm_k
                 @test refl_sym3.dofo == dofo3
                 @test all(
                     refl_sym3.cycles[i].perm.vector ==
-                    BitPermutation{UInt}(perm_k(perm3, i - 1)).vector
+                    perm_wrapper(perm_k(perm3, i - 1), 2, UInt).vector
                     for i in 1:length(refl_sym3.cycles)
                 )
                 @test refl_sym3.check == check_perm
@@ -700,10 +700,10 @@ using SymBasis.Miscs: combos_spin_sum, perm_k
             perm2 = [2, 4, 1, 3]  # order 4
             R2 = 4
             cycles2 = [
-                (; perm=BitPermutation{UInt}(perm_k(perm2, 0))),
-                (; perm=BitPermutation{UInt}(perm_k(perm2, 1))),
-                (; perm=BitPermutation{UInt}(perm_k(perm2, 2))),
-                (; perm=BitPermutation{UInt}(perm_k(perm2, 3))),
+                (; perm=perm_wrapper(perm_k(perm2, 0), 2, UInt)),
+                (; perm=perm_wrapper(perm_k(perm2, 1), 2, UInt)),
+                (; perm=perm_wrapper(perm_k(perm2, 2), 2, UInt)),
+                (; perm=perm_wrapper(perm_k(perm2, 3), 2, UInt)),
             ]
             for r in 0:(R2-1)
                 rot_sym2 = sym(Rotational(r, perm2), dofo2)

@@ -10,4 +10,7 @@ Aqua.test_all(
     # express "at least one element", and narrowing the public signatures would be a
     # breaking change.
     unbound_args=false,
+    # `Aqua` is only a test dependency. The Downgrade CI job promotes it into `[deps]` for
+    # its locked `Pkg.test` run, and Aqua would then report it as an unused dependency.
+    stale_deps=(; ignore=[:Aqua]),
 )

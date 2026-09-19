@@ -16,6 +16,9 @@ jobs:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
+    # Note: with job-level continue-on-error, a failing experimental job is
+    # reported as green (success) in the checks UI; inspect its log for the failure.
+    continue-on-error: ${{ matrix.allow_failure || false }}
     permissions: # needed to allow julia-actions/cache to proactively delete old caches that it has created
       actions: write
       contents: read
@@ -38,6 +41,25 @@ jobs:
             arch: aarch64
           - os: macOS-latest
             arch: x64
+          # nightly and pre-release run on Linux only
+          - version: 'nightly'
+            os: windows-latest
+          - version: 'nightly'
+            os: macOS-latest
+          - version: 'pre'
+            os: windows-latest
+          - version: 'pre'
+            os: macOS-latest
+        include:
+          # unstable channels: failures must not fail the workflow
+          - version: 'nightly'
+            os: ubuntu-latest
+            arch: x64
+            allow_failure: true
+          - version: 'pre'
+            os: ubuntu-latest
+            arch: x64
+            allow_failure: true
     steps:
       - uses: actions/checkout@v6
       - uses: julia-actions/setup-julia@v2
@@ -47,7 +69,10 @@ jobs:
       - uses: julia-actions/cache@v2
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
+      # Upload coverage from a single job only; other jobs would just add redundant uploads.
       - uses: julia-actions/julia-processcoverage@v1
+        if: matrix.version == '1' && matrix.os == 'ubuntu-latest'
       - uses: codecov/codecov-action@v5
+        if: matrix.version == '1' && matrix.os == 'ubuntu-latest'
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

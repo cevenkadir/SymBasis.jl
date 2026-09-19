@@ -480,6 +480,10 @@ according to the permutation vector `perm`.
 # Returns
 - [`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: A new [`SymBasis.DigitBase.BaseInt`](@ref)
     instance with the digits permuted according to `perm`.
+
+# Throws
+- `ArgumentError`: If an entry of `perm` is outside `1:length(perm)`, or if `perm` repeats
+    an index (that is, `perm` is not a permutation).
 """
 function permute(b::BaseInt{T,Ti,B}, perm::AbstractVector{Ti}) where {T,Ti,B}
     B > 1 || throw(ArgumentError("Base must be ≥ 2"))
@@ -550,6 +554,12 @@ its position.
 # Returns
 - [`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: A new [`SymBasis.DigitBase.BaseInt`](@ref)
     instance with the specified digit permuted according to `perm`.
+
+# Throws
+- `ArgumentError`: If `pos < 1`, if `length(perm)` is not `B`, or if an entry of `perm` is
+    outside `0:B-1`. The check on the entries is a `@boundscheck`, so it is skipped when
+    the call is compiled under `@inbounds`.
+- `OverflowError`: If the permuted digit makes the value exceed `typemax(T)`.
 """
 function permute(
     b::BaseInt{T,Ti,B},
@@ -603,6 +613,11 @@ than their positions.
 # Returns
 - [`SymBasis.DigitBase.BaseInt`](@ref)`{T,Ti,B}`: A new [`SymBasis.DigitBase.BaseInt`](@ref)
     instance with the specified digits permuted according to `perm`.
+
+# Throws
+- `ArgumentError`: If a position in `pos` is less than 1, if `length(perm)` is not `B`, or
+    if an entry of `perm` is outside `0:B-1`.
+- `OverflowError`: If a permuted digit makes the value exceed `typemax(T)`.
 """
 function permute(
     b::BaseInt{T,Ti,B},

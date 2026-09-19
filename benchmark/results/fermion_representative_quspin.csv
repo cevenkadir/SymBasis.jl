@@ -1,2 +1,2 @@
 N,config,nsamples,quspin_mean_seconds_per_call,quspin_std_seconds_per_call
-16,U1+T(k=0)+P(p=1),10000,1.5097973400000343e-06,2.7776304515031453e-08
+16,U1+T(k=0)+P(p=1),10000,1.4958993000001897e-06,7.62625655333659e-09

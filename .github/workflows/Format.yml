@@ -1,0 +1,38 @@
+name: Format
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+concurrency:
+  # Skip intermediate builds: always.
+  # Cancel intermediate builds: only if it is a pull request build.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+jobs:
+  format:
+    name: JuliaFormatter
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1'
+      - name: Install JuliaFormatter
+        run: julia -e 'using Pkg; Pkg.add(PackageSpec(name="JuliaFormatter", version="2"))'
+      # Only src/ and test/ are kept formatted (docs/ and benchmark/ are not).
+      # The formatter needs two passes to converge, so run it twice.
+      - name: Format src/ and test/ (two passes)
+        run: |
+          julia -e 'using JuliaFormatter; format("src"); format("test")'
+          julia -e 'using JuliaFormatter; format("src"); format("test")'
+      - name: Fail if formatting changed any file
+        run: |
+          if ! git diff --exit-code; then
+            echo "::error::Files are not formatted. Run JuliaFormatter (twice) on src/ and test/."
+            exit 1
+          fi

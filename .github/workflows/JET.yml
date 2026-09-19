@@ -1,0 +1,38 @@
+name: JET
+on:
+  push:
+    branches:
+      - main
+    tags: ['*']
+  pull_request:
+  workflow_dispatch:
+concurrency:
+  # Skip intermediate builds: always.
+  # Cancel intermediate builds: only if it is a pull request build.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+jobs:
+  jet:
+    name: JET - Julia ${{ matrix.version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions: # needed to allow julia-actions/cache to proactively delete old caches that it has created
+      actions: write
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - '1.11'
+          - '1.12'
+          - '1.13'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.version }}
+      - uses: julia-actions/cache@v2
+      - name: Instantiate the JET environment
+        run: julia --project=test/jet -e 'using Pkg; Pkg.develop(path="."); Pkg.instantiate()'
+      - name: Run JET
+        run: julia --project=test/jet test/jet/runjet.jl

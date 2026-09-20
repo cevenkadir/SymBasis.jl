@@ -22,12 +22,12 @@ jobs:
       actions: write
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v2
         with:
           version: '1'
-      - uses: julia-actions/cache@v2
-      - uses: actions/setup-python@v5
+      - uses: julia-actions/cache@v3
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Install QuSpin (latest, PyPI)
@@ -77,16 +77,16 @@ jobs:
       statuses: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Use this run's fresh benchmark results, if any were generated
         if: needs.benchmark.result == 'success'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: benchmark-docs-page
       - uses: julia-actions/setup-julia@v2
         with:
           version: '1'
-      - uses: julia-actions/cache@v2
+      - uses: julia-actions/cache@v3
       - name: Install dependencies
         shell: julia --color=yes --project=docs {0}
         run: |

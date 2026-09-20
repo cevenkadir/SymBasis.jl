@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Quantum many-body scars in the PXP chain · SymBasis.jl</title><meta name="title" content="Quantum many-body scars in the PXP chain · SymBasis.jl"/><meta property="og:title" content="Quantum many-body scars in the PXP chain · SymBasis.jl"/><meta property="twitter:title" content="Quantum many-body scars in the PXP chain · SymBasis.jl"/><meta name="description" content="Documentation for SymBasis.jl."/><meta property="og:description" content="Documentation for SymBasis.jl."/><meta property="twitter:description" content="Documentation for SymBasis.jl."/><meta property="og:url" content="https://cevenkadir.github.io/SymBasis.jl/examples/pxp/"/><meta property="twitter:url" content="https://cevenkadir.github.io/SymBasis.jl/examples/pxp/"/><link rel="canonical" href="https://cevenkadir.github.io/SymBasis.jl/examples/pxp/"/><script async src="https://www.googletagmanager.com/gtag/js?id=G-X8Z32YNZ42"></script><script>  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-X8Z32YNZ42', {'page_path': location.pathname + location.search + location.hash});
+</script><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../assets/favicon.ico" rel="icon" type="image/x-icon"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img class="docs-light-only" src="../../assets/logo.svg" alt="SymBasis.jl logo"/><img class="docs-dark-only" src="../../assets/logo-dark.svg" alt="SymBasis.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">SymBasis.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Manual</span><ul><li><a class="tocitem" href="../../manual/getting_started/">Getting started</a></li><li><a class="tocitem" href="../../manual/defining_dof_objects/">Defining DoF-object(s)</a></li><li><a class="tocitem" href="../../manual/defining_sym_groups/">Defining symmetry group(s)</a></li><li><a class="tocitem" href="../../manual/basis_construction/">Basis construction</a></li><li><a class="tocitem" href="../../manual/representative_states/">Determining representative states</a></li><li><a class="tocitem" href="../../manual/state_operations/">State operations</a></li></ul></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../spins/">Quantum mechanical spins</a></li><li class="is-active"><a class="tocitem" href>Quantum many-body scars in the PXP chain</a><ul class="internal"><li><a class="tocitem" href="#Defining-the-Rydberg-DoF-object-and-blockade-constraint"><span>Defining the Rydberg DoF-object and blockade constraint</span></a></li><li><a class="tocitem" href="#Adding-translational-and-spatial-reflection-symmetries"><span>Adding translational and spatial reflection symmetries</span></a></li><li><a class="tocitem" href="#Constructing-the-basis"><span>Constructing the basis</span></a></li><li><a class="tocitem" href="#Building-the-PXP-Hamiltonian"><span>Building the PXP Hamiltonian</span></a></li><li><a class="tocitem" href="#Diagonalizing-and-computing-overlaps-with-the-\\mathbb{Z}_2-period-2-density-wave-initial-state"><span>Diagonalizing and computing overlaps with the <span>$\mathbb{Z}_2$</span> period-2 density-wave initial state</span></a></li><li><a class="tocitem" href="#Plotting-the-spectrum"><span>Plotting the spectrum</span></a></li></ul></li><li><a class="tocitem" href="../1d_bhm_phase_diagram/">Phase diagram of the Bose-Hubbard chain</a></li></ul></li><li><span class="tocitem">API Reference</span><ul><li><a class="tocitem" href="../../api/digitbase/">DigitBase</a></li><li><a class="tocitem" href="../../api/dofobjects/">DoFObjects</a></li><li><a class="tocitem" href="../../api/miscs/">Miscs</a></li><li><a class="tocitem" href="../../api/symgroups/">SymGroups</a></li><li><a class="tocitem" href="../../api/bases/">Bases</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Quantum many-body scars in the PXP chain</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Quantum many-body scars in the PXP chain</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/cevenkadir/SymBasis.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/cevenkadir/SymBasis.jl/blob/main/docs/src/examples/pxp.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Quantum-many-body-scars-in-the-PXP-chain"><a class="docs-heading-anchor" href="#Quantum-many-body-scars-in-the-PXP-chain">Quantum many-body scars in the PXP chain</a><a id="Quantum-many-body-scars-in-the-PXP-chain-1"></a><a class="docs-heading-anchor-permalink" href="#Quantum-many-body-scars-in-the-PXP-chain" title="Permalink"></a></h1><p>The PXP model describes a chain of Rydberg atoms subject to a nearest-neighbor blockade constraint: two adjacent atoms cannot both be in the excited (Rydberg) state <span>$|r\rangle$</span> simultaneously. The Hamiltonian acts on the constrained Hilbert space and flips the state of each atom conditioned on both of its neighbors being in the ground state <span>$\ket{g}$</span>:</p><p class="math-container">\[H = \sum_{i} P_{i-1} X_i P_{i+1}\,,\]</p><p>where <span>$P_i = \ket{g}\!\!\bra{g}_i$</span> is the projector onto the ground state and <span>$X_i = \ket{g}\!\!\bra{r}_i + \ket{r}\!\!\bra{g}_i$</span>.</p><p>This model is known to exhibit quantum many-body scars<sup class="footnote-reference"><a id="citeref-Turner_2018" href="#footnote-Turner_2018" class="footnote-ref">[Turner_2018]</a><span class="footnote-preview" id="fn-Turner_2018"></span></sup>: special high-energy eigenstates that have anomalously large overlap with the <span>$\mathbb{Z}_2$</span> period-2 density-wave initial state <span>$\ket{r g r g \cdots}$</span>, leading to persistent oscillations when the system is initialized in that state.</p><h2 id="Defining-the-Rydberg-DoF-object-and-blockade-constraint"><a class="docs-heading-anchor" href="#Defining-the-Rydberg-DoF-object-and-blockade-constraint">Defining the Rydberg DoF-object and blockade constraint</a><a id="Defining-the-Rydberg-DoF-object-and-blockade-constraint-1"></a><a class="docs-heading-anchor-permalink" href="#Defining-the-Rydberg-DoF-object-and-blockade-constraint" title="Permalink"></a></h2><p>We first define the Rydberg degree-of-freedom object and a custom symmetry group encoding the blockade constraint. The blockade is represented as a <code>SymGroup</code> with a <code>check</code> function that returns <code>false</code> whenever two adjacent sites are both in state <span>$\ket{r}$</span>.</p><pre><code class="language-julia hljs">using SymBasis.DigitBase
+using SymBasis.DoFObjects
+using SymBasis.SymGroups
+
+N = 22 # number of sites in the chain
+# define the Rydberg DoF-object with two states: ground (g) and Rydberg (r)
+dofo = DoFObject(:Rydberg, (:g, :r))
+
+# define the check function for the blockade constraint
+function check_blockade(
+    p::Tp,
+    state::BaseInt{T,Ti,B},
+    prev_bool::Bool
+) where {
+    T,
+    Ti,
+    B,
+    Tp&lt;:NamedTuple{(:prevent, :N),&lt;:Tuple{NTuple{2,T},&lt;:Integer}}
+}
+    prev_bool || return false
+    @inbounds for i in 1:(p.N)
+        d_curr = read(state, i)
+        d_curr == p.prevent[1] || continue
+        d_next = read(state, mod1(i + 1, p.N))
+        d_next == p.prevent[2] &amp;&amp; return false
+    end
+    return true
+end
+
+# define the apply function for the blockade constraint (identity in this case)
+function apply_blockade(p, state::BaseInt{T,Ti,B}) where {T,Ti,B}
+    return state
+end
+
+# define the cycle for the blockade constraint
+cycles = [(; prevent=(UInt(1), UInt(1)), N=N)]
+# define the factor for the blockade constraint (no symmetry transformation, so factor is 1)
+factors = [1,]
+
+# construct the Rydberg blockade symmetry group
+rydberg_blockade_sg = SymGroup(
+    dofo,
+    cycles,
+    check_blockade,
+    apply_blockade,
+    phase_unity, # no symmetry transformation, so phase is 1
+    factors,
+    N
+)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SymGroup{2,Symbol,UInt64,Int64,Int64} with 1 cycle(s)
+  N:             22
+  DoF-object:    DoFObject(Rydberg, B=2)
+  cycles:        (prevent = (0x0000000000000001, 0x0000000000000001), N = 22)
+  factors:       1 element(s), eltype=Int64
+  check:         check_blockade
+  apply:         apply_blockade
+  phase:         phase_unity
+</code></pre><p>The <code>check_blockade</code> function iterates over all sites and rejects any state where a site in state <span>$\ket{r}$</span> (digit <code>1</code>) is immediately followed by another site in state <span>$\ket{r}$</span>. The <code>apply_blockade</code> function acts as the identity since the blockade is a constraint rather than a symmetry transformation.</p><h2 id="Adding-translational-and-spatial-reflection-symmetries"><a class="docs-heading-anchor" href="#Adding-translational-and-spatial-reflection-symmetries">Adding translational and spatial reflection symmetries</a><a id="Adding-translational-and-spatial-reflection-symmetries-1"></a><a class="docs-heading-anchor-permalink" href="#Adding-translational-and-spatial-reflection-symmetries" title="Permalink"></a></h2><p>We next define translational and spatial reflection symmetry groups and combine them with the blockade constraint:</p><pre><code class="language-julia hljs"># define the translational symmetry group at momentum k=0
+T_sg = sym(Translational(0, mod1.((1:N) .+ 1, N)), dofo)
+# define the spatial reflection symmetry group with parity p=+1
+P_sg = sym(SpatialReflection(+1, 1:N |&gt; reverse |&gt; collect), dofo)
+
+# merge the symmetry groups
+csg = rydberg_blockade_sg ∘ T_sg ∘ P_sg</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">CombSymGroup{2,Symbol,UInt64,Int64,ComplexF64} with size of cycles = (1, 22, 2)
+  N:             22
+  DoF-object:    DoFObject(Rydberg, B=2)
+  cycles:        array of vectors; eltype=Vector{NamedTuple}
+  factors:       size=(1, 22, 2), eltype=ComplexF64
+  check:         3 function(s)
+  apply:         3 function(s)
+  phase:         3 function(s)
+  preview @[1]:  factor=1.0 + 0.0im
+                 cycle=(prevent = (0x0000000000000001, 0x0000000000000001), N = 22), (perm = BitPermutation{UInt64},), (perm = BitPermutation{UInt64},)
+</code></pre><p>Here <code>T_sg</code> is the translational symmetry group at momentum <span>$k = 0$</span> and <code>P_sg</code> is the spatial reflection symmetry group with parity <span>$p = +1$</span>. Composing the three groups with <code>∘</code> produces a combined symmetry group <code>csg</code> that enforces the blockade constraint and resolves both symmetries simultaneously.</p><h2 id="Constructing-the-basis"><a class="docs-heading-anchor" href="#Constructing-the-basis">Constructing the basis</a><a id="Constructing-the-basis-1"></a><a class="docs-heading-anchor-permalink" href="#Constructing-the-basis" title="Permalink"></a></h2><pre><code class="language-julia hljs">using SymBasis.Bases
+
+# construct the symmetry-resolved basis for the PXP model
+ba = basis(dofo, N, csg)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Basis{SymBasis.DigitBase.BaseInt{UInt64, Int64, 2},Float64} with 1022 states
+  states: Vector{SymBasis.DigitBase.BaseInt{UInt64, Int64, 2}}
+  norms : Vector{Float64}
+  first 10 states/norms:
+    (0)₂             (norm=1936.0)
+    (1000001)₂       (norm=88.0)
+    (10101010)₂      (norm=88.0)
+    (1000010000)₂    (norm=88.0)
+    (1001010001)₂    (norm=44.0)
+    (10010010000)₂   (norm=88.0)
+    (100001000001)₂  (norm=44.0)
+    (100010101010)₂  (norm=44.0)
+    (100100001000)₂  (norm=44.0)
+    (101000010000)₂  (norm=44.0)
+    ⋮
+</code></pre><p>The resulting basis contains only the blockade-respecting states in the <span>$k = 0$</span>, <span>$p = +1$</span> symmetry sector.</p><h2 id="Building-the-PXP-Hamiltonian"><a class="docs-heading-anchor" href="#Building-the-PXP-Hamiltonian">Building the PXP Hamiltonian</a><a id="Building-the-PXP-Hamiltonian-1"></a><a class="docs-heading-anchor-permalink" href="#Building-the-PXP-Hamiltonian" title="Permalink"></a></h2><p>The Hamiltonian matrix is assembled in the symmetry-resolved basis. For each representative state <span>$\ket{s_n}$</span>, we flip site <span>$i+1$</span> whenever sites <span>$i$</span> and <span>$i+2$</span> are both in the ground state <span>$\ket{g}$</span>, find the representative of the resulting state, and accumulate the matrix element with the appropriate normalization factor:</p><pre><code class="language-julia hljs">using SparseArrays
+
+# initialize vectors to store the row indices, column indices, and values of the nonzero matrix elements
+I_vec = Int64[]
+J_vec = Int64[]
+V_vec = Float64[]
+
+hilbert_dim = length(ba.states)
+b = Dict(ba.states .=&gt; 1:hilbert_dim)
+for sₙ in ba.states
+    n = b[sₙ]
+    Nₙ = ba.norms[n]
+
+    for xᵢ in 1:(N-1)
+        xᵢ₊₁ = mod1(xᵢ + 1, N)
+        xᵢ₊₂ = mod1(xᵢ + 2, N)
+
+        # only flip site i+1 if sites i and i+2 are both in the ground state (digit `0`)
+        if DigitBase.read(sₙ, xᵢ) == DigitBase.read(sₙ, xᵢ₊₂) == 0
+
+            temp_s = flip(sₙ, xᵢ₊₁)
+            rep_s, rep_fac = representative(temp_s, csg)
+
+            if rep_s ∈ ba.states
+                m = b[rep_s]
+                Nₘ = ba.norms[m]
+
+                all_fac = sqrt(Nₘ / Nₙ) * rep_fac
+
+                push!(I_vec, m)
+                push!(J_vec, n)
+                push!(V_vec, all_fac)
+
+                push!(I_vec, n)
+                push!(J_vec, m)
+                push!(V_vec, all_fac)
+            end
+        end
+    end
+end
+
+# construct the sparse Hamiltonian matrix
+h = sparse(I_vec, J_vec, V_vec, hilbert_dim, hilbert_dim)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1022×1022 SparseArrays.SparseMatrixCSC{Float64, Int64} with 11076 stored entries:
+⎡⣿⣿⣿⣿⣾⣿⣶⣮⣿⣖⢽⡷⢿⢷⢧⡾⣢⢴⣳⣺⣦⣶⣆⣲⣢⠐⣰⡼⠀⡲⣿⠯⢶⣴⠰⣲⢼⡤⢮⡆⎤
+⎢⣿⣿⣿⣿⣿⣙⢿⣿⣛⡟⢽⡿⣿⣯⣿⣕⡛⡿⡽⣼⣷⢾⡧⢽⣾⠛⢾⠝⠲⢃⣻⡧⡽⢰⡳⢿⣾⡷⡇⡍⎥
+⎢⣾⣿⣟⢻⣻⣾⣿⣟⣶⢿⣿⣽⡿⣿⣿⡏⡟⣼⡿⣹⣿⣯⡏⡙⡝⣺⣺⣽⡎⠒⢭⣦⣜⣙⢹⣾⣾⠟⠿⠅⎥
+⎢⡸⣿⣿⣷⣿⢿⣺⣾⣿⢌⣹⣯⣻⢿⢯⣍⣧⣿⣶⡿⣿⣻⡿⠿⣿⢤⢾⣼⡮⠅⣺⢽⣾⣿⣿⣷⢽⢿⣾⣀⎥
+⎢⢻⢿⣿⠼⣼⣟⡛⢟⢿⢗⡯⢿⣽⢿⣿⣷⣳⠲⢮⣙⣞⣿⣯⣝⡯⢹⣝⢵⣿⣠⣻⣛⣧⣿⠙⢯⢼⡯⡣⢆⎥
+⎢⢷⡷⣷⡷⣟⣿⡷⣾⣯⣏⣵⣿⣾⢟⣭⡍⣍⣻⣿⣹⢾⡖⠿⣿⣻⠣⣒⣿⣶⡜⢾⣷⣟⣧⢯⣽⣶⣗⡖⡳⎥
+⎢⢿⣗⡿⣿⣿⣯⣿⣞⣷⣟⣾⢟⣯⣿⡿⣳⡋⣿⢯⠯⣿⣶⣧⣽⣯⣻⣻⢯⣿⢎⠿⣟⣽⢗⣻⣊⣍⣮⢭⠁⎥
+⎢⣩⡷⢟⢿⡿⠿⡏⢷⢿⣿⡇⠿⢿⣫⣾⣿⡟⡽⣻⢺⢯⣟⣿⣞⣯⡻⣵⡿⣾⣎⠾⣭⣽⣧⣭⣥⢿⡗⢯⡦⎥
+⎢⢈⣞⣿⡬⣛⣭⣭⣿⢹⡚⣧⣹⣯⣬⣟⡭⣿⣿⣿⣯⣛⣺⣽⡸⣿⢷⣿⢷⠷⣫⡾⣝⣯⣹⣿⣷⢷⣿⠶⡷⎥
+⎢⣹⣺⣓⣯⣟⣫⣼⡿⣎⢳⣟⣻⡯⡗⣻⣚⡿⣿⣯⣻⣱⠢⣟⢮⢳⣹⣯⣮⠷⣾⣿⢾⣟⢿⣿⢓⣯⣿⡿⣼⎥
+⎢⢨⣿⣹⣟⡿⣿⣿⣻⣾⣽⢺⠷⢻⣿⣯⢷⣻⣸⠱⡚⣯⣿⣿⡽⣾⢿⢹⣿⣾⢵⢻⢿⣿⣾⡖⣿⣼⣇⣷⠆⎥
+⎢⢨⣹⣍⣏⣏⠩⣿⡏⣏⢿⣿⣧⣍⣿⣻⢿⣓⡻⡻⣝⣟⡿⢿⢗⣿⡮⣞⣼⣭⣻⣑⣽⣟⣗⣖⡿⢿⡳⣟⠅⎥
+⎢⢈⠚⣾⠛⣳⣩⠛⣟⣏⣋⠿⡚⣯⣻⣯⡻⢿⣟⣝⣲⣾⣟⡻⡿⢿⢗⣷⠇⣭⣷⢯⣼⢛⣻⡽⣽⢟⣏⣱⣂⎥
+⎢⣐⡾⣞⠗⣞⣾⣚⣷⢗⣝⣼⣼⡿⣞⣵⡿⢿⣟⡫⣿⣷⣶⣚⣽⠽⠟⢿⣷⢿⣷⡸⣾⣽⣺⣟⣻⣷⡻⡋⡇⎥
+⎢⢠⡠⠼⢂⢪⠉⠎⠏⠛⣻⣘⠿⡻⢟⡺⢿⡽⣣⣹⣧⢞⣟⣧⣻⢧⣿⢿⣷⣯⣻⣥⡎⡳⢼⡯⢽⢻⣿⢯⣏⎥
+⎢⡿⡟⠿⡾⠣⣷⣞⣞⣿⢺⢾⣷⣿⢧⡞⣧⣞⢯⣻⣟⣿⣖⣕⣼⣋⣷⣲⣮⡡⠿⢵⢗⣽⢺⣾⣹⣿⣣⡍⣯⎥
+⎢⢘⣷⢓⣋⣖⢹⣾⣿⣭⣿⠿⣽⢷⢟⠷⣿⣏⣻⣿⣝⣻⣿⢿⢽⣿⣰⣳⣻⣙⣎⣳⣛⣺⣾⣿⣷⢿⣷⣿⣝⎥
+⎢⢰⣢⣽⣎⣳⣶⢿⣿⡷⣄⣏⣷⡻⢺⠇⣿⢿⣿⢿⢛⣼⣭⣼⡽⣗⣯⣿⣹⣏⣏⣞⣻⢿⣿⢿⣷⣪⣭⣺⡋⎥
+⎢⠒⡷⢾⡿⣾⠟⣷⣗⡶⡷⢼⢿⡣⣽⢿⠷⣽⣷⣯⣿⠶⢿⢿⡳⡿⢵⣽⡻⣿⣶⠿⣻⢿⣷⡎⣾⣻⣾⣯⠟⎥
+⎣⠪⠷⡍⠭⠟⠇⠚⢻⠩⢎⢼⡩⠇⠓⠫⡷⢼⡧⣛⣯⠹⠟⠟⠝⠱⢺⠯⠬⡯⢷⡧⣭⣟⢿⡾⠺⣯⠟⡿⣫⎦</code></pre><h2 id="Diagonalizing-and-computing-overlaps-with-the-\\mathbb{Z}_2-period-2-density-wave-initial-state"><a class="docs-heading-anchor" href="#Diagonalizing-and-computing-overlaps-with-the-\\mathbb{Z}_2-period-2-density-wave-initial-state">Diagonalizing and computing overlaps with the <span>$\mathbb{Z}_2$</span> period-2 density-wave initial state</a><a id="Diagonalizing-and-computing-overlaps-with-the-\\mathbb{Z}_2-period-2-density-wave-initial-state-1"></a><a class="docs-heading-anchor-permalink" href="#Diagonalizing-and-computing-overlaps-with-the-\\mathbb{Z}_2-period-2-density-wave-initial-state" title="Permalink"></a></h2><p>We diagonalize the Hamiltonian and compute the overlap of each eigenstate with the <span>$\mathbb{Z}_2$</span> period-2 density-wave initial state <span>$\ket{r g r g \cdots}$</span>:</p><pre><code class="language-julia hljs">using LinearAlgebra
+
+# diagonalize the Hamiltonian
+egn = h |&gt; collect |&gt; eigen
+
+# construct the integer representation of the Z_2 state
+Z_2_state = bi&quot;0&quot;2
+for i in 2:2:N
+    global Z_2_state = flip(Z_2_state, i)
+end
+# find the representative of the Z_2 state in the symmetry-resolved basis
+rep_Z_2_state, _ = representative(Z_2_state, csg)
+# determine the index of the representative state in the basis
+m_Z_2_state = b[rep_Z_2_state]
+# construct the vector representation of the Z_2 state in the symmetry-resolved basis
+Z_2_vec = zeros(hilbert_dim)
+Z_2_vec[m_Z_2_state] = 1.0
+
+# compute the overlap of each eigenstate with the Z_2 state
+overlap = abs2.([Z_2_vec ⋅ egn.vectors[:, i] for i in 1:hilbert_dim]) .|&gt; log10</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1022-element Vector{Float64}:
+ -5.356878154089941
+ -3.427185727468685
+ -4.505133453262009
+ -4.862348645171486
+ -5.454306856524204
+ -4.383200521796187
+ -2.300048639011477
+ -4.018075337795388
+ -3.0132528712638016
+ -4.493623165108528
+  ⋮
+ -3.013252871263827
+ -4.018075337795357
+ -2.3000486390114645
+ -4.383200521796173
+ -5.454306856524123
+ -4.86234864517148
+ -4.505133453261947
+ -3.4271857274686157
+ -5.356878154089823</code></pre><h2 id="Plotting-the-spectrum"><a class="docs-heading-anchor" href="#Plotting-the-spectrum">Plotting the spectrum</a><a id="Plotting-the-spectrum-1"></a><a class="docs-heading-anchor-permalink" href="#Plotting-the-spectrum" title="Permalink"></a></h2><p>The scar states become visible as a regular tower of eigenstates with anomalously large overlap (close to <span>$\log_{10}|\langle\mathbb{Z}_2|E_n\rangle|^2 = 0$</span>) spread across the entire energy spectrum:</p><pre><code class="language-julia hljs">using CairoMakie
+
+fig = Figure()
+ax = Axis(
+    fig[1, 1];
+    xlabel=L&quot;E_n/N&quot;,
+    ylabel=L&quot;\log_{10}\left| \langle\mathbb{Z}_2|E_n\rangle\right|^2&quot;
+)
+scatter!(ax, egn.values ./ N, overlap)
+ylims!(ax, -10, 0)
+fig</code></pre><img src="f9cc5cd2.svg" alt="Example block output"/><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-Turner_2018"><a class="tag is-link" href="#citeref-Turner_2018">Turner_2018</a>C. J. Turner, A. A. Michailidis, D. A. Abanin, M. Serbyn, and Z. Papić, <em>Weak ergodicity breaking from quantum many-body scars</em>, <a href="https://doi.org/10.1038/s41567-018-0137-5">Nature Phys. <strong>14</strong>, 745 (2018)</a>.</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../spins/">« Quantum mechanical spins</a><a class="docs-footer-nextpage" href="../1d_bhm_phase_diagram/">Phase diagram of the Bose-Hubbard chain »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Wednesday 22 April 2026 21:53">Wednesday 22 April 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

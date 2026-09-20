@@ -8,5 +8,7 @@ SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 SymBasis = "0806812d-f945-4f84-939d-820504b53c51"
 
 [compat]
+Arpack = "0.5"
 Documenter = "1.16"
 QuadGK = "2"
+SpecialFunctions = "2"

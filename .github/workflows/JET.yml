@@ -28,11 +28,11 @@ jobs:
           - '1.12'
           - '1.13'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
-      - uses: julia-actions/cache@v2
+      - uses: julia-actions/cache@v3
       - name: Instantiate the JET environment
         run: julia --project=test/jet -e 'using Pkg; Pkg.develop(path="."); Pkg.instantiate()'
       - name: Run JET

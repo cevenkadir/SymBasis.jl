@@ -9,3 +9,4 @@ SymBasis = "0806812d-f945-4f84-939d-820504b53c51"
 
 [compat]
 Documenter = "1.16"
+SpecialFunctions = "2"

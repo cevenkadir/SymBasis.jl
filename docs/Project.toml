@@ -7,6 +7,10 @@ QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 SymBasis = "0806812d-f945-4f84-939d-820504b53c51"
 
+[sources]
+OperatorAlgebra = {rev = "main", url = "https://github.com/h-mnzlr/OperatorAlgebra.jl"}
+SymBasis = {path = ".."}
+
 [compat]
 Arpack = "0.5"
 CairoMakie = "0.15"

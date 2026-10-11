@@ -55,7 +55,7 @@ jobs:
       # Hand the raw CSVs + generated page to the `build` job -- `docs/make.jl` renders the
       # plots live from these CSVs using the docs environment's CairoMakie (already required
       # there for docs/src/examples/pxp.md), so no image ever needs to be built or shipped here.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: benchmark-docs-page
           path: |
